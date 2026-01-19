@@ -10,7 +10,11 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
@@ -18,113 +22,306 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-import org.bukkit.event.entity.EntityDamageByEntityEvent; // 올라프 대미지용
-import org.bukkit.entity.Snowball;                      // 올라프 눈구멍(도끼)용
-import org.bukkit.event.block.Action;                   // 클릭 감지용
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class MocPlugin extends JavaPlugin implements Listener, CommandExecutor {
-
     private final Map<UUID, String> playerAbilities = new HashMap<>();
+    private final Map<UUID, Integer> rerollCounts = new HashMap<>();
+    private final Set<UUID> readyPlayers = new HashSet<>();
+    private final Map<UUID, Integer> scores = new HashMap<>();
     private final Map<UUID, Horse> activeBikes = new HashMap<>();
+
+    private BukkitTask selectionTask;
     private BukkitTask borderTask;
     private BukkitTask damageTask;
-
+    private boolean isInvincible = false;
+    private boolean isGameStarted = false;
+    private Location gameCenter;
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        Optional.ofNullable(getCommand("moc")).ifPresent(cmd -> cmd.setExecutor(this));
-        getLogger().info("MOC 플러그인 정리 완료!");
+        getCommand("moc").setExecutor(this);
+        getLogger().info("MOC 시즌 2 시스템 로딩 완료!");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player admin)) return false;
-        if (args.length == 0) return false;
+        if (!(sender instanceof Player player)) return false;
 
-        // --- 게임 시작 (/moc start) ---
-        if (args[0].equalsIgnoreCase("start")) {
-            Location center = admin.getLocation();
-            World world = center.getWorld();
-            int floorY = center.getBlockY() - 1;
-
-            // 환경 설정
-            world.setTime(6000);
-            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-            world.setStorm(false);
-            world.setDifficulty(Difficulty.NORMAL);
-
-            // 경기장 설정
-            Location emeraldLoc = center.getBlock().getRelative(0, -1, 0).getLocation();
-            emeraldLoc.getBlock().setType(Material.EMERALD_BLOCK);
-            world.getWorldBorder().setCenter(center);
-            world.getWorldBorder().setSize(120);
-
-            admin.sendMessage("§e[MOC] §f경기장 건설 및 게임을 시작합니다!");
-            generateCircleFloor(center, 60, floorY, emeraldLoc);
-            setupPlayers();
-
-            // 기존 스케줄러 초기화 후 재등록
-            if (borderTask != null) borderTask.cancel();
-            if (damageTask != null) damageTask.cancel();
-
-            borderTask = new BukkitRunnable() {
-                @Override
-                public void run() { startCustomBorderShrink(world); }
-            }.runTaskLater(this, 20L * 60 * 5); // 5분 뒤 수축 시작
-
-            startBorderDamageTask(world);
-            return true;
-        }
-
-        // --- 게임 종료 (/moc stop) ---
-        if (args[0].equalsIgnoreCase("stop")) {
-            World world = admin.getWorld();
-            if (borderTask != null) borderTask.cancel();
-            if (damageTask != null) damageTask.cancel();
-
-            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
-            world.getWorldBorder().setSize(30000000);
-
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage("§c§l[MOC] §f게임이 종료되었습니다!");
-            Bukkit.broadcastMessage(" ");
-
-            playerAbilities.clear();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                p.getInventory().clear();
-                AttributeInstance health = p.getAttribute(Attribute.MAX_HEALTH);
-                if (health != null) health.setBaseValue(20.0);
-                p.setHealth(20.0);
-                p.sendTitle("§c§lGAME OVER", "§f게임이 종료되었습니다.", 10, 40, 10);
+        if (args.length > 0) {
+            switch (args[0].toLowerCase()) {
+                case "start":
+                    if (player.isOp()) startNewRound(player.getLocation());
+                    break;
+                case "stop":
+                    if (player.isOp()) stopGame();
+                    break;
+                case "yes":
+                    acceptAbility(player);
+                    break;
+                case "re":
+                    rerollAbility(player);
+                    break;
             }
-            activeBikes.values().forEach(Entity::remove);
-            activeBikes.clear();
             return true;
         }
         return false;
     }
 
-    private void setupPlayers() {
-        List<String> abilityList = new ArrayList<>(Arrays.asList("우에키", "올라프", "미다스", "매그너스"));
-        Collections.shuffle(abilityList);
-        int index = 0;
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            p.setGameMode(GameMode.SURVIVAL);
-            String assigned = abilityList.get(index % abilityList.size());
-            playerAbilities.put(p.getUniqueId(), assigned);
 
+
+
+    private void startNewRound(Location center) {
+        this.gameCenter = center;
+        this.isGameStarted = false;
+        playerAbilities.clear();
+        rerollCounts.clear();
+        readyPlayers.clear();
+
+        // 경기장 바닥 생성
+        generateCircleFloor(center, 60, center.getBlockY() - 1, center);
+
+        List<String> abilities = new ArrayList<>(Arrays.asList("우에키", "올라프", "미다스", "매그너스"));
+        Collections.shuffle(abilities);
+
+        int i = 0;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            String initialAbility = abilities.get(i % abilities.size());
+            playerAbilities.put(p.getUniqueId(), initialAbility);
+            rerollCounts.put(p.getUniqueId(), 2);
+            showAbilityInfo(p, initialAbility);
+            i++;
+        }
+
+        // 45초 타이머 시작
+        if (selectionTask != null) selectionTask.cancel();
+        selectionTask = new BukkitRunnable() {
+            int timer = 45;
+            @Override
+            public void run() {
+                if (readyPlayers.size() == Bukkit.getOnlinePlayers().size() || timer <= 0) {
+                    this.cancel();
+                    startGameLogic();
+                    return;
+                }
+                if (timer <= 5) {
+                    Bukkit.broadcastMessage("§e[MOC] §f능력 자동 수락까지 §c" + timer + "초 §f남았습니다.");
+                }
+                timer--;
+            }
+        }.runTaskTimer(this, 0, 20L);
+    }
+
+    private void showAbilityInfo(Player p, String ability) {
+        p.sendMessage("§f ");
+        p.sendMessage("§e=== §l능력 정보 §e===");
+        switch (ability) {
+            case "우에키":
+                p.sendMessage("§b유틸 ● 우에키(우에키의 법칙/배틀짱)");
+                p.sendMessage("§f묘목이 지급된다. 묘목을 우 클릭 시,");
+                p.sendMessage("§f주변 나무와 쓰레기들을 변환한다.");
+                p.sendMessage("§a- 쓰레기를 나무로 바꾸는 힘!");
+                break;
+            case "올라프":
+                p.sendMessage("§c공격 ● 올라프(리그 오브 레전드)");
+                p.sendMessage("§f철 도끼가 지급된다. 우 클릭 시 도끼를 던져");
+                p.sendMessage("§f적에게 강력한 대미지를 입힌다.");
+                break;
+            case "미다스":
+                p.sendMessage("§6특수 ● 미다스(그리스 신화)");
+                p.sendMessage("§f금괴가 지급된다. 좌 클릭한 블록을");
+                p.sendMessage("§f순금 블록으로 바꾸어버린다.");
+                break;
+            case "매그너스":
+                p.sendMessage("§8이동 ● 매그너스(이터널 리턴)");
+                p.sendMessage("§f염료가 지급된다. 사용 시 오토바이를 소환해");
+                p.sendMessage("§f폭발적인 속도로 돌진 후 자폭한다.");
+                break;
+        }
+        p.sendMessage("§f ");
+        p.sendMessage("§e능력 수락 : §a/moc yes");
+        p.sendMessage("§e리롤(2회) : §c/moc re §7(소고기 15개 소모)");
+        p.sendMessage("§e==================");
+    }
+
+    private void acceptAbility(Player p) {
+        if (readyPlayers.contains(p.getUniqueId())) return;
+        readyPlayers.add(p.getUniqueId());
+        p.sendMessage("§a[MOC] §f능력을 수락하셨습니다. 준비 완료!");
+    }
+
+    private void rerollAbility(Player p) {
+        int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
+        if (left <= 0) {
+            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다.");
+            return;
+        }
+
+        // 소고기 15개 체크 및 소모
+        if (!p.getInventory().contains(Material.COOKED_BEEF, 15)) {
+            p.sendMessage("§c[MOC] 소고기가 부족하여 리롤할 수 없습니다.");
+            return;
+        }
+
+        p.getInventory().removeItem(new ItemStack(Material.COOKED_BEEF, 15));
+        List<String> pool = new ArrayList<>(Arrays.asList("우에키", "올라프", "미다스", "매그너스"));
+        String newAbility = pool.get(new Random().nextInt(pool.size()));
+
+        playerAbilities.put(p.getUniqueId(), newAbility);
+        rerollCounts.put(p.getUniqueId(), left - 1);
+        p.sendMessage("§e[MOC] §f능력이 교체되었습니다! 남은 리롤: §c" + (left - 1));
+        showAbilityInfo(p, newAbility);
+    }
+
+    private void startGameLogic() {
+        isGameStarted = true;
+        isInvincible = true;
+        Bukkit.broadcastMessage("§6§l[MOC] 전투가 곧 시작됩니다! 무적 시간(3초)");
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.getInventory().clear();
+
+            // 1. 칼
+            p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
+            // 2. 고기
+            p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
+            // 3. 물양동이
+            p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
+            // 4. 유리
+            p.getInventory().addItem(new ItemStack(Material.GLASS, 10));
+            // 5. 갑옷
+            p.getInventory().addItem(new ItemStack(Material.IRON_CHESTPLATE));
+
+            // [수정된 부분] 1레벨 체력 재생 포션 1개 지급
+            ItemStack regenPotion = new ItemStack(Material.POTION);
+            org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) regenPotion.getItemMeta();
+            if (meta != null) {
+                // REGEN이 아니라 REGENERATION을 사용해야 합니다.
+                try {
+                    meta.setBasePotionData(new org.bukkit.potion.PotionData(org.bukkit.potion.PotionType.REGENERATION));
+                } catch (NoSuchFieldError e) {
+                    // 아주 최신 버전(1.20.5+)에서 위 코드가 안될 경우를 대비한 대체 코드
+                    meta.setBasePotionData(new org.bukkit.potion.PotionData(org.bukkit.potion.PotionType.valueOf("REGEN")));
+                }
+                regenPotion.setItemMeta(meta);
+            }
+            p.getInventory().addItem(regenPotion);
+
+            // 6. 고유 능력 아이템 (지급 순서 마지막)
+            giveAbilityItem(p, playerAbilities.get(p.getUniqueId()));
+
+            // 랜덤 텔레포트
+            double rx = gameCenter.getX() + (new Random().nextDouble() * 80 - 40);
+            double rz = gameCenter.getZ() + (new Random().nextDouble() * 80 - 40);
+            p.teleport(new Location(gameCenter.getWorld(), rx, gameCenter.getY() + 1, rz));
+
+            // 체력 3줄 설정 (60.0)
             AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
                 maxHealth.setBaseValue(60.0);
                 p.setHealth(60.0);
             }
-            giveItems(p, assigned);
-            p.sendTitle("§6§l게임 시작!", "§f능력: " + assigned, 10, 70, 20);
-            index++;
+        }
+
+        // 3초 후 무적 해제
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                isInvincible = false;
+                Bukkit.broadcastMessage("§c§l[MOC] 무적 시간이 종료되었습니다! 전투 시작!");
+            }
+        }.runTaskLater(this, 60L);
+
+        // 5분 뒤 자기장 시작
+        if (borderTask != null) borderTask.cancel();
+        borderTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                startCustomBorderShrink(gameCenter.getWorld());
+            }
+        }.runTaskLater(this, 20L * 60 * 5);
+
+        startBorderDamageTask(gameCenter.getWorld());
+    }
+
+    private void giveAbilityItem(Player p, String ability) {
+        switch (ability) {
+            case "우에키": p.getInventory().addItem(new ItemStack(Material.OAK_SAPLING, 16)); break;
+            case "올라프": p.getInventory().addItem(new ItemStack(Material.IRON_AXE, 9)); break;
+            case "미다스": p.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, 64)); break;
+            case "매그너스": p.getInventory().addItem(new ItemStack(Material.GRAY_DYE)); break;
         }
     }
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        if (!isGameStarted) return;
+        Player victim = e.getEntity();
+        Player killer = victim.getKiller();
+
+        if (killer != null) {
+            int currentScore = scores.getOrDefault(killer.getUniqueId(), 0);
+            scores.put(killer.getUniqueId(), currentScore + 1);
+            killer.sendMessage("§e[MOC] §f적을 처치하여 점수를 획득했습니다!");
+        }
+
+        checkWinner();
+    }
+
+    private void checkWinner() {
+        List<Player> alive = Bukkit.getOnlinePlayers().stream()
+                .filter(p -> p.getGameMode() == GameMode.SURVIVAL)
+                .collect(Collectors.toList());
+
+        if (alive.size() <= 1) {
+            Player winner = alive.get(0);
+            scores.put(winner.getUniqueId(), scores.getOrDefault(winner.getUniqueId(), 0) + 3);
+
+            Bukkit.broadcastMessage("§6§l==========================");
+            Bukkit.broadcastMessage("§e최후의 승리자: §f" + winner.getName());
+
+            // 내림차순 점수 출력
+            scores.entrySet().stream()
+                    .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                    .forEach(entry -> {
+                        String name = Bukkit.getOfflinePlayer(entry.getKey()).getName();
+                        Bukkit.broadcastMessage("§f- " + name + ": §e" + entry.getValue() + "점");
+                    });
+
+            if (scores.get(winner.getUniqueId()) >= 20) {
+                Bukkit.broadcastMessage("§b§l[!] " + winner.getName() + "님이 최종 우승(20점)하셨습니다!");
+                stopGame();
+            } else {
+                Bukkit.broadcastMessage("§7잠시 후 다음 라운드가 시작됩니다...");
+                new BukkitRunnable() {
+                    @Override
+                    public void run() { startNewRound(gameCenter); }
+                }.runTaskLater(this, 200L);
+            }
+        }
+    }
+
+    private void stopGame() {
+        if (borderTask != null) borderTask.cancel();
+        if (damageTask != null) damageTask.cancel();
+        isGameStarted = false;
+        Bukkit.getOnlinePlayers().forEach(p -> {
+            p.getInventory().clear();
+            p.setGameMode(GameMode.SURVIVAL);
+            AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) maxHealth.setBaseValue(20.0);
+            p.setHealth(20.0);
+        });
+        gameCenter.getWorld().getWorldBorder().setSize(30000000);
+    }
+
+
+
+
+
+
 
     private void giveItems(Player p, String ability) {
         p.getInventory().clear();
@@ -311,6 +508,18 @@ public final class MocPlugin extends JavaPlugin implements Listener, CommandExec
         }
     }
 
-    @EventHandler public void onBreak(BlockBreakEvent e) { if (e.getBlock().getType() == Material.BEDROCK) e.setCancelled(true); }
-    @EventHandler public void onDura(PlayerItemDamageEvent e) { if (playerAbilities.containsKey(e.getPlayer().getUniqueId())) e.setCancelled(true); }
+
+
+
+    @EventHandler
+    public void onInvincible(EntityDamageEvent e) {
+        if (isInvincible && e.getEntity() instanceof Player) e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDura(PlayerItemDamageEvent e) {
+        // 갑옷 내구도 무한 적용
+        if (e.getItem().getType() == Material.IRON_CHESTPLATE) e.setCancelled(true);
+    }
+
 }
