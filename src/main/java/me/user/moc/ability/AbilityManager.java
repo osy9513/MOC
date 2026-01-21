@@ -235,26 +235,17 @@ public class AbilityManager {
         p.sendMessage(" ");
         p.sendMessage(" ");
         p.sendMessage("§e=== 상세 설명 ===");
-        if (code.equals("001")) {
-            p.sendMessage("§a유틸 ● 우에키(우에키의 법칙/배틀짱)");
-            p.sendMessage("§f묘목을 우클릭 하면 주변 20블럭 이내 모든 생명체와");
-            p.sendMessage("§f바닥에 떨어진 아이템들이 나무로 변합니다.");
-            p.sendMessage("§a추가 아이템: 묘목 64개.");
-        } else if (code.equals("005")) {
-            p.sendMessage("§c전투 ● 사이타마(원펀맨)");
-            p.sendMessage("§f사이타마 운동법을 완료하면 매우 강력해집니다.");
-            p.sendMessage("§f[조건] 웅크리기 500회 / 점프 500회 / 이동 500블럭");
-            p.sendMessage("§f[보상] 힘V, 이속V, 저항V, 성급함V (영구)");
 
-        } else if (code.equals("011")) {
-            p.sendMessage("§a전투 ● 람머스(롤)");
-            p.sendMessage("§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
-            p.sendMessage("§f - 모자 착용 시 구속2");
-            p.sendMessage("§f - 모자 미착용 시 풀림");
-            p.sendMessage("§a추가 아이템: 거북이 모자 (가시 8)");
-        }  else {
-            p.sendMessage("§7[" + abilityName + "]의 상세 가이드는 존재하지 않습니다.");
+        Ability ability = abilities.get(abilityName);
+
+        if (ability != null) {
+            // 3. 하드코딩 대신, 능력자 파일 안에 있는 detailCheck()를 실행합니다!
+            ability.detailCheck(p);
+        } else {
+            p.sendMessage("§c"+abilityName+"의 상세 능력을 찾을 수 없습니다.");
         }
+
+
         p.sendMessage("§e=================");
     }
 }

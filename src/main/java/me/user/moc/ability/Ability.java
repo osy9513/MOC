@@ -22,4 +22,6 @@ public abstract class Ability implements Listener {
     
     // 아이템 지급 로직
     public abstract void giveItem(Player p);
+    // /moc check 시 출력될 상세 설명입니다.
+    public abstract void detailCheck(Player p);
 }

@@ -40,17 +40,35 @@ public class Saitama extends Ability {
     public String getName() {
         return "사이타마";
     }
-
     @Override
     public List<String> getDescription() {
         return List.of(
-                "§c전투 ● 사이타마(원펀맨)",
-                "§f사이타마 운동법을 완료하면 매우 강력해집니다.",
-                "§7[조건]",
-                "§f- 웅크리기 " + GOAL_SNEAK + "회",
-                "§f- 점프 " + GOAL_JUMP + "회",
-                "§f- 블럭 이동 " + GOAL_DIST_CM + "블럭");
+                "§c유틸 ● 사이타마(원펀맨)",
+                "§f사이타마 운동법을 완료하면 매우 강력해집니다.");
     }
+
+    @Override
+    public void detailCheck(Player p) {
+        p.sendMessage("§c유틸 ● 사이타마(원펀맨)");
+        p.sendMessage("웅크리기(쉬프트) 연타 500번,\n" +
+                "\n" +
+                "점프(스페이스바) 연타 500번,\n" +
+                "\n" +
+                "블럭 이동 500블럭,\n" +
+                "\n" +
+                "위 3개의 조건을 완료하면\n" +
+                "\n" +
+                "라운드 종료까지 힘V, 이속V, 저항V, 성급함V 버프를 부여합니다.\n" +
+                "\n" +
+                "쿨타임 : 0초.\n" +
+                "\n" +
+                "---\n" +
+                "\n" +
+                "추가 장비: 없음.\n" +
+                "\n" +
+                "장비 제거: 철 갑옷, 철 흉갑.");
+    }
+
 
     @Override
     public void giveItem(Player p) {

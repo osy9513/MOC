@@ -30,13 +30,28 @@ public class Rammus extends Ability {
     public String getName() {
         return "람머스";
     }
-
     @Override
     public List<String> getDescription() {
         return List.of(
-                "§a전투 ● 람머스(롤)",
+                "§a유틸● 람머스(롤)",
                 "§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
     }
+    @Override
+    public void detailCheck(Player p) {
+        p.sendMessage("§a유틸● 람머스(롤)");
+        p.sendMessage("거북이 모자 착용 중엔 구속 2가 걸린다.\n" +
+                "\n" +
+                "거북이 모자 미착용 시 풀린다.\n" +
+                "\n" +
+                "쿨타임 : 0초.\n" +
+                "\n" +
+                "---\n" +
+                "\n" +
+                "추가 장비: 거북이 모자(가시 8 인첸트).\n" +
+                "\n" +
+                "장비 제거: 없음.");
+    }
+
 
     @Override
     public void giveItem(Player p) {

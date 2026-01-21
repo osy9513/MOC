@@ -49,6 +49,24 @@ public class Ueki extends Ability {
     }
 
     @Override
+    public void detailCheck(Player p) {
+        p.sendMessage("§a유틸 ● 우에키(우에키의 법칙)");
+        p.sendMessage("묘목을 우클릭 하면 주변 20블럭 이내 \n" +
+                "\n" +
+                "모든 생명체와 바닥에 떨어진 아이템들이\n" +
+                "\n" +
+                "나무로 변합니다.\n" +
+                "\n" +
+                "쿨타임 : 8초.\n" +
+                "\n" +
+                "---\n" +
+                "\n" +
+                "추가 장비: 묘목 64개.\n" +
+                "\n" +
+                "장비 제거: 없음.");
+    }
+
+    @Override
     public void giveItem(Player p) {
         // 능력 전용 아이템: 묘목 64개
         p.getInventory().addItem(new ItemStack(Material.OAK_SAPLING, 64));
