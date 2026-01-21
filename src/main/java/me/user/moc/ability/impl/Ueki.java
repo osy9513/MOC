@@ -29,7 +29,12 @@ public class Ueki extends Ability {
     public Ueki(JavaPlugin plugin) {
         super(plugin);
     }
-
+    // [수정 2] 우에키에게 "001"이라는 번호표를 붙여줍니다.
+    // 이 부분은 각 능력 파일마다 다르게 적어야겠죠? (올라프는 "002" 처럼)
+    @Override
+    public String getCode() {
+        return "001";
+    }
     @Override
     public String getName() {
         return "우에키";

@@ -2,6 +2,7 @@ package me.user.moc;
 
 import me.user.moc.ability.AbilityManager;
 import me.user.moc.command.MocCommand;
+import me.user.moc.config.ConfigManager;
 import me.user.moc.game.ArenaManager;
 import me.user.moc.game.ClearManager;
 import me.user.moc.game.GameManager;
@@ -21,6 +22,7 @@ public final class MocPlugin extends JavaPlugin {
     private AbilityManager abilityManager;
     private ArenaManager arenaManager;
     private ClearManager clearManager;
+    private ConfigManager configManager;
 
     /**
      * 다른 클래스에서 플러그인의 기능(매니저 등)을 가져다 쓰고 싶을 때 사용합니다.
@@ -65,9 +67,24 @@ public final class MocPlugin extends JavaPlugin {
     }
 
     // 아래 메서드들은 다른 클래스에서 매니저들을 꺼내 쓰기 위한 통로(Getter)입니다.
-    public AbilityManager getAbilityManager() { return abilityManager; }
-    public GameManager getGameManager() { return gameManager; }
-    public ArenaManager getArenaManager() { return arenaManager; }
+    public AbilityManager getAbilityManager() {
+        return abilityManager;
+    }
+
+    public GameManager getGameManager() {
+        return gameManager;
+    }
+
+    public ArenaManager getArenaManager() {
+        return arenaManager;
+    }
+
     // 다른 곳에서 쓸 수 있게 getter 추가
-    public ClearManager getClearManager() { return clearManager; }
+    public ClearManager getClearManager() {
+        return clearManager;
+    }
+
+    public ConfigManager getConfigManager() {
+        return configManager;
+    }
 }

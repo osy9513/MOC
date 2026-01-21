@@ -23,6 +23,10 @@ public class Rammus extends Ability {
     }
 
     @Override
+    public String getCode() {
+        return "011";
+    }
+    @Override
     public String getName() {
         return "람머스";
     }

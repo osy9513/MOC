@@ -34,6 +34,8 @@ public class ArenaManager {
         world.setStorm(false);
         world.setThundering(false);
         world.setTime(1000L);
+        // 난이도 노말로 변경.
+        world.setDifficulty(org.bukkit.Difficulty.NORMAL);
 
         // 2. [자기장] 기존 작업 종료 후, 설정값보다 2칸 작게 초기화
         stopTasks();
@@ -106,16 +108,6 @@ public class ArenaManager {
     }
 
     /**
-     * 자기장 멈추기 및
-     */
-    public void stopTasks() {
-        if (borderShrinkTask != null) borderShrinkTask.cancel();
-        if (borderDamageTask != null) borderDamageTask.cancel();
-        borderShrinkTask = null;
-        borderDamageTask = null;
-    }
-
-    /**
      * 자기장 좁아지기
      */
     public void startBorderShrink() {
@@ -134,7 +126,6 @@ public class ArenaManager {
             }
         }.runTaskTimer(plugin, 0, 60L);
     }
-
 
     /**
      * 자기장 밖 대미지 처리를 시작합니다.
@@ -181,5 +172,15 @@ public class ArenaManager {
                 }
             }
         }.runTaskTimer(plugin, 0, 5L); // 5틱(0.25초)마다 검사해서 반응 속도 4배 향상!
+    }
+
+    /**
+     * 자기장 멈추기 및
+     */
+    public void stopTasks() {
+        if (borderShrinkTask != null) borderShrinkTask.cancel();
+        if (borderDamageTask != null) borderDamageTask.cancel();
+        borderShrinkTask = null;
+        borderDamageTask = null;
     }
 }

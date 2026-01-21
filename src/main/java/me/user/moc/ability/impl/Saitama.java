@@ -32,7 +32,10 @@ public class Saitama extends Ability {
     public Saitama(JavaPlugin plugin) {
         super(plugin);
     }
-
+    @Override
+    public String getCode() {
+        return "005";
+    }
     @Override
     public String getName() {
         return "사이타마";

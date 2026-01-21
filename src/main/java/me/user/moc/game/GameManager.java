@@ -26,12 +26,20 @@ public class GameManager implements Listener {
 
     private final MocPlugin plugin;
     private final ArenaManager arenaManager;
-    private final ConfigManager config = ConfigManager.getInstance(); // 콘피그 싱글톤
+    private final ConfigManager configManager;
     // 데이터 관리
+    // 플레이어 점수 저장소 (UUID, 점수)
     private final Map<UUID, Integer> scores = new HashMap<>(); // 점수판
     private final Set<String> afkPlayers = new HashSet<>(); // 잠수 유저(닉네임)
     private final Set<UUID> readyPlayers = new HashSet<>(); // 준비 완료(/moc yes) 유저
     private AbilityManager abilityManager; // 의존성 주입
+    // 게임에 참여 중인 플레이어 목록 (접속 끊겨도 여기엔 남아있을 수 있음)
+    private final Set<UUID> players = new HashSet<>();
+    // 현재 라운드에서 '실제로 살아서 뛰고 있는' 플레이어 목록
+    private final Set<UUID> livePlayers = new HashSet<>();
+
+
+
     // 게임 상태 변수
     private boolean isRunning = false;
     private boolean isInvincible = false;
@@ -43,6 +51,7 @@ public class GameManager implements Listener {
         this.plugin = plugin;
         this.arenaManager = arenaManager;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        this.configManager = plugin.getConfigManager();
     }
 
     public static GameManager getInstance(MocPlugin plugin) {
@@ -68,6 +77,12 @@ public class GameManager implements Listener {
         scores.clear();
 
         // 1-1. 게임 설정 정보 출력 (기획안 양식)
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§e=== 마인크래프트 오브 캐릭터즈 (버전 0.1.1) ===");
         Bukkit.broadcastMessage("§f기본 체력: 3줄(60칸)");
         Bukkit.broadcastMessage("§f기본 지급: 철칼, 구운 소고기64개, 물 양동이, 유리10개, 재생포션, 철 흉갑");
@@ -80,10 +95,10 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§f참가 인원 : (총 " + participants.size() + "명) " + String.join(", ", participants));
 
         // 스폰 좌표 확인
-        Location spawn = config.spawn_point != null ? config.spawn_point : starter.getLocation();
+        Location spawn = configManager.spawn_point != null ? configManager.spawn_point : starter.getLocation();
         // 만약 콘피그에 스폰이 없으면 시작한 사람 위치를 임시 스폰으로 잡음
-        if (config.spawn_point == null)
-            config.spawn_point = spawn;
+        if (configManager.spawn_point == null)
+            configManager.spawn_point = spawn;
 
         Bukkit.broadcastMessage("§f스폰 위치 : " + spawn.getBlockX() + ", " + spawn.getBlockY() + ", " + spawn.getBlockZ());
         Bukkit.broadcastMessage("§f게임 모드 : 개인전");
@@ -106,16 +121,23 @@ public class GameManager implements Listener {
         round++;
         readyPlayers.clear();
 
+        // [무적 시작] 능력 추첨 중에는 서로 공격할 수 없게 설정합니다.
+        this.isInvincible = true;
+        //Bukkit.broadcastMessage("§e[정보] 능력 추첨 중에는 무적 상태가 됩니다.");
+
         // AbilityManager에게 능력 초기화 요청 (리롤 횟수 등 리셋)
         if (abilityManager != null)
             abilityManager.resetAbilities();
 
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§a§l=== " + round + "라운드 시작! ===");
-
-
-
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         // 2-1. 맵 및 플레이어 상태 초기화
-        Location center = config.spawn_point;
+        Location center = configManager.spawn_point;
         if (center == null)
             center = Bukkit.getOnlinePlayers().iterator().next().getLocation();
 
@@ -152,7 +174,7 @@ public class GameManager implements Listener {
                 abilityManager.setPlayerAbility(p.getUniqueId(), abilityName);
 
                 // 리롤 횟수 설정 (콘피그 값)
-                abilityManager.setRerollCount(p.getUniqueId(), config.re_point);
+                abilityManager.setRerollCount(p.getUniqueId(), configManager.re_point);
 
                 // 설명 메세지 출력 (AbilityManager가 담당)
                 abilityManager.showAbilityInfo(p, abilityName);
@@ -164,7 +186,7 @@ public class GameManager implements Listener {
         if (selectionTask != null)
             selectionTask.cancel();
         selectionTask = new BukkitRunnable() {
-            int timeLeft = config.start_time;
+            int timeLeft = configManager.start_time;
 
             @Override
             public void run() {
@@ -174,6 +196,11 @@ public class GameManager implements Listener {
 
                 if ((readyPlayers.size() >= activePlayerCount && activePlayerCount > 0) || timeLeft <= 0) {
                     this.cancel();
+
+                    // [무적 해제] 추첨 시간이 끝났으니 이제 데미지가 들어가게 합니다.
+                    isInvincible = false;
+                    //Bukkit.broadcastMessage("§c[정보] 무적 상태가 해제되었습니다! 곧 배틀이 시작됩니다.");
+
                     prepareBattle(); // 전투 준비 단계로 이동
                     return;
                 }
@@ -194,9 +221,15 @@ public class GameManager implements Listener {
     // 3. 전투 준비 단계 (텔레포트 & 무적)
     // =========================================================================
     private void prepareBattle() {
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6모든 플레이어가 준비되었습니다. 전장으로 이동합니다!");
 
-        Location spawn = config.spawn_point;
+        Location spawn = configManager.spawn_point;
         if (spawn == null)
             spawn = Bukkit.getOnlinePlayers().iterator().next().getLocation();
 
@@ -212,11 +245,11 @@ public class GameManager implements Listener {
             p.teleport(tpLoc);
         }
 
-        // 3-2. 3초 카운트다운 및 무적 설정
+        // 3-2. 5초 카운트다운 및 무적 설정
         isInvincible = true;
 
         new BukkitRunnable() {
-            int count = 3;
+            int count = 5;
 
             @Override
             public void run() {
@@ -242,6 +275,12 @@ public class GameManager implements Listener {
     private void startBattle() {
         isInvincible = false;
 
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         // 웅장한 소리와 함께 시작 알림
         Bukkit.broadcastMessage("§c§l[전투 시작] §f모든 적을 처치하십시오!");
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -253,6 +292,10 @@ public class GameManager implements Listener {
             // 4-1. 아이템 지급 (칼-고기-물-유리-포션-갑옷-능력템)
             giveBattleItems(p);
 
+            // 배고픔, 풀로 회복.
+            p.setFoodLevel(20);      // 허기 게이지를 20(가득)으로 설정합니다.
+            p.setSaturation(10.0f);   // 포화도를 높여서 허기가 금방 닳지 않게 서비스!
+
             // 4-2. 체력 3줄(60) 설정
             AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null)
@@ -261,7 +304,7 @@ public class GameManager implements Listener {
         }
 
         // 4-3. 자기장 타이머 시작 (콘피그 final_time 후 줄어듦)
-        if (config.final_fight) {
+        if (configManager.final_fight) {
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -274,7 +317,7 @@ public class GameManager implements Listener {
                     // 드디어 아레나 매니저의 그 함수를 여기서 부릅니다!
                     arenaManager.startBorderShrink();
                 }
-            }.runTaskLater(plugin, config.final_time * 20L); // 5분(300초) * 20
+            }.runTaskLater(plugin, configManager.final_time * 20L); // 5분(300초) * 20
         }
 
         // 자기장 대미지 체크 태스크 시작 (ArenaManager 기능 활용 권장)
@@ -325,19 +368,24 @@ public class GameManager implements Listener {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
             return;
         }
-        config.spawn_point = null;
         isRunning = false;
         if (selectionTask != null)
             selectionTask.cancel();
         arenaManager.stopTasks(); // 자기장 등 정지
-        // 자기장=월드보더 초기화. 기능 필요.
-
+        // 자기장=월드보더 초기화. 클리어매니저에서 가져옴
+        plugin.getClearManager().worldBorderCear();
 
         // 점수 내림차순 정렬 및 출력
         List<Map.Entry<UUID, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
         sortedScores.sort(Map.Entry.<UUID, Integer>comparingByValue().reversed());
 
-        Bukkit.broadcastMessage("§b=== 게임 종료! ===");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§b=== MOC 게임 종료! ===");
         if (!sortedScores.isEmpty()) {
             Map.Entry<UUID, Integer> first = sortedScores.get(0);
             Bukkit.broadcastMessage(
@@ -371,6 +419,8 @@ public class GameManager implements Listener {
                 maxHealth.setBaseValue(20.0);
             p.setHealth(20.0);
         }
+
+        configManager.spawn_point = null;
     }
 
     // 사망 이벤트 핸들러 (점수 계산)
@@ -418,6 +468,12 @@ public class GameManager implements Listener {
         // 라운드 승리 점수 +2
         scores.put(winner.getUniqueId(), scores.getOrDefault(winner.getUniqueId(), 0) + 2);
 
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6==========================");
         Bukkit.broadcastMessage("§e마지막까지 살아남은 플레이어 : " + winner.getName() + " +2점");
         spawnFireworks(winner.getLocation());
@@ -433,7 +489,7 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§6==========================");
 
         // 우승 점수 체크
-        if (scores.get(winner.getUniqueId()) >= config.win_value) {
+        if (scores.get(winner.getUniqueId()) >= configManager.win_value) {
             stopGame();
         } else {
             // 5초 뒤 다음 라운드
@@ -485,6 +541,12 @@ public class GameManager implements Listener {
         if (!readyPlayers.contains(p.getUniqueId())) {
             readyPlayers.add(p.getUniqueId());
             p.sendMessage("§a[MOC] 준비 완료!");
+            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcastMessage(" ");
         }
     }
 
