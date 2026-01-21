@@ -30,7 +30,6 @@ public class Ueki extends Ability {
         super(plugin);
     }
     // [수정 2] 우에키에게 "001"이라는 번호표를 붙여줍니다.
-    // 이 부분은 각 능력 파일마다 다르게 적어야겠죠? (올라프는 "002" 처럼)
     @Override
     public String getCode() {
         return "001";
@@ -60,7 +59,7 @@ public class Ueki extends Ability {
         Player p = e.getPlayer();
 
         // 1. 이 사람이 우에키 능력을 가졌는지 확인 (람머스와 동일한 방식)
-        if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getName())) return;
+        if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode())) return;
 
         // 2. 묘목을 들고 우클릭했는지 확인
         if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)

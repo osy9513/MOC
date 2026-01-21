@@ -54,21 +54,37 @@ public class MocCommand implements CommandExecutor {
             }
 
             case "yes" -> { // 능력 수락: /moc yes
+                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
                 gm.playerReady(p); // "저 이 능력으로 할게요"라고 등록합니다.
                 return true;
             }
 
             case "re" -> { // 능력 다시 뽑기: /moc re
+                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
                 gm.playerReroll(p); // 능력을 다시 굴립니다.
                 return true;
             }
 
             case "check" -> { // 내 능력 보기: /moc check
+                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
                 gm.showAbilityDetail(p); // 내 능력이 뭔지 자세한 설명을 보여줍니다.
                 return true;
             }
 
             case "afk" -> { // 잠수 설정: /moc afk [닉네임]
+                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
                 if (args.length < 2) {
                     p.sendMessage("§c사용법: /moc afk [플레이어이름]");
                     return true;

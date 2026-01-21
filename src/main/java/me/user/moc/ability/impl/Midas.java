@@ -19,8 +19,6 @@ public class Midas extends Ability {
         super(plugin);
     }
 
-    // [수정 2] 우에키에게 "001"이라는 번호표를 붙여줍니다.
-    // 이 부분은 각 능력 파일마다 다르게 적어야겠죠? (올라프는 "002" 처럼)
     @Override
     public String getCode() {
         return "003";
@@ -48,7 +46,7 @@ public class Midas extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (plugin instanceof MocPlugin moc) {
-             if (moc.getAbilityManager() == null || !moc.getAbilityManager().hasAbility(p, getName())) return;
+             if (moc.getAbilityManager() == null || !moc.getAbilityManager().hasAbility(p, getCode())) return;
         }
 
         if (e.getAction() == Action.LEFT_CLICK_BLOCK && e.getItem() != null && e.getItem().getType() == Material.GOLD_INGOT) {

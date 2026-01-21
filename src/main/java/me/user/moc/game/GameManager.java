@@ -42,6 +42,10 @@ public class GameManager implements Listener {
 
     // 게임 상태 변수
     private boolean isRunning = false;
+    // GameManager.java 파일 안에 추가 (어느 곳이든 상관없음)
+    public boolean isRunning() {
+        return isRunning;
+    }
     private boolean isInvincible = false;
     private int round = 0;
     // 태스크 관리 (타이머)
@@ -172,11 +176,20 @@ public class GameManager implements Listener {
             if (afkPlayers.contains(p.getName()))
                 continue;
 
-            // 상태 리셋
-            p.setGameMode(GameMode.SURVIVAL);
+            // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+            // 관전 모드였던 사람도 다시 참여시켜야 하므로 모드 변경 필수!
+            p.setGameMode(GameMode.SURVIVAL); // <--- [여기 변경됨!!!] 관전 -> 서바이벌
+
+            // 텔레포트 (이미 소스에 있지만 확실히 체크)
+            if (configManager.spawn_point != null) {
+                p.teleport(configManager.spawn_point); // <--- [여기 변경됨!!!] 스폰 지점으로 이동
+            }
+
             p.getInventory().clear();
-            p.setHealth(20);
+            p.setHealth(20); // 기본 체력으로 일단 리셋 (전투 시작 시 60으로 늘어남)
             p.setFoodLevel(20);
+            // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+
             for (PotionEffect effect : p.getActivePotionEffects())
                 p.removePotionEffect(effect.getType());
 
@@ -193,7 +206,7 @@ public class GameManager implements Listener {
                 abilityManager.setRerollCount(p.getUniqueId(), configManager.re_point);
 
                 // 설명 메세지 출력 (AbilityManager가 담당)
-                abilityManager.showAbilityInfo(p, abilityCode);
+                abilityManager.showAbilityInfo(p, abilityCode, 0);
             }
             deckIndex++;
         }
@@ -237,11 +250,6 @@ public class GameManager implements Listener {
     // 3. 전투 준비 단계 (텔레포트 & 무적)
     // =========================================================================
     private void prepareBattle() {
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6모든 플레이어가 준비되었습니다. 전장으로 이동합니다!");
 
@@ -384,7 +392,6 @@ public class GameManager implements Listener {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
             return;
         }
-        isRunning = false;
         if (selectionTask != null)
             selectionTask.cancel();
         arenaManager.stopTasks(); // 자기장 등 정지
@@ -436,6 +443,7 @@ public class GameManager implements Listener {
             p.setHealth(20.0);
         }
 
+        isRunning = false;
         configManager.spawn_point = null;
     }
 
@@ -457,24 +465,49 @@ public class GameManager implements Listener {
         // e.setDrops(Collections.emptyList()); // 아이템 떨구기 방지 (깔끔하게)
         e.setDeathMessage(null); // 기본 데스메시지 끄기
         Bukkit.broadcastMessage("§c☠ §f" + victim.getName() + "님이 탈락했습니다.");
+        // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+        // 1. 즉시 리스폰 및 관전 모드 전환 (1틱 뒤 실행)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                victim.spigot().respawn(); // <--- [여기 변경됨!!!] 자동 리스폰
+                victim.setGameMode(GameMode.SPECTATOR); // <--- [여기 변경됨!!!] 관전 모드 변경
 
-        // 생존자 체크 (스펙테이터가 아닌 사람)
-        List<Player> survivors = Bukkit.getOnlinePlayers().stream()
-                .filter(p -> p.getGameMode() == GameMode.SURVIVAL && !afkPlayers.contains(p.getName())
-                        && !p.equals(victim))
-                .collect(Collectors.toList());
+                // 2. 생존자 체크 (스펙테이터가 아닌 사람만 필터링)
+                List<Player> survivors = Bukkit.getOnlinePlayers().stream()
+                        .filter(p -> p.getGameMode() == GameMode.SURVIVAL && !afkPlayers.contains(p.getName()))
+                        .collect(Collectors.toList());
 
-        // 최후의 1인 확인
-        if (survivors.size() <= 1) {
-            Player winner = survivors.isEmpty() ? killer : survivors.get(0);
-            if (winner != null) {
-                endRound(winner);
-            } else {
-                // 모두 죽은 경우 그냥 재시작
-                Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
-                startRoundAfterDelay();
+                // 최후의 1인 확인
+                if (survivors.size() <= 1) {
+                    Player winner = survivors.isEmpty() ? killer : survivors.get(0);
+                    if (winner != null) {
+                        endRound(winner);
+                    } else {
+                        Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
+                        startRoundAfterDelay();
+                    }
+                }
             }
-        }
+        }.runTaskLater(plugin, 1L); // <--- [여기 변경됨!!!] 1틱 뒤 실행 로직으로 감싸기
+        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+        //        // 생존자 체크 (스펙테이터가 아닌 사람)
+        //        List<Player> survivors = Bukkit.getOnlinePlayers().stream()
+        //                .filter(p -> p.getGameMode() == GameMode.SURVIVAL && !afkPlayers.contains(p.getName())
+        //                        && !p.equals(victim))
+        //                .collect(Collectors.toList());
+        //
+        //        // 최후의 1인 확인
+        //        if (survivors.size() <= 1) {
+        //            Player winner = survivors.isEmpty() ? killer : survivors.get(0);
+        //            if (winner != null) {
+        //                endRound(winner);
+        //            } else {
+        //                // 모두 죽은 경우 그냥 재시작
+        //                Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
+        //                startRoundAfterDelay();
+        //            }
+        //        }
     }
 
     private void endRound(Player winner) {
@@ -516,11 +549,50 @@ public class GameManager implements Listener {
 
     private void startRoundAfterDelay() {
         new BukkitRunnable() {
+
+            // @@@@@@ 해당 부분은 라운드 시작할 때랑 지금이랑 유저를 비교하여 플레이할 유저가 없어진 경우에만 실행하게 수정 필요함. 아래의 문구를 참고.
+            /*
+            * afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
+
+라운드 종료 후 이전 라운드에 플레이한 사람이
+죽어서 관전 상태가 된 사람을 제외하고
+서버에 나감 or 죽은 상태로 리스폰 안함인 경우
+10초 의 대기 시간을 준다.
+
+해당 대기 시간 안에 접속하지 않은 경우,
+해당 서버 미접속 유저들을 전부 afk 상태로 변경하여 새로운 라운드에 참여하지 않게 구현.
+이때 게임 중 afk가 된 유저의 스코어 점수는 초기화 되지 않음.
+
+이후에 재참가 가능하도록. 대신 라운드 종료 후 점수 출력 시 기존과 동일하게 출력하면서 맨 마지막줄에 다음과 같은 문구를 추가함.
+
+(붉은 색으로)afk 유저 : 닉네임, 닉네임, 닉네임
+
+이후 afk로 지정된 해당 유저가 다시 접속하여 /moc afk 유저이름 명령어를 통해 afk 상태에서 해제된 경우엔
+현재 진행 중인 라운드를 제외한 다음 라운드부터 다시 능력 배정되며 게임에 참가됨.
+
+라운드 종료 후 사람 수를 체크할 때 서버에 신규 유저가 접속한 경우
+해당 신규 유저를 afk 상태로 지정해둔게 아닌 이상 해당 신규 유저도 다음 라운드에 자동으로 추가되어 같이 게임하게 됨.
+            * */
             @Override
             public void run() {
-                startRound();
+                // 접속 끊긴 사람이 있는지 확인
+                List<String> missingPlayers = new ArrayList<>();
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    // 여기서는 기존 참여자 중 나간 사람을 체크하는 로직이 필요하지만,
+                    // 간단하게 현재 접속 인원 중 게임 가능 인원을 체크합니다.
+                }
+
+                // 5초 대기 후 startRound() 실행
+                Bukkit.broadcastMessage("§e[MOC] 10초 후 다음 라운드가 시작됩니다. (재접속 대기)"); // <--- [여기 변경됨!!!]
+
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        startRound();
+                    }
+                }.runTaskLater(plugin, 200L); // 200틱 = 10초 기다림 // <--- [여기 변경됨!!!]
             }
-        }.runTaskLater(plugin, 100L); // 5초
+        }.runTaskLater(plugin, 100L); // 기본 5초 대기 후 10초 추가 대기 시작
     }
 
     // =========================================================================

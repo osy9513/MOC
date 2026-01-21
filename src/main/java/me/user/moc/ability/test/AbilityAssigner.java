@@ -38,7 +38,7 @@ public class AbilityAssigner {
         target.sendMessage("§e[관리자] §f당신의 능력이 변경되었습니다.");
 
         // 5. 변경된 능력 정보를 보여줍니다.
-        am.showAbilityInfo(target, abilityCode);
+        am.showAbilityInfo(target, abilityCode, 2);
 
         // [테스트 편의성] 능력 아이템(소환수 등)을 즉시 지급합니다.
         // 이를 통해 /moc start 없이도 바로 능력을 확인할 수 있습니다.

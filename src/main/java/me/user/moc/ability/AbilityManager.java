@@ -4,6 +4,7 @@ import me.user.moc.MocPlugin;
 import me.user.moc.ability.impl.*;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
@@ -79,7 +80,7 @@ public class AbilityManager {
      * 인자로 들어오는 abilityCode는 이제 "001", "002" 같은 녀석들입니다.
      */
     /*** 플레이어에게 배정된 능력의 요약 정보를 채팅창에 예쁘게 보여줍니다.*/
-    public void showAbilityInfo(Player p, String abilityCode) {
+    public void showAbilityInfo(Player p, String abilityCode, int massgeType) {
         p.sendMessage("§f ");
         p.sendMessage("§e=== 당신의 능력은 ===");
 
@@ -115,12 +116,25 @@ public class AbilityManager {
         }
 
         p.sendMessage("§f ");
-        p.sendMessage("§f상세 설명 : §b/moc check");
-        p.sendMessage("§f능력 수락 : §a/moc yes");
+        p.sendMessage("§f ");
+        switch (massgeType){
+            case 1 -> {
+                // 선택 여부 확인 메세지 안 보냄.
+            }
+            case 2 -> {
+                // 체크 가능할 수 있음만 알림.
+                p.sendMessage("§f상세 설명 : §b/moc check");
+            }
+            default ->{
+                p.sendMessage("§f상세 설명 : §b/moc check");
+                p.sendMessage("§f능력 수락 : §a/moc yes");
+                // 남은 리롤 횟수를 가져와서 보여줍니다.
+                int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
+                p.sendMessage("§f리롤(" + left + "회) : §c/moc re");
+            }
+        }
 
-        // 남은 리롤 횟수를 가져와서 보여줍니다.
-        int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
-        p.sendMessage("§f리롤(" + left + "회) : §c/moc re");
+
         p.sendMessage("§e==================");
     }
 
@@ -131,14 +145,14 @@ public class AbilityManager {
         int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
 
         // 1. 리롤 횟수가 0이면 거절합니다.
-        if (left <= 0) {
-            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다.");
-            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-
-            // 강제 준비 완료
-            plugin.getGameManager().playerReady(p);
-            return;
-        }
+        //        if (left <= 0) {
+        //            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
+        //            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        //
+        //            // 강제 준비 완료
+        //            plugin.getGameManager().playerReady(p);
+        //            return;
+        //        }
 
         // 2. 현재 능력을 제외한 나머지 능력 중에서 하나를 랜덤으로 뽑습니다.
         List<String> pool = new ArrayList<>(abilities.keySet());
@@ -163,23 +177,41 @@ public class AbilityManager {
         // 3. 새로운 능력을 저장하고 리롤 횟수를 1 차감합니다.
         playerAbilities.put(p.getUniqueId(), newAbility);
         rerollCounts.put(p.getUniqueId(), left - 1);
+
+        // 리롤 횟수 사용 시 0 이하일 때
         if(left - 1 <=0){
             // 강제 준비 완료
-            plugin.getGameManager().playerReady(p);
+            p.sendMessage("§f ");
+            p.sendMessage("§f ");
+            p.sendMessage("§f ");
+            p.sendMessage("§f ");
+            p.sendMessage("§f ");
+            p.sendMessage("§f ");
+            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
+            p.sendMessage("§c[MOC] 5초 후 자동으로 준비됩니다. ");
+            // [자바 버전의 setTimeout: BukkitRunnable]
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    // 3초 후에 실행될 내용을 여기에 적습니다.
+                    plugin.getGameManager().playerReady(p);
+                }
+            }.runTaskLater(plugin, 100L);
         }
+
         // 4. 효과음과 함께 새로운 정보를 보여줍니다.
         p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
-        showAbilityInfo(p, newAbility);
+        showAbilityInfo(p, newAbility, 2);
     }
 
     /**
      * 전투 시작 시 각 능력에 맞는 고유 아이템을 지급합니다.
      */
     public void giveAbilityItems(Player p) {
-        String name = playerAbilities.get(p.getUniqueId());
-        if (name != null && abilities.containsKey(name)) {
+        String abilityCode = playerAbilities.get(p.getUniqueId()); // 001 등을 가져옴
+        if (abilityCode != null && abilities.containsKey(abilityCode)) {
             // Ability 클래스(Ueki.java 등)에 정의된 giveItem 메서드를 실행합니다.
-            abilities.get(name).giveItem(p);
+            abilities.get(abilityCode).giveItem(p);
         }
     }
 

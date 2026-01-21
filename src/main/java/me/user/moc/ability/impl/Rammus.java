@@ -69,7 +69,7 @@ public class Rammus extends Ability {
                     // Ability 클래스는 plugin만 알고 있음.
                     // MocPlugin.getInstance().getAbilityManager() 로 접근 가능.
 
-                    if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getName())) {
+                    if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode())) {
                         continue;
                     }
 

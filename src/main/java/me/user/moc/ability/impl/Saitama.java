@@ -108,7 +108,7 @@ public class Saitama extends Ability {
 
         // 데이터가 없으면 본인이 사이타마 능력자인지 확인하고 초기화 (Lazy Init)
         if (data == null) {
-            if (me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getName())) {
+            if (me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode())) {
                 data = new SaitamaProgress();
                 progressMap.put(p.getUniqueId(), data);
             } else {
