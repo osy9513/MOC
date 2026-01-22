@@ -373,8 +373,12 @@ public class GameManager implements Listener {
         }
         p.getInventory().addItem(regenPotion);
 
-        // 6. 철 흉갑
-        p.getInventory().addItem(new ItemStack(Material.IRON_CHESTPLATE));
+        // 6. 철 흉갑 자동으로 입혀주기
+        p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+        // // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+
+        // 인벤토리 새로고침 (아이템이 바뀐 걸 유저 화면에 즉시 적용)
+        p.updateInventory();
 
         // 7. 고유 능력 아이템 (AbilityManager가 지급)
         if (abilityManager != null) {

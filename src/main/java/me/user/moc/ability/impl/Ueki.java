@@ -24,7 +24,7 @@ public class Ueki extends Ability {
 
     // 플레이어별 쿨타임을 저장하는 장부입니다. (단위: 밀리초)
     private final HashMap<UUID, Long> cooldowns = new HashMap<>();
-    private final int COOLDOWN_TIME = 15; // 쿨타임 15초
+    private final int COOLDOWN_TIME = 7; // 쿨타임 15초
 
     public Ueki(JavaPlugin plugin) {
         super(plugin);
@@ -57,7 +57,7 @@ public class Ueki extends Ability {
                 "\n" +
                 "나무로 변합니다.\n" +
                 "\n" +
-                "쿨타임 : 8초.\n" +
+                "쿨타임 : 7초.\n" +
                 "\n" +
                 "---\n" +
                 "\n" +

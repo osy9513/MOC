@@ -55,7 +55,46 @@ public class Midas extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        p.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, 64));
+        // 1. [기존 장비 제거] GameManager에서 기본으로 준 아이템들을 싹 지웁니다.
+        // // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+        p.getInventory().remove(Material.IRON_SWORD);        // 철 칼 삭제
+        p.getInventory().remove(Material.COOKED_BEEF);      // 고기 삭제
+        p.getInventory().remove(Material.GLASS);            // 유리 삭제
+        p.getInventory().remove(Material.POTION);           // 포션 삭제 (체력재생포션 포함)
+        p.getInventory().remove(Material.IRON_CHESTPLATE);           // 포션 삭제 (체력재생포션 포함)
+        // 갑옷 슬롯은 .remove로 안 지워질 때가 많아 직접 null로 비워줍니다.
+        if (p.getInventory().getChestplate() != null &&
+                p.getInventory().getChestplate().getType() == Material.IRON_CHESTPLATE) {
+            p.getInventory().setChestplate(null);
+        }
+        // // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+
+        // 2. [추가 장비 지급] 미다스 전용 황금 세트를 지급합니다.
+        p.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, 64)); // 능력용 금괴
+
+        // // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+        // 금 칼 및 금 블럭 10개, 황금 사과 64개 지급
+        p.getInventory().addItem(new ItemStack(Material.GOLDEN_SWORD));
+        p.getInventory().addItem(new ItemStack(Material.GOLD_BLOCK, 10));
+        p.getInventory().addItem(new ItemStack(Material.GOLDEN_APPLE, 64));
+
+        // 발광 포션 지급 (투척용으로 드릴게요!)
+        ItemStack glowPotion = new ItemStack(Material.SPLASH_POTION);
+        org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) glowPotion.getItemMeta();
+        if (meta != null) {
+            meta.addCustomEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.GLOWING, 600, 0), true);
+            meta.setDisplayName("§e미다스의 빛 (발광 포션)");
+            glowPotion.setItemMeta(meta);
+        }
+        p.getInventory().addItem(glowPotion);
+
+        // 금 갑옷(흉갑) 자동으로 입혀주기
+        p.getInventory().setChestplate(new ItemStack(Material.GOLDEN_CHESTPLATE));
+        // // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+
+        // 인벤토리 새로고침 (아이템이 바뀐 걸 유저 화면에 즉시 적용)
+        p.updateInventory();
+
     }
 
     @EventHandler

@@ -72,7 +72,8 @@ public class Saitama extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 기존 철 흉갑 제거 (GameManager에서 지급된 것)
+        // 기존 철 흉갑, 철 칼 제거 (GameManager에서 지급된 것)
+        p.getInventory().remove(Material.IRON_SWORD);
         p.getInventory().remove(Material.IRON_CHESTPLATE);
         p.getInventory().setChestplate(null); // 혹시 입고 있을 수 있으므로
 
