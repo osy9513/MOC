@@ -313,18 +313,23 @@ public class GameManager implements Listener {
             if (afkPlayers.contains(p.getName()))
                 continue;
 
-            // 4-1. 아이템 지급 (칼-고기-물-유리-포션-갑옷-능력템)
-            giveBattleItems(p);
+            // 시작 전 기존 버프 다 제거.
+            p.getActivePotionEffects().forEach(effect -> p.removePotionEffect(effect.getType()));
+            // 불이 붙어 있다면 불도 꺼주는 매너!
+            p.setFireTicks(0);
 
             // 배고픔, 풀로 회복.
             p.setFoodLevel(20);      // 허기 게이지를 20(가득)으로 설정합니다.
             p.setSaturation(10.0f);   // 포화도를 높여서 허기가 금방 닳지 않게 서비스!
 
-            // 4-2. 체력 3줄(60) 설정
+            // 체력 3줄(60) 설정
             AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null)
                 maxHealth.setBaseValue(60.0);
             p.setHealth(60.0);
+
+            // 아이템 지급 (칼-고기-물-유리-포션-갑옷-능력템) + 능력부여.
+            giveBattleItems(p);
         }
 
         // 4-3. 자기장 타이머 시작 (콘피그 final_time 후 줄어듦)
