@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class GameManager implements Listener {
@@ -488,7 +489,7 @@ public class GameManager implements Listener {
                 if (survivors.size() <= 1) {
                     Player winner = survivors.isEmpty() ? killer : survivors.get(0);
                     if (winner != null) {
-                        endRound(winner);
+                        endRound(java.util.Collections.singletonList(winner));
                     } else {
                         Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
                         startRoundAfterDelay();
@@ -516,12 +517,23 @@ public class GameManager implements Listener {
         //        }
     }
 
-    private void endRound(Player winner) {
+    /**
+     * 라운드를 종료하고 승자를 처리합니다.
+     * @param winners 마지막까지 살아남은 플레이어들의 명단
+     */
+    public void endRound(List<Player> winners) {
         // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
         arenaManager.stopTasks();
 
-        // 라운드 승리 점수 +2
-        scores.put(winner.getUniqueId(), scores.getOrDefault(winner.getUniqueId(), 0) + 2);
+        // 2. 승자 이름 합치기 (예: "오승엽, 남상도, 박연준")
+        // stream().map(Player::getName) -> 플레이어 객체에서 이름만 쏙쏙 뽑아내기
+        // joining(", ") -> 뽑아낸 이름들 사이에 쉼표와 공백을 넣어서 하나로 합치기
+        String winnerNames = winners.stream()
+                .map(Player::getName)
+                .collect(java.util.stream.Collectors.joining(", "));
+
+        // 3. 점수 계산 및 메시지 출력 로직 (단수/복수 구분)
+        boolean onlyOneWinner = (winners.size() == 1); // 승자가 딱 한 명인지 확인
 
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage(" ");
@@ -530,24 +542,51 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6==========================");
-        Bukkit.broadcastMessage("§e마지막까지 살아남은 플레이어 : " + winner.getName() + " +2점");
-        spawnFireworks(winner.getLocation());
+        // 여러 명이면 "오승엽, 남상도" 처럼 출력됩니다.
+        Bukkit.broadcastMessage("§e마지막까지 살아남은 플레이어 : " + winnerNames);
 
-        // 점수 현황판 출력
-        Bukkit.broadcastMessage("§7[현재 점수]");
+        // 딱 한 명일 때만 실행되는 보너스 구간
+        if (onlyOneWinner) {
+            Player winner = winners.get(0); // 명단에서 첫 번째(유일한) 사람 꺼내기
+
+            // 점수 부여 (+2점)
+            scores.put(winner.getUniqueId(), scores.getOrDefault(winner.getUniqueId(), 0) + 2);
+
+            // 보너스 메시지 출력
+            Bukkit.broadcastMessage("§e최종 생존자 [" + winner.getName() + "] 추가 점수 +2점");
+
+            // 승자 위치에 폭죽 발사
+            spawnFireworks(winner.getLocation());
+        } else {
+            // 여러 명인 경우: 점수 지급 메시지 없이 그냥 축하 폭죽만 모든 승자 위치에 발사
+            for (Player p : winners) {
+                spawnFireworks(p.getLocation());
+            }
+            Bukkit.broadcastMessage("§e최종 전장의 생존 점수는 없습니다.");
+        }
+
+        // 4. 점수 현황판 출력
+        Bukkit.broadcastMessage("§7[현재 최종 점수]");
         scores.entrySet().stream()
-                .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
+                .sorted(Map.Entry.<java.util.UUID, Integer>comparingByValue().reversed())
                 .forEach(entry -> {
                     String name = Bukkit.getOfflinePlayer(entry.getKey()).getName();
                     Bukkit.broadcastMessage("§f- " + name + " : §e" + entry.getValue() + "점");
                 });
         Bukkit.broadcastMessage("§6==========================");
 
-        // 우승 점수 체크
-        if (scores.get(winner.getUniqueId()) >= configManager.win_value) {
-            stopGame();
+        // 5. 게임 완전 종료 체크 (승자들 중 목표 점수 도달자가 있는지 확인)
+        boolean gameShouldStop = false;
+        for (Player p : winners) {
+            if (scores.getOrDefault(p.getUniqueId(), 0) >= configManager.win_value) {
+                gameShouldStop = true;
+                break;
+            }
+        }
+        if (gameShouldStop) {
+            stopGame(); // 있으면 게임 종료
         } else {
-            // 5초 뒤 다음 라운드
+            // 없으면 5초 뒤 다음 라운드
             Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
             startRoundAfterDelay();
         }

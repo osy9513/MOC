@@ -9,14 +9,20 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import java.util.List;
+import java.util.ArrayList;        // ArrayList를 사용하기 위해 필요합니다.
+import java.util.List;             // List를 사용하기 위해 필요합니다.
+import java.util.stream.Collectors; // 이름을 합치는 기능을 위해 필요합니다.
 
 public class ArenaManager {
     private final MocPlugin plugin;
     private final ConfigManager config = ConfigManager.getInstance();
     private final ClearManager clearManager;
     private Location gameCenter;
-    private BukkitTask borderShrinkTask;
-    private BukkitTask borderDamageTask;
+    private BukkitTask borderShrinkTask; // 자기장 및 진행 관련 타이머
+    private BukkitTask borderDamageTask; // 대미지 체크 타이머
+    private BukkitTask generateTask;     // 맵 공사 타이머 (추가됨!)
+    GameManager gm = GameManager.getInstance(MocPlugin.getInstance());
 
     public ArenaManager(MocPlugin plugin) {
         this.plugin = plugin;
@@ -40,6 +46,9 @@ public class ArenaManager {
 
         // 2. [자기장] 기존 작업 종료 후, 설정값보다 2칸 작게 초기화
         stopTasks();
+        // 게임이 끝나고 다시 시작할 때, 이전 게임의 '즉사 대미지' 설정이 남아있지 않게 안전하게 초기화/ 현재는 굳이 할 필요 없음.
+        //        world.getWorldBorder().setDamageBuffer(5.0);
+        //        world.getWorldBorder().setDamageAmount(0.2);
         world.getWorldBorder().setCenter(center);
         world.getWorldBorder().setSize(config.map_size - 2);
 
@@ -63,7 +72,9 @@ public class ArenaManager {
         int cx = center.getBlockX();
         int cz = center.getBlockZ();
 
-        new BukkitRunnable() {
+        // 그냥 new BukkitRunnable() 하지 않고, generateTask 변수에 담습니다.
+        // 그래야 stopTasks()가 얘를 멈출 수 있습니다.
+        generateTask = new BukkitRunnable() {
             // 시작 지점: 중심에서 -halfSize 만큼 떨어진 곳
             int x = cx - halfSize;
 
@@ -109,7 +120,7 @@ public class ArenaManager {
     }
 
     /**
-     * 자기장 좁아지기
+     * 자기장 좁아지기 및 최종 결전 시스템 (메시지 -> 7초 텔포 -> 1분 결투 -> 종료)
      */
     public void startBorderShrink() {
         if (gameCenter == null) return;
@@ -118,62 +129,127 @@ public class ArenaManager {
         borderShrinkTask = new BukkitRunnable() {
             @Override
             public void run() {
-                // 1. [게임 종료 체크] 게임이 이미 끝났다면 자기장 줄이기를 멈춥니다.
-                GameManager gm = GameManager.getInstance(MocPlugin.getInstance());
+
+                // 1. [게임 종료 체크]
                 if (!gm.isRunning()) {
-                    stopTasks(); // 기존 3초마다 줄어드는 작업 중지
+                    stopTasks();
                     return;
                 }
-                double size = gameCenter.getWorld().getWorldBorder().getSize();
-                if (size <= 5) {// 설정한 최소 크기인 5에 도달하면.
-                    this.cancel();
-                    // 안내 메시지 출력
-                    plugin.getServer().broadcastMessage("§c[!] §f자기장이 최대로 줄어들었습니다.");
-                    plugin.getServer().broadcastMessage("§c[!] §e7초 후 §f맵 중앙으로 모두 텔레포트 됩니다.");
-                    plugin.getServer().broadcastMessage("§a텔레포트 카운트 다운 시작.");
 
-                    // 7초 카운트다운을 위한 새로운 타이머 시작 (1초 = 20틱)
-                    new BukkitRunnable() {
-                        int timeLeft = 7; // 7초부터 시작
+                double size = gameCenter.getWorld().getWorldBorder().getSize();
+
+                // 2. 자기장 크기가 5 이하가 되면 (최소 크기 도달)
+                if (size <= 5) {
+                    this.cancel(); // 자기장 줄이는 작업 종료
+
+                    // 여기서부터 '자기장 줄이기' 역할은 끝났으니, '메시지 출력' 역할을 borderShrinkTask에 맡깁니다.
+                    // 이렇게 해야 stopTasks()를 호출했을 때 메시지 출력도 멈춥니다.
+                    borderShrinkTask = new BukkitRunnable() {
+                        String[] messages = {
+                                "§c[!] §f자기장이 최대로 줄어들었습니다.",
+                                "§c[!] §e1분 간 §f최종 전투를 시작합니다.",
+                                "§c[!] §e1분간 승자가 정해지지 않는 경우,",
+                                "§e    자동으로 라운드가 종료됩니다.",
+                                "§c[!] 잠시 후 시작합니다.",
+                                "§a최종 전장 활성화 카운트 다운 시작."
+                        };
+                        int index = 0;
 
                         @Override
                         public void run() {
-                            // 카운트다운 도중 게임이 끝나면 중단
-                            if (!gm.isRunning()) {
-                                this.cancel();
-                                return;
-                            }
+                            if (!gm.isRunning()) { this.cancel(); return; }
 
-                            if (timeLeft > 0) {
-                                // 카운트다운 숫자 출력 (7, 6, 5...)
-                                plugin.getServer().broadcastMessage("§e" + timeLeft);
-                                // (선택사항) 째깍거리는 효과음 추가
-                                for (Player p : plugin.getServer().getOnlinePlayers()) {
-                                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 2f);
-                                }
-                                timeLeft--; // 시간 1초 감소
+                            if (index < messages.length) {
+                                plugin.getServer().broadcastMessage(messages[index]);
+                                index++;
                             } else {
-                                // 시간이 0이 되면 텔레포트 실행!
-                                plugin.getServer().broadcastMessage("§c⚔ §l최종 전장 활성화 §c⚔");
-
-                                // 모든 플레이어를 중앙(gameCenter)으로 이동
-                                for (Player p : plugin.getServer().getOnlinePlayers()) {
-                                    // 안전하게 이동시키기 위해 높이를 살짝 조정하거나 그대로 이동
-                                    // (gameCenter가 에메랄드 블럭 위치라면, 그 위로 이동됩니다)
-                                    p.teleport(gameCenter.clone().add(0, 1, 0));
-                                    p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
-                                }
-
-                                this.cancel(); // 카운트다운 타이머 종료
+                                this.cancel();
+                                startTeleportCountdown(gm); // 다음 단계로
                             }
                         }
-                    }.runTaskTimer(plugin, 0L, 20L); // 0초 딜레이 후, 1초(20L)마다 실행
+                    }.runTaskTimer(plugin, 0L, 20L);
+
                     return;
                 }
+
                 // 아직 5보다 크다면 계속 2씩 줄여나갑니다.
                 gameCenter.getWorld().getWorldBorder().setSize(size - 2, 1);
             }
         }.runTaskTimer(plugin, 0, 60L);
+    }
+
+    /**
+     * [단계 2] 7초 카운트다운 후 텔레포트
+     */
+    private void startTeleportCountdown(GameManager gm) {
+        // 이 타이머도 borderShrinkTask에 덮어씌웁니다.
+        borderShrinkTask = new BukkitRunnable() {
+            int timeLeft = 7;
+
+            @Override
+            public void run() {
+                if (!gm.isRunning()) { this.cancel(); return; }
+
+                if (timeLeft > 0) {
+                    plugin.getServer().broadcastMessage("§e" + timeLeft);
+                    for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 2f);
+                    }
+                    timeLeft--;
+                } else {
+                    plugin.getServer().broadcastMessage("§c⚔ §l최종 전장 활성화 §c⚔");
+
+                    for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        p.teleport(gameCenter.clone().add(0, 1, 0));
+                        p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
+                    }
+
+                    this.cancel();
+                    startFinalBattleTimer(gm); // 다음 단계로
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    /**
+     * [단계 3] 1분 제한시간 체크 및 강제 종료
+     */
+    private void startFinalBattleTimer(GameManager gm) {
+        // 마지막 전투 타이머도 borderShrinkTask가 관리하게 합니다.
+        borderShrinkTask = new BukkitRunnable() {
+            int battleTime = 60;
+
+            @Override
+            public void run() {
+                if (!gm.isRunning()) { this.cancel(); return; }
+
+                if (battleTime <= 5 && battleTime > 0) {
+                    plugin.getServer().broadcastMessage("§c[!] 최종 전투 종료까지 §e" + battleTime + "초");
+                    for (Player p : plugin.getServer().getOnlinePlayers()) {
+                        p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 2f);
+                    }
+                }
+
+                if (battleTime <= 0) {
+                    this.cancel();
+                    if (gm.isRunning()) {
+                        plugin.getServer().broadcastMessage("§c[!] §l최종 전투가 종료되었습니다.");
+                        // 1. 승자들을 담을 '명단(List)'을 만듭니다.
+                        java.util.List<Player> survivors = new java.util.ArrayList<>();
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            // 관전 모드가 아닌 플레이어만 생존자로 간주하여 명단에 넣습니다.
+                            if (p.getGameMode() != GameMode.SPECTATOR) {
+                                survivors.add(p);
+                            }
+                        }
+                        // 2. 찾아낸 생존자 명단을 들고 GameManager의 endRound를 호출합니다.
+                        // (주의: GameManager의 endRound 함수가 public 이어야 합니다!)
+                        gm.endRound(survivors);
+                    }
+                }
+                battleTime--;
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
     }
 
     /**
@@ -222,14 +298,30 @@ public class ArenaManager {
             }
         }.runTaskTimer(plugin, 0, 5L); // 5틱(0.25초)마다 검사해서 반응 속도 4배 향상!
     }
-
     /**
-     * 자기장 멈추기 및
+     * 자기장 멈추기 및 모든 진행중인 타이머 강제 종료
      */
     public void stopTasks() {
-        if (borderShrinkTask != null) borderShrinkTask.cancel();
-        if (borderDamageTask != null) borderDamageTask.cancel();
-        borderShrinkTask = null;
-        borderDamageTask = null;
+        // [▼▼▼ 변경됨: 모든 종류의 타이머를 확실하게 취소 ▼▼▼]
+
+        // 1. 자기장 줄어들기 + (메시지출력/텔포카운트/전투타이머 포함) 취소
+        if (borderShrinkTask != null) {
+            borderShrinkTask.cancel();
+            borderShrinkTask = null;
+        }
+
+        // 2. 대미지 체크 취소
+        if (borderDamageTask != null) {
+            borderDamageTask.cancel();
+            borderDamageTask = null;
+        }
+
+        // 3. 맵 공사(블록 설치) 중이었다면 그것도 취소! (중요)
+        if (generateTask != null) {
+            generateTask.cancel();
+            generateTask = null;
+        }
+
+        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
     }
 }
