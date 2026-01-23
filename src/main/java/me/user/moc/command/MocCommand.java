@@ -2,6 +2,7 @@ package me.user.moc.command; // 명령어가 들어있는 폴더 주소
 
 import me.user.moc.MocPlugin;
 import me.user.moc.game.GameManager;
+import me.user.moc.ability.AbilityManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,6 +24,7 @@ public class MocCommand implements CommandExecutor {
         // 2. [핵심 포인트] 메인 플러그인에서 게임 매니저를 빌려옵니다.
         // MocPlugin.getInstance()는 "지금 켜져 있는 플러그인 나와라!" 하는 호출 버튼입니다.
         GameManager gm = GameManager.getInstance(MocPlugin.getInstance());
+        AbilityManager am = AbilityManager.getInstance(MocPlugin.getInstance());
 
         // 3. /moc 만 치고 뒤에 아무것도 안 적었을 때를 대비합니다.
         if (args.length == 0) {
@@ -81,10 +83,6 @@ public class MocCommand implements CommandExecutor {
             }
 
             case "afk" -> { // 잠수 설정: /moc afk [닉네임]
-                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
-                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
-                    return true;
-                }
                 if (args.length < 2) {
                     p.sendMessage("§c사용법: /moc afk [플레이어이름]");
                     return true;
@@ -107,6 +105,24 @@ public class MocCommand implements CommandExecutor {
                 String result = me.user.moc.ability.test.AbilityAssigner.assignAbility(args[1], args[2]);
                 p.sendMessage(result);
                 return true;
+            }
+
+            case "list" -> { // 목록 조회: /moc list
+//                if (!p.isOp()) { // 관리자(OP)만 시작할 수 있게 감시합니다.
+//                    p.sendMessage("§c권한이 없습니다.");
+//                    return true;
+//                }
+//                if (!gm.isRunning()) { // <--- [여기 변경됨!!!] 게임 중인지 확인
+//                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+//                    return true;
+//                }
+                am.showAbilityList(p);
+                return true;
+            }
+
+
+            default -> {
+                p.sendMessage("§c /moc help 를 입력하세요.");
             }
         }
 

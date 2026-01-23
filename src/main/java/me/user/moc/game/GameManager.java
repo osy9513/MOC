@@ -18,13 +18,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class GameManager implements Listener {
 
-    private ConfigManager configManager;
     private final MocPlugin plugin;
     private final ArenaManager arenaManager;
     // 데이터 관리
@@ -32,25 +30,18 @@ public class GameManager implements Listener {
     private final Map<UUID, Integer> scores = new HashMap<>(); // 점수판
     private final Set<String> afkPlayers = new HashSet<>(); // 잠수 유저(닉네임)
     private final Set<UUID> readyPlayers = new HashSet<>(); // 준비 완료(/moc yes) 유저
-    private AbilityManager abilityManager; // 의존성 주입
     // 게임에 참여 중인 플레이어 목록 (접속 끊겨도 여기엔 남아있을 수 있음)
     private final Set<UUID> players = new HashSet<>();
     // 현재 라운드에서 '실제로 살아서 뛰고 있는' 플레이어 목록
     private final Set<UUID> livePlayers = new HashSet<>();
-
-
-
+    private ConfigManager configManager;
+    private AbilityManager abilityManager; // 의존성 주입
     // 게임 상태 변수
     private boolean isRunning = false;
-    // GameManager.java 파일 안에 추가 (어느 곳이든 상관없음)
-    public boolean isRunning() {
-        return isRunning;
-    }
     private boolean isInvincible = false;
     private int round = 0;
     // 태스크 관리 (타이머)
     private BukkitTask selectionTask; // 능력 추첨 타이머
-
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
         this.arenaManager = arenaManager;
@@ -66,12 +57,18 @@ public class GameManager implements Listener {
             plugin.getLogger().warning("!!! [경고] GameManager가 설정 장부를 찾지 못했습니다 !!!");
         }
     }
+
     /**
      * [수정 포인트 1] 이 함수가 실행될 때 장부(ConfigManager)를
      * 확실하게 챙기도록 고쳤습니다.
      */
     public static GameManager getInstance(MocPlugin plugin) {
         return plugin.getGameManager(); // 메인 클래스를 통해 가져오거나 싱글톤 패턴 적용 가능
+    }
+
+    // GameManager.java 파일 안에 추가 (어느 곳이든 상관없음)
+    public boolean isRunning() {
+        return isRunning;
     }
 
     // MocPlugin에서 AbilityManager를 설정해주기 위한 세터
@@ -647,21 +644,22 @@ public class GameManager implements Listener {
         }
     }
 
+    // 능력 리롤.
     public void playerReroll(Player p) {
         if (abilityManager != null)
             abilityManager.rerollAbility(p);
     }
 
+    // AbilityManager에게 현재 플레이어의 능력을 물어봐서 출력
     public void showAbilityDetail(Player p) {
-        // AbilityManager에게 현재 플레이어의 능력을 물어봐서 출력
         // (현재 구조상 AbilityManager가 담당하는게 맞음)
         if (abilityManager != null) {
             abilityManager.showAbilityDetail(p);
         }
     }
 
+    // 승리 축하 폭죽 로직 (생략 가능, 단순화)
     private void spawnFireworks(Location loc) {
-        // 승리 축하 폭죽 로직 (생략 가능, 단순화)
         org.bukkit.entity.Firework fw = loc.getWorld().spawn(loc, org.bukkit.entity.Firework.class);
         org.bukkit.inventory.meta.FireworkMeta fm = fw.getFireworkMeta();
         fm.addEffect(FireworkEffect.builder().withColor(Color.RED).withFade(Color.ORANGE).with(FireworkEffect.Type.BALL)
@@ -669,4 +667,42 @@ public class GameManager implements Listener {
         fm.setPower(1);
         fw.setFireworkMeta(fm);
     }
+
+    // 1. [일반 블록 설치 검사] 유리가 아니면 설치를 막습니다.
+    @EventHandler
+    public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent e) {
+        // 게임 중이 아니라면 검사하지 않고 통과시킵니다.
+        if (!isRunning) return;
+
+        // 플레이어가 설치하려는 블록의 종류를 확인합니다.
+        org.bukkit.Material blockType = e.getBlock().getType();
+
+        // 만약 설치하려는 블록이 '유리(GLASS)'가 아니라면?
+        if (blockType != org.bukkit.Material.GLASS) {
+            // 이벤트를 취소하여 블록이 설치되지 않게 합니다.
+            e.setCancelled(true);
+
+            // (선택 사항) 플레이어에게 경고 메시지를 보냅니다.
+            e.getPlayer().sendMessage("§c[경고] 게임 중에는 유리와 물만 설치할 수 있습니다!");
+        }
+    }
+
+    // 2. [양동이 사용 검사] 물 양동이가 아니면 붓기를 막습니다.
+    @EventHandler
+    public void onBucketEmpty(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
+        // 게임 중이 아니라면 통과
+        if (!isRunning) return;
+
+        // 플레이어가 들고 있는 양동이의 종류를 확인합니다.
+        org.bukkit.Material bucketType = e.getBucket();
+
+        // 만약 사용하려는 양동이가 '물 양동이(WATER_BUCKET)'가 아니라면? (용암 등 금지)
+        if (bucketType != org.bukkit.Material.WATER_BUCKET) {
+            // 물 붓기를 취소시킵니다.
+            e.setCancelled(true);
+            e.getPlayer().sendMessage("§c[경고] 게임 중에는 물만 부을 수 있습니다!");
+        }
+    }
+
+
 }

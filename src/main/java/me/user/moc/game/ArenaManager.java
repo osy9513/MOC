@@ -3,6 +3,7 @@ package me.user.moc.game;
 
 import me.user.moc.MocPlugin;
 import me.user.moc.config.ConfigManager;
+import me.user.moc.game.GameManager;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -117,11 +118,59 @@ public class ArenaManager {
         borderShrinkTask = new BukkitRunnable() {
             @Override
             public void run() {
-                double size = gameCenter.getWorld().getWorldBorder().getSize();
-                if (size <= 5) {
-                    this.cancel();
+                // 1. [게임 종료 체크] 게임이 이미 끝났다면 자기장 줄이기를 멈춥니다.
+                GameManager gm = GameManager.getInstance(MocPlugin.getInstance());
+                if (!gm.isRunning()) {
+                    stopTasks(); // 기존 3초마다 줄어드는 작업 중지
                     return;
                 }
+                double size = gameCenter.getWorld().getWorldBorder().getSize();
+                if (size <= 5) {// 설정한 최소 크기인 5에 도달하면.
+                    this.cancel();
+                    // 안내 메시지 출력
+                    plugin.getServer().broadcastMessage("§c[!] §f자기장이 최대로 줄어들었습니다.");
+                    plugin.getServer().broadcastMessage("§c[!] §e7초 후 §f맵 중앙으로 모두 텔레포트 됩니다.");
+                    plugin.getServer().broadcastMessage("§a텔레포트 카운트 다운 시작.");
+
+                    // 7초 카운트다운을 위한 새로운 타이머 시작 (1초 = 20틱)
+                    new BukkitRunnable() {
+                        int timeLeft = 7; // 7초부터 시작
+
+                        @Override
+                        public void run() {
+                            // 카운트다운 도중 게임이 끝나면 중단
+                            if (!gm.isRunning()) {
+                                this.cancel();
+                                return;
+                            }
+
+                            if (timeLeft > 0) {
+                                // 카운트다운 숫자 출력 (7, 6, 5...)
+                                plugin.getServer().broadcastMessage("§e" + timeLeft);
+                                // (선택사항) 째깍거리는 효과음 추가
+                                for (Player p : plugin.getServer().getOnlinePlayers()) {
+                                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 2f);
+                                }
+                                timeLeft--; // 시간 1초 감소
+                            } else {
+                                // 시간이 0이 되면 텔레포트 실행!
+                                plugin.getServer().broadcastMessage("§c⚔ §l최종 전장 활성화 §c⚔");
+
+                                // 모든 플레이어를 중앙(gameCenter)으로 이동
+                                for (Player p : plugin.getServer().getOnlinePlayers()) {
+                                    // 안전하게 이동시키기 위해 높이를 살짝 조정하거나 그대로 이동
+                                    // (gameCenter가 에메랄드 블럭 위치라면, 그 위로 이동됩니다)
+                                    p.teleport(gameCenter.clone().add(0, 1, 0));
+                                    p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
+                                }
+
+                                this.cancel(); // 카운트다운 타이머 종료
+                            }
+                        }
+                    }.runTaskTimer(plugin, 0L, 20L); // 0초 딜레이 후, 1초(20L)마다 실행
+                    return;
+                }
+                // 아직 5보다 크다면 계속 2씩 줄여나갑니다.
                 gameCenter.getWorld().getWorldBorder().setSize(size - 2, 1);
             }
         }.runTaskTimer(plugin, 0, 60L);

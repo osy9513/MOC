@@ -22,9 +22,19 @@ public class AbilityManager {
     // 플레이어별로 남은 리롤 횟수를 저장하는 지도
     private final Map<UUID, Integer> rerollCounts = new HashMap<>();
 
+    private static AbilityManager instance;
+
     public AbilityManager(MocPlugin plugin) {
         this.plugin = plugin;
+        instance = this; // 인스턴스 저장
         registerAbilities(); // 클래스가 생성될 때 능력을 자동으로 등록합니다.
+    }
+    // [추가] MocCommand에서 호출하는 getInstance 함수
+    public static AbilityManager getInstance(MocPlugin plugin) {
+        if (instance == null) {
+            instance = new AbilityManager(plugin);
+        }
+        return instance;
     }
 
     /**
@@ -263,4 +273,45 @@ public class AbilityManager {
 
         p.sendMessage("§e=================");
     }
+
+    // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+
+    /**
+     * 모든 능력자 목록을 번호 순서대로 채팅창에 출력합니다.
+     *
+     * @param sender 메시지를 받을 대상 (명령어 사용자)
+     */
+    /**
+     * 모든 능력자 목록을 번호 순서대로 채팅창에 출력합니다.
+     * @param sender 메시지를 받을 대상 (명령어 사용자)
+     */
+    public void showAbilityList(org.bukkit.command.CommandSender sender) {
+        // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+
+        // 1. [지도에서 알맹이 빼기]
+        // abilities는 '지도'라서 바로 반복문을 돌릴 수 없습니다.
+        // abilities.values()를 사용하여 지도 안의 '능력 객체'들만 쏙 뽑아 새로운 리스트를 만듭니다.
+        List<Ability> sortedList = new ArrayList<>(this.abilities.values());
+
+        // 2. [정렬] 리스트에 담긴 능력들을 번호(getCode) 순서대로 정렬합니다.
+        sortedList.sort((a, b) -> a.getCode().compareTo(b.getCode()));
+
+        // 3. 채팅창 디자인 (여백을 주어 깔끔하게 보이게 함)
+        for (int i = 0; i < 5; i++) sender.sendMessage(" "); // 빈 줄 출력
+        sender.sendMessage("§a§l[ 능력자 목록 ]");
+        sender.sendMessage("§7코드 §f| §e능력자명");
+        sender.sendMessage("§7--------------------");
+
+        // 4. [반복문 실행]
+        // 이제 'abilities'가 아니라, 위에서 정렬한 'sortedList'를 사용해야 에러가 안 납니다!
+        for (Ability ability : sortedList) {
+            // 예: 001 | 우에키
+            sender.sendMessage("§b" + ability.getCode() + " §f| §f" + ability.getName());
+        }
+
+        sender.sendMessage(" "); // 마무리 빈 줄
+
+        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+    }
+    // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 }
