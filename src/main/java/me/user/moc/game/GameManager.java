@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +44,7 @@ public class GameManager implements Listener {
     private int round = 0;
     // 태스크 관리 (타이머)
     private BukkitTask selectionTask; // 능력 추첨 타이머
+
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
         this.arenaManager = arenaManager;
@@ -136,6 +138,8 @@ public class GameManager implements Listener {
     // 2. 라운드 시작 & 능력 추첨 단계
     // =========================================================================
     private void startRound() {
+        if (!isRunning)
+            return;
         round++;
         readyPlayers.clear();
 
@@ -223,11 +227,6 @@ public class GameManager implements Listener {
 
                 if ((readyPlayers.size() >= activePlayerCount && activePlayerCount > 0) || timeLeft <= 0) {
                     this.cancel();
-
-                    // [무적 해제] 추첨 시간이 끝났으니 이제 데미지가 들어가게 합니다.
-                    isInvincible = false;
-                    //Bukkit.broadcastMessage("§c[정보] 무적 상태가 해제되었습니다! 곧 배틀이 시작됩니다.");
-
                     prepareBattle(); // 전투 준비 단계로 이동
                     return;
                 }
@@ -248,6 +247,8 @@ public class GameManager implements Listener {
     // 3. 전투 준비 단계 (텔레포트 & 무적)
     // =========================================================================
     private void prepareBattle() {
+        if (!isRunning)
+            return;
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6모든 플레이어가 준비되었습니다. 전장으로 이동합니다!");
 
@@ -266,9 +267,6 @@ public class GameManager implements Listener {
             Location tpLoc = spawn.clone().add(rx, 1, rz);
             p.teleport(tpLoc);
         }
-
-        // 3-2. 5초 카운트다운 및 무적 설정
-        isInvincible = true;
 
         new BukkitRunnable() {
             int count = 5;
@@ -295,6 +293,9 @@ public class GameManager implements Listener {
     // 4. 전투 진행 단계
     // =========================================================================
     private void startBattle() {
+        if (!isRunning)
+            return;
+        // 무적 해제.
         isInvincible = false;
 
         Bukkit.broadcastMessage(" ");
@@ -452,9 +453,10 @@ public class GameManager implements Listener {
 
         isRunning = false;
         configManager.spawn_point = null;
+        isInvincible = false;
     }
 
-    // 사망 이벤트 핸들러 (점수 계산)
+    // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         if (!isRunning)
@@ -496,34 +498,20 @@ public class GameManager implements Listener {
                     }
                 }
             }
-        }.runTaskLater(plugin, 1L); // <--- [여기 변경됨!!!] 1틱 뒤 실행 로직으로 감싸기
-        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
-        //        // 생존자 체크 (스펙테이터가 아닌 사람)
-        //        List<Player> survivors = Bukkit.getOnlinePlayers().stream()
-        //                .filter(p -> p.getGameMode() == GameMode.SURVIVAL && !afkPlayers.contains(p.getName())
-        //                        && !p.equals(victim))
-        //                .collect(Collectors.toList());
-        //
-        //        // 최후의 1인 확인
-        //        if (survivors.size() <= 1) {
-        //            Player winner = survivors.isEmpty() ? killer : survivors.get(0);
-        //            if (winner != null) {
-        //                endRound(winner);
-        //            } else {
-        //                // 모두 죽은 경우 그냥 재시작
-        //                Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
-        //                startRoundAfterDelay();
-        //            }
-        //        }
+        }.runTaskLater(plugin, 1L);
     }
 
     /**
      * 라운드를 종료하고 승자를 처리합니다.
+     *
      * @param winners 마지막까지 살아남은 플레이어들의 명단
      */
     public void endRound(List<Player> winners) {
         // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
         arenaManager.stopTasks();
+        if (!isRunning)
+            return;
+        isInvincible = true; // 무적 상태 활성화.;
 
         // 2. 승자 이름 합치기 (예: "오승엽, 남상도, 박연준")
         // stream().map(Player::getName) -> 플레이어 객체에서 이름만 쏙쏙 뽑아내기
@@ -592,7 +580,9 @@ public class GameManager implements Listener {
         }
     }
 
+    // 시작 전 잠시 대기 시간.
     private void startRoundAfterDelay() {
+        if (!isRunning) return;
         new BukkitRunnable() {
 
             // @@@@@@ 해당 부분은 라운드 시작할 때랑 지금이랑 유저를 비교하여 플레이할 유저가 없어진 경우에만 실행하게 수정 필요함. 아래의 문구를 참고.
@@ -644,7 +634,7 @@ public class GameManager implements Listener {
     // 유틸리티 및 이벤트 리스너
     // =========================================================================
 
-    // 무적 시간 대미지 방지
+    // 무적 시간 대미지 방지 isInvincible <ㅡ t 면 무적 f 면 무적해제
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
         if (isInvincible && e.getEntity() instanceof Player) {
@@ -671,6 +661,7 @@ public class GameManager implements Listener {
 
     // Yes, Re, Check 등은 AbilityManager로 위임하거나 여기서 처리
     public void playerReady(Player p) {
+        if (!isRunning) return;
         if (!readyPlayers.contains(p.getUniqueId())) {
             readyPlayers.add(p.getUniqueId());
             p.sendMessage("§a[MOC] 준비 완료!");
@@ -685,12 +676,14 @@ public class GameManager implements Listener {
 
     // 능력 리롤.
     public void playerReroll(Player p) {
+        if (!isRunning) return;
         if (abilityManager != null)
             abilityManager.rerollAbility(p);
     }
 
     // AbilityManager에게 현재 플레이어의 능력을 물어봐서 출력
     public void showAbilityDetail(Player p) {
+        if (!isRunning) return;
         // (현재 구조상 AbilityManager가 담당하는게 맞음)
         if (abilityManager != null) {
             abilityManager.showAbilityDetail(p);
@@ -742,6 +735,4 @@ public class GameManager implements Listener {
             e.getPlayer().sendMessage("§c[경고] 게임 중에는 물만 부을 수 있습니다!");
         }
     }
-
-
 }
