@@ -40,9 +40,9 @@ public class AbilityAssigner {
         // 5. 변경된 능력 정보를 보여줍니다.
         am.showAbilityInfo(target, abilityCode, 2);
 
-        // [테스트 편의성] 능력 아이템(소환수 등)을 즉시 지급합니다.
-        // 이를 통해 /moc start 없이도 바로 능력을 확인할 수 있습니다.
-        am.giveAbilityItems(target);
+        // [수정] 테스트 편의성을 위해 아이템을 줬으나,
+        // 란가 같은 소환수 능력이 미리 발동되는 문제가 있어 제거합니다.
+        // am.giveAbilityItems(target);
 
         return "§a[성공] " + targetName + "님에게 능력을 부여했습니다.";
     }

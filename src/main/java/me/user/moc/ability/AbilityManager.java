@@ -38,6 +38,7 @@ public class AbilityManager {
         addAbility(new Magnus(plugin)); // 매그너스 등록
         addAbility(new Rammus(plugin)); // 람머스 등록
         addAbility(new Saitama(plugin)); // 사이타마 등록
+        addAbility(new Ranga(plugin)); // 란가 등록
     }
 
     private void addAbility(Ability ability) {
@@ -59,6 +60,18 @@ public class AbilityManager {
      * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
      */
     public void resetAbilities() {
+        // [수정] 리셋 전에 기존 능력자들의 뒤처리를 해줍니다 (소환수 삭제 등).
+        for (Map.Entry<UUID, String> entry : playerAbilities.entrySet()) {
+            UUID uuid = entry.getKey();
+            String code = entry.getValue();
+            Ability ability = abilities.get(code);
+            if (ability != null) {
+                Player p = plugin.getServer().getPlayer(uuid);
+                if (p != null) {
+                    ability.cleanup(p);
+                }
+            }
+        }
         playerAbilities.clear();
         rerollCounts.clear();
     }
@@ -79,7 +92,7 @@ public class AbilityManager {
      * [수정 4] 능력 정보를 보여줄 때도 '코드'를 기준으로 검사합니다.
      * 인자로 들어오는 abilityCode는 이제 "001", "002" 같은 녀석들입니다.
      */
-    /*** 플레이어에게 배정된 능력의 요약 정보를 채팅창에 예쁘게 보여줍니다.*/
+    /*** 플레이어에게 배정된 능력의 요약 정보를 채팅창에 예쁘게 보여줍니다. */
     public void showAbilityInfo(Player p, String abilityCode, int massgeType) {
         p.sendMessage("§f ");
         p.sendMessage("§e=== 당신의 능력은 ===");
@@ -107,6 +120,10 @@ public class AbilityManager {
                 p.sendMessage("§c전투 ● 사이타마(원펀맨)");
                 p.sendMessage("§f사이타마 운동법을 완료하면 매우 강력해집니다.");
             }
+            case "006" -> {
+                p.sendMessage("§c전투 ● 란가(전생슬라임)");
+                p.sendMessage("§f란가를 소환하여 적에게 강력한 고정 피해를 입힌다.");
+            }
             case "011" -> {
                 p.sendMessage("§a전투 ● 람머스(롤)");
                 p.sendMessage("§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
@@ -117,7 +134,7 @@ public class AbilityManager {
 
         p.sendMessage("§f ");
         p.sendMessage("§f ");
-        switch (massgeType){
+        switch (massgeType) {
             case 1 -> {
                 // 선택 여부 확인 메세지 안 보냄.
             }
@@ -125,7 +142,7 @@ public class AbilityManager {
                 // 체크 가능할 수 있음만 알림.
                 p.sendMessage("§f상세 설명 : §b/moc check");
             }
-            default ->{
+            default -> {
                 p.sendMessage("§f상세 설명 : §b/moc check");
                 p.sendMessage("§f능력 수락 : §a/moc yes");
                 // 남은 리롤 횟수를 가져와서 보여줍니다.
@@ -133,7 +150,6 @@ public class AbilityManager {
                 p.sendMessage("§f리롤(" + left + "회) : §c/moc re");
             }
         }
-
 
         p.sendMessage("§e==================");
     }
@@ -145,14 +161,14 @@ public class AbilityManager {
         int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
 
         // 1. 리롤 횟수가 0이면 거절합니다.
-        //        if (left <= 0) {
-        //            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
-        //            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        // if (left <= 0) {
+        // p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
+        // p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         //
-        //            // 강제 준비 완료
-        //            plugin.getGameManager().playerReady(p);
-        //            return;
-        //        }
+        // // 강제 준비 완료
+        // plugin.getGameManager().playerReady(p);
+        // return;
+        // }
 
         // 2. 현재 능력을 제외한 나머지 능력 중에서 하나를 랜덤으로 뽑습니다.
         List<String> pool = new ArrayList<>(abilities.keySet());
@@ -179,7 +195,7 @@ public class AbilityManager {
         rerollCounts.put(p.getUniqueId(), left - 1);
 
         // 리롤 횟수 사용 시 0 이하일 때
-        if(left - 1 <=0){
+        if (left - 1 <= 0) {
             // 강제 준비 완료
             p.sendMessage("§f ");
             p.sendMessage("§f ");
@@ -242,9 +258,8 @@ public class AbilityManager {
             // 3. 하드코딩 대신, 능력자 파일 안에 있는 detailCheck()를 실행합니다!
             ability.detailCheck(p);
         } else {
-            p.sendMessage("§c"+abilityName+"의 상세 능력을 찾을 수 없습니다.");
+            p.sendMessage("§c" + abilityName + "의 상세 능력을 찾을 수 없습니다.");
         }
-
 
         p.sendMessage("§e=================");
     }
