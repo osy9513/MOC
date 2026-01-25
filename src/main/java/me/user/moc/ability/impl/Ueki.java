@@ -24,18 +24,18 @@ import java.util.UUID;
 
 public class Ueki extends Ability {
 
-    // 플레이어별 쿨타임을 저장하는 장부입니다. (단위: 밀리초)
-    private final HashMap<UUID, Long> cooldowns = new HashMap<>();
     private final int COOLDOWN_TIME = 12; // 쿨타임 12초
 
     public Ueki(JavaPlugin plugin) {
         super(plugin);
     }
+
     // [수정 2] 우에키에게 "001"이라는 번호표를 붙여줍니다.
     @Override
     public String getCode() {
         return "001";
     }
+
     @Override
     public String getName() {
         return "우에키";
@@ -46,8 +46,7 @@ public class Ueki extends Ability {
         return List.of(
                 "§a유틸 ● 우에키(우에키의 법칙)",
                 "§f묘목을 우클릭하면 주변 20블럭 이내의",
-                "§f생명체와 아이템을 나무로 바꿉니다."
-        );
+                "§f생명체와 아이템을 나무로 바꿉니다.");
     }
 
     @Override
@@ -79,14 +78,16 @@ public class Ueki extends Ability {
         Player p = e.getPlayer();
 
         // 1. 이 사람이 우에키 능력을 가졌는지 확인 (람머스와 동일한 방식)
-        if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode())) return;
+        if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode()))
+            return;
 
         // 2. 묘목을 들고 우클릭했는지 확인
         if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
                 && e.getMaterial() == Material.OAK_SAPLING) {
 
-            // 3. 쿨타임 체크
+            // 3. 쿨타임 체크 (부모 메서드 사용)
             if (checkCooldown(p)) {
+                setCooldown(p, COOLDOWN_TIME); // 쿨타임 설정
                 useAbility(p);
             }
         }
@@ -135,21 +136,5 @@ public class Ueki extends Ability {
                 // [▲▲▲ 여기까지 변경됨 ▲▲▲]
             }
         }
-    }
-
-    private boolean checkCooldown(Player p) {
-        long now = System.currentTimeMillis();
-        long lastUse = cooldowns.getOrDefault(p.getUniqueId(), 0L);
-        long remain = (lastUse + (COOLDOWN_TIME * 1000L)) - now;
-
-        if (remain > 0) {
-            // [옵션 3] 액션바에 붉은색 쿨타임 표시
-            double seconds = remain / 1000.0;
-            p.sendActionBar(Component.text("남은 시간: " + String.format("%.1f", seconds) + "초")
-                    .color(NamedTextColor.RED));
-            return false;
-        }
-        cooldowns.put(p.getUniqueId(), now);
-        return true;
     }
 }

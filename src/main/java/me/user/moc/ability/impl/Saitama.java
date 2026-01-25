@@ -29,17 +29,26 @@ public class Saitama extends Ability {
     private static final int GOAL_DIST_CM = 100; // 500 blocks = 50000 cm
     private final Map<UUID, SaitamaProgress> progressMap = new HashMap<>();
 
+    @Override
+    public void reset() {
+        super.reset();
+        progressMap.clear();
+    }
+
     public Saitama(JavaPlugin plugin) {
         super(plugin);
     }
+
     @Override
     public String getCode() {
         return "005";
     }
+
     @Override
     public String getName() {
         return "사이타마";
     }
+
     @Override
     public List<String> getDescription() {
         return List.of(
@@ -68,7 +77,6 @@ public class Saitama extends Ability {
                 "\n" +
                 "장비 제거: 철 갑옷, 철 흉갑.");
     }
-
 
     @Override
     public void giveItem(Player p) {

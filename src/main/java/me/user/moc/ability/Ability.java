@@ -35,4 +35,71 @@ public abstract class Ability implements Listener {
      */
     public void cleanup(Player p) {
     }
+
+    // [중앙 집권형 상태 관리] 자식들이 개별 Map을 쓰지 않도록 부모가 통합 관리합니다.
+    protected final java.util.Map<java.util.UUID, Long> cooldowns = new java.util.HashMap<>();
+    protected final java.util.Map<java.util.UUID, java.util.List<org.bukkit.entity.Entity>> activeEntities = new java.util.HashMap<>();
+    protected final java.util.Map<java.util.UUID, java.util.List<org.bukkit.scheduler.BukkitTask>> activeTasks = new java.util.HashMap<>();
+
+    /**
+     * [추가] 라운드가 시작되거나 게임이 리셋될 때 호출됩니다.
+     * 모든 쿨타임, 파티클, 소환수 등 '능력 자체'에 저장된 상태를 초기화해야 합니다.
+     * 자식 클래스에서 특별히 더 비워야 할 게 있다면 override하되, super.reset()을 호출해야 합니다.
+     */
+    public void reset() {
+        // 1. 모든 쿨타임 초기화
+        cooldowns.clear();
+
+        // 2. 관리 중인 모든 엔티티 제거 (소환수 등)
+        for (java.util.List<org.bukkit.entity.Entity> list : activeEntities.values()) {
+            if (list == null)
+                continue;
+            for (org.bukkit.entity.Entity e : list) {
+                if (e != null && !e.isDead())
+                    e.remove();
+            }
+        }
+        activeEntities.clear();
+
+        // 3. 관리 중인 모든 태스크 취소 (파티클 등)
+        for (java.util.List<org.bukkit.scheduler.BukkitTask> list : activeTasks.values()) {
+            if (list == null)
+                continue;
+            for (org.bukkit.scheduler.BukkitTask t : list) {
+                if (t != null && !t.isCancelled())
+                    t.cancel();
+            }
+        }
+        activeTasks.clear();
+    }
+
+    // === [쿨타임 관련 헬퍼 메서드] ===
+    protected void setCooldown(Player p, long seconds) {
+        cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + (seconds * 1000));
+    }
+
+    protected boolean checkCooldown(Player p) {
+        if (!cooldowns.containsKey(p.getUniqueId()))
+            return true; // 쿨타임 없음 (사용 가능)
+
+        long now = System.currentTimeMillis();
+        long endTime = cooldowns.get(p.getUniqueId());
+        if (now < endTime) {
+            double left = (endTime - now) / 1000.0;
+            // 쿨타임 중이면 메시지 보내거나 false 리턴
+            p.sendActionBar(
+                    net.kyori.adventure.text.Component.text("§c쿨타임이 " + String.format("%.1f", left) + "초 남았습니다."));
+            return false;
+        }
+        return true;
+    }
+
+    // === [소환수/태스크 등록 헬퍼 메서드] ===
+    protected void registerSummon(Player p, org.bukkit.entity.Entity e) {
+        activeEntities.computeIfAbsent(p.getUniqueId(), k -> new java.util.ArrayList<>()).add(e);
+    }
+
+    protected void registerTask(Player p, org.bukkit.scheduler.BukkitTask t) {
+        activeTasks.computeIfAbsent(p.getUniqueId(), k -> new java.util.ArrayList<>()).add(t);
+    }
 }

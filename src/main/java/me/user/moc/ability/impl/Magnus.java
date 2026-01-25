@@ -17,7 +17,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 
 public class Magnus extends Ability {
-    private final Map<UUID, Horse> activeBikes = new HashMap<>();
 
     public Magnus(JavaPlugin plugin) {
         super(plugin);
@@ -27,17 +26,19 @@ public class Magnus extends Ability {
     public String getCode() {
         return "004";
     }
+
     @Override
     public String getName() {
         return "매그너스";
     }
+
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-            "§복합 ● 매그너스(이터널 리턴)",
-            "§멋진 오토바이를 탄다."
-        );
+                "§복합 ● 매그너스(이터널 리턴)",
+                "§멋진 오토바이를 탄다.");
     }
+
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§복합 ● 매그너스(이터널 리턴)");
@@ -75,33 +76,44 @@ public class Magnus extends Ability {
     public void onInteract(PlayerInteractEvent event) {
         Player p = event.getPlayer();
         if (plugin instanceof MocPlugin moc) {
-             if (moc.getAbilityManager() == null || !moc.getAbilityManager().hasAbility(p, getCode())) return;
+            if (moc.getAbilityManager() == null || !moc.getAbilityManager().hasAbility(p, getCode()))
+                return;
         }
 
-        if (event.getItem() != null && event.getItem().getType() == Material.GRAY_DYE && event.getAction().name().contains("RIGHT")) {
-            if (activeBikes.containsKey(p.getUniqueId())) return;
+        if (event.getItem() != null && event.getItem().getType() == Material.GRAY_DYE
+                && event.getAction().name().contains("RIGHT")) {
+            if (activeEntities.containsKey(p.getUniqueId()) && !activeEntities.get(p.getUniqueId()).isEmpty())
+                return;
 
             Horse bike = (Horse) p.getWorld().spawnEntity(p.getLocation(), EntityType.HORSE);
             bike.setTamed(true);
             bike.getInventory().setSaddle(new ItemStack(Material.SADDLE));
             Optional.ofNullable(bike.getAttribute(Attribute.MOVEMENT_SPEED)).ifPresent(a -> a.setBaseValue(0.5));
             bike.addPassenger(p);
-            activeBikes.put(p.getUniqueId(), bike);
+
+            // 부모 메서드로 등록
+            registerSummon(p, bike);
 
             new BukkitRunnable() {
                 int t = 0;
+
                 @Override
                 public void run() {
                     t++;
                     if (t > 200 || bike.getPassengers().isEmpty() || bike.isDead()) {
                         explodeBike(bike, p);
-                        activeBikes.remove(p.getUniqueId());
+                        List<org.bukkit.entity.Entity> list = activeEntities.get(p.getUniqueId());
+                        if (list != null)
+                            list.remove(bike);
                         this.cancel();
                         return;
                     }
-                    if (bike.getLocation().add(bike.getLocation().getDirection().multiply(1.2)).getBlock().getType().isSolid()) {
+                    if (bike.getLocation().add(bike.getLocation().getDirection().multiply(1.2)).getBlock().getType()
+                            .isSolid()) {
                         explodeBike(bike, p);
-                        activeBikes.remove(p.getUniqueId());
+                        List<org.bukkit.entity.Entity> list = activeEntities.get(p.getUniqueId());
+                        if (list != null)
+                            list.remove(bike);
                         this.cancel();
                     }
                 }
@@ -113,6 +125,7 @@ public class Magnus extends Ability {
         Location loc = bike.getLocation();
         new BukkitRunnable() {
             int m = 0;
+
             @Override
             public void run() {
                 m++;

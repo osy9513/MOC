@@ -29,6 +29,7 @@ public class AbilityManager {
         instance = this; // 인스턴스 저장
         registerAbilities(); // 클래스가 생성될 때 능력을 자동으로 등록합니다.
     }
+
     // [추가] MocCommand에서 호출하는 getInstance 함수
     public static AbilityManager getInstance(MocPlugin plugin) {
         if (instance == null) {
@@ -49,6 +50,7 @@ public class AbilityManager {
         addAbility(new Rammus(plugin)); // 람머스 등록
         addAbility(new Saitama(plugin)); // 사이타마 등록
         addAbility(new Ranga(plugin)); // 란가 등록
+        addAbility(new Byakuya(plugin)); // 뱌쿠야 등록
     }
 
     private void addAbility(Ability ability) {
@@ -69,8 +71,11 @@ public class AbilityManager {
     /**
      * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
      */
+    /**
+     * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
+     */
     public void resetAbilities() {
-        // [수정] 리셋 전에 기존 능력자들의 뒤처리를 해줍니다 (소환수 삭제 등).
+        // [수정] 1. 개별 플레이어에 대한 cleanup (기존 유지)
         for (Map.Entry<UUID, String> entry : playerAbilities.entrySet()) {
             UUID uuid = entry.getKey();
             String code = entry.getValue();
@@ -82,6 +87,12 @@ public class AbilityManager {
                 }
             }
         }
+
+        // [추가] 2. 모든 능력의 전역 상태(쿨타임, 관리 중인 늑대 등) 초기화
+        for (Ability ability : abilities.values()) {
+            ability.reset();
+        }
+
         playerAbilities.clear();
         rerollCounts.clear();
     }
@@ -138,6 +149,10 @@ public class AbilityManager {
                 p.sendMessage("§a전투 ● 람머스(롤)");
                 p.sendMessage("§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
             }
+            case "013" -> {
+                p.sendMessage("§d전투 ● 쿠치키 뱌쿠야(블리치)");
+                p.sendMessage("§f철 검 우클릭 시 만해를 사용하여 광역 피해를 입힙니다.");
+            }
 
             default -> p.sendMessage("§7등록되지 않은 능력입니다.");
         }
@@ -171,11 +186,11 @@ public class AbilityManager {
         int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
 
         // 1. 리롤 횟수가 0이면 거절합니다.
-         if (left <= 0) {
-         p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
-         p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-         return;
-         }
+        if (left <= 0) {
+            p.sendMessage("§c[MOC] 리롤 횟수를 모두 사용했습니다. ");
+            p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
 
         // 2. 현재 능력을 제외한 나머지 능력 중에서 하나를 랜덤으로 뽑습니다.
         List<String> pool = new ArrayList<>(abilities.keySet());
@@ -280,6 +295,7 @@ public class AbilityManager {
      */
     /**
      * 모든 능력자 목록을 번호 순서대로 채팅창에 출력합니다.
+     * 
      * @param sender 메시지를 받을 대상 (명령어 사용자)
      */
     public void showAbilityList(org.bukkit.command.CommandSender sender) {
@@ -294,7 +310,8 @@ public class AbilityManager {
         sortedList.sort((a, b) -> a.getCode().compareTo(b.getCode()));
 
         // 3. 채팅창 디자인 (여백을 주어 깔끔하게 보이게 함)
-        for (int i = 0; i < 5; i++) sender.sendMessage(" "); // 빈 줄 출력
+        for (int i = 0; i < 5; i++)
+            sender.sendMessage(" "); // 빈 줄 출력
         sender.sendMessage("§a§l[ 능력자 목록 ]");
         sender.sendMessage("§7코드 §f| §e능력자명");
         sender.sendMessage("§7--------------------");
