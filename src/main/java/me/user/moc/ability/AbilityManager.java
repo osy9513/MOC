@@ -51,6 +51,10 @@ public class AbilityManager {
         addAbility(new Saitama(plugin)); // 사이타마 등록
         addAbility(new Ranga(plugin)); // 란가 등록
         addAbility(new Byakuya(plugin)); // 뱌쿠야 등록
+        addAbility(new GoldSilverAxe(plugin)); // 금도끼 은도끼 등록
+        addAbility(new Alex(plugin)); // 알렉스 등록
+        addAbility(new Zenitsu(plugin)); // 아가츠마 젠이츠 등록
+        addAbility(new Meliodas(plugin)); // 멜리오다스 등록
     }
 
     private void addAbility(Ability ability) {
@@ -152,6 +156,22 @@ public class AbilityManager {
             case "013" -> {
                 p.sendMessage("§d전투 ● 쿠치키 뱌쿠야(블리치)");
                 p.sendMessage("§f철 검 우클릭 시 만해를 사용하여 광역 피해를 입힙니다.");
+            }
+            case "015" -> {
+                p.sendMessage("§a유틸 ● 금도끼 은도끼(이솝 우화/나무꾼과 헤르메스)");
+                p.sendMessage("§f도끼를 물에 빠트리면 도끼가 랜덤한 확률로 변합니다.");
+            }
+            case "020" -> {
+                p.sendMessage("§a유틸 ● 알렉스(이터널 리턴)");
+                p.sendMessage("§f에메랄드 시스템을 해킹하여 기반암을 제거합니다.");
+            }
+            case "021" -> {
+                p.sendMessage("§e전투 ● 아가츠마 젠이츠(귀멸의 칼날)");
+                p.sendMessage("§f검 우클릭 시 전방으로 초고속 돌진하며 적을 벱니다.");
+            }
+            case "022" -> {
+                p.sendMessage("§d전투 ● 멜리오다스(일곱 개의 대죄)");
+                p.sendMessage("§f검 우클릭 유지 시 받은 피해를 2배로 돌려줍니다.");
             }
 
             default -> p.sendMessage("§7등록되지 않은 능력입니다.");

@@ -56,7 +56,7 @@ public class Byakuya extends Ability {
         p.sendMessage("§e능력명: §f쿠치키 뱌쿠야 (블리치)");
         p.sendMessage("§e타입: §c전투 / 광역 제어");
         p.sendMessage("§e발동 조건: §f철 검 우클릭");
-        p.sendMessage("§e쿨타임: §f120초");
+        p.sendMessage("§e쿨타임: §f50초");
         p.sendMessage("§e지속 시간: §f30초");
         p.sendMessage("§e효과:");
         p.sendMessage("  §7- §d만해(卍解)§7를 사용하여 반경 30블록을 벚꽃으로 뒤덮습니다.");
@@ -122,7 +122,7 @@ public class Byakuya extends Ability {
     private void activateBankai(Player p) {
         UUID uuid = p.getUniqueId();
 
-        // 1. 쿨타임 체크 (부모 메서드 사용, 120초)
+        // 1. 쿨타임 체크 (부모 메서드 사용, 50초)
         if (!checkCooldown(p))
             return;
 
@@ -140,8 +140,8 @@ public class Byakuya extends Ability {
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1.0f, 2.0f); // 칭!
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1.0f, 0.5f); // 웅장한 바람 소리
 
-        // 쿨타임 설정 (120초)
-        setCooldown(p, 120);
+        // 쿨타임 설정 (50초)
+        setCooldown(p, 50);
 
         // 이동 속도 패널티 (10% 감소) -> 0.2f * 0.9 = 0.18f
         p.setWalkSpeed(0.18f);

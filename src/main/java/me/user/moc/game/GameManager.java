@@ -73,6 +73,7 @@ public class GameManager implements Listener {
     public boolean isRunning() {
         return isRunning;
     }
+
     /**
      * 다른 클래스(MocCommand)에서 특정 플레이어가 AFK인지 확인할 수 있게 해주는 함수입니다.
      */
@@ -151,7 +152,7 @@ public class GameManager implements Listener {
 
         // [무적 시작] 능력 추첨 중에는 서로 공격할 수 없게 설정합니다.
         this.isInvincible = true;
-        //Bukkit.broadcastMessage("§e[정보] 능력 추첨 중에는 무적 상태가 됩니다.");
+        // Bukkit.broadcastMessage("§e[정보] 능력 추첨 중에는 무적 상태가 됩니다.");
 
         // AbilityManager에게 능력 초기화 요청 (리롤 횟수 등 리셋)
         if (abilityManager != null)
@@ -180,10 +181,9 @@ public class GameManager implements Listener {
         // 여기서 날씨, 시간, 기반암, 에메랄드, 자기장, 월드 바닥의 아이템, 몬스터 초기화가 다 일어납니다.
         arenaManager.prepareArena(center);
 
-
         // 플레이어 초기화 및 능력 배정
         // (중복 안 나오게 셔플)
-        List<String> deck = new ArrayList<>(Arrays.asList("001", "002", "003", "004"));
+        List<String> deck = new ArrayList<>(Arrays.asList("001", "002", "003", "004", "020"));
         Collections.shuffle(deck);
         int deckIndex = 0;
 
@@ -199,8 +199,8 @@ public class GameManager implements Listener {
                 continue;
             }
 
-//            if (afkPlayers.contains(p.getName()))
-//                continue;
+            // if (afkPlayers.contains(p.getName()))
+            // continue;
 
             // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
             // 관전 모드였던 사람도 다시 참여시켜야 하므로 모드 변경 필수!
@@ -251,7 +251,8 @@ public class GameManager implements Listener {
                 long activePlayerCount = Bukkit.getOnlinePlayers().size() - afkPlayers.size();
 
                 // 만약 모든 플레이어가 AFK라면(참여자가 0명), 게임 진행이 안 되므로 예외 처리
-                if (activePlayerCount <= 0) activePlayerCount = 1;
+                if (activePlayerCount <= 0)
+                    activePlayerCount = 1;
                 // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 
                 if ((readyPlayers.size() >= activePlayerCount && activePlayerCount > 0) || timeLeft <= 0) {
@@ -347,8 +348,8 @@ public class GameManager implements Listener {
             p.setFireTicks(0);
 
             // 배고픔, 풀로 회복.
-            p.setFoodLevel(20);      // 허기 게이지를 20(가득)으로 설정합니다.
-            p.setSaturation(10.0f);   // 포화도를 높여서 허기가 금방 닳지 않게 서비스!
+            p.setFoodLevel(20); // 허기 게이지를 20(가득)으로 설정합니다.
+            p.setSaturation(10.0f); // 포화도를 높여서 허기가 금방 닳지 않게 서비스!
 
             // 체력 3줄(60) 설정
             AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
@@ -611,32 +612,34 @@ public class GameManager implements Listener {
 
     // 시작 전 잠시 대기 시간.
     private void startRoundAfterDelay() {
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
         new BukkitRunnable() {
 
-            // @@@@@@ 해당 부분은 라운드 시작할 때랑 지금이랑 유저를 비교하여 플레이할 유저가 없어진 경우에만 실행하게 수정 필요함. 아래의 문구를 참고.
+            // @@@@@@ 해당 부분은 라운드 시작할 때랑 지금이랑 유저를 비교하여 플레이할 유저가 없어진 경우에만 실행하게 수정 필요함. 아래의 문구를
+            // 참고.
             /*
-afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
-
-라운드 종료 후 이전 라운드에 플레이한 사람이
-죽어서 관전 상태가 된 사람을 제외하고
-서버에 나감 or 죽은 상태로 리스폰 안함인 경우
-10초 의 대기 시간을 준다.
-
-해당 대기 시간 안에 접속하지 않은 경우,
-해당 서버 미접속 유저들을 전부 afk 상태로 변경하여 새로운 라운드에 참여하지 않게 구현.
-이때 게임 중 afk가 된 유저의 스코어 점수는 초기화 되지 않음.
-
-이후에 재참가 가능하도록. 대신 라운드 종료 후 점수 출력 시 기존과 동일하게 출력하면서 맨 마지막줄에 다음과 같은 문구를 추가함.
-
-(붉은 색으로)afk 유저 : 닉네임, 닉네임, 닉네임
-
-이후 afk로 지정된 해당 유저가 다시 접속하여 /moc afk 유저이름 명령어를 통해 afk 상태에서 해제된 경우엔
-현재 진행 중인 라운드를 제외한 다음 라운드부터 다시 능력 배정되며 게임에 참가됨.
-
-라운드 종료 후 사람 수를 체크할 때 서버에 신규 유저가 접속한 경우
-해당 신규 유저를 afk 상태로 지정해둔게 아닌 이상 해당 신규 유저도 다음 라운드에 자동으로 추가되어 같이 게임하게 됨.
-            * */
+             * afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
+             * 
+             * 라운드 종료 후 이전 라운드에 플레이한 사람이
+             * 죽어서 관전 상태가 된 사람을 제외하고
+             * 서버에 나감 or 죽은 상태로 리스폰 안함인 경우
+             * 10초 의 대기 시간을 준다.
+             * 
+             * 해당 대기 시간 안에 접속하지 않은 경우,
+             * 해당 서버 미접속 유저들을 전부 afk 상태로 변경하여 새로운 라운드에 참여하지 않게 구현.
+             * 이때 게임 중 afk가 된 유저의 스코어 점수는 초기화 되지 않음.
+             * 
+             * 이후에 재참가 가능하도록. 대신 라운드 종료 후 점수 출력 시 기존과 동일하게 출력하면서 맨 마지막줄에 다음과 같은 문구를 추가함.
+             * 
+             * (붉은 색으로)afk 유저 : 닉네임, 닉네임, 닉네임
+             * 
+             * 이후 afk로 지정된 해당 유저가 다시 접속하여 /moc afk 유저이름 명령어를 통해 afk 상태에서 해제된 경우엔
+             * 현재 진행 중인 라운드를 제외한 다음 라운드부터 다시 능력 배정되며 게임에 참가됨.
+             * 
+             * 라운드 종료 후 사람 수를 체크할 때 서버에 신규 유저가 접속한 경우
+             * 해당 신규 유저를 afk 상태로 지정해둔게 아닌 이상 해당 신규 유저도 다음 라운드에 자동으로 추가되어 같이 게임하게 됨.
+             */
             @Override
             public void run() {
                 // 접속 끊긴 사람이 있는지 확인
@@ -690,7 +693,8 @@ afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
 
     // Yes, Re, Check 등은 AbilityManager로 위임하거나 여기서 처리
     public void playerReady(Player p) {
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
         if (!readyPlayers.contains(p.getUniqueId())) {
             readyPlayers.add(p.getUniqueId());
             p.sendMessage("§a[MOC] 준비 완료!");
@@ -705,7 +709,8 @@ afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
 
     // 능력 리롤.
     public void playerReroll(Player p) {
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
         // [▼▼▼ 추가됨: 이미 준비 완료(Yes)한 경우 리롤 차단 ▼▼▼]
         if (readyPlayers.contains(p.getUniqueId())) {
             p.sendMessage("§c[!] 준비 완료 후 능력을 바꿀 수 없습니다.");
@@ -718,7 +723,8 @@ afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
 
     // AbilityManager에게 현재 플레이어의 능력을 물어봐서 출력
     public void showAbilityDetail(Player p) {
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
         // (현재 구조상 AbilityManager가 담당하는게 맞음)
         if (abilityManager != null) {
             abilityManager.showAbilityDetail(p);
@@ -739,7 +745,8 @@ afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
     @EventHandler
     public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent e) {
         // 게임 중이 아니라면 검사하지 않고 통과시킵니다.
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
 
         // 플레이어가 설치하려는 블록의 종류를 확인합니다.
         org.bukkit.Material blockType = e.getBlock().getType();
@@ -758,7 +765,8 @@ afk 완성 시 `startRoundAfterDelay` 함수 수정 할 부분.
     @EventHandler
     public void onBucketEmpty(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
         // 게임 중이 아니라면 통과
-        if (!isRunning) return;
+        if (!isRunning)
+            return;
 
         // 플레이어가 들고 있는 양동이의 종류를 확인합니다.
         org.bukkit.Material bucketType = e.getBucket();

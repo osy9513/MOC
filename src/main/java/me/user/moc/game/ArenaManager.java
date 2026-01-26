@@ -10,8 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import java.util.List;
-import java.util.ArrayList;        // ArrayList를 사용하기 위해 필요합니다.
-import java.util.List;             // List를 사용하기 위해 필요합니다.
+import java.util.ArrayList; // ArrayList를 사용하기 위해 필요합니다.
+import java.util.List; // List를 사용하기 위해 필요합니다.
 import java.util.stream.Collectors; // 이름을 합치는 기능을 위해 필요합니다.
 
 public class ArenaManager {
@@ -21,7 +21,7 @@ public class ArenaManager {
     private Location gameCenter;
     private BukkitTask borderShrinkTask; // 자기장 및 진행 관련 타이머
     private BukkitTask borderDamageTask; // 대미지 체크 타이머
-    private BukkitTask generateTask;     // 맵 공사 타이머 (추가됨!)
+    private BukkitTask generateTask; // 맵 공사 타이머 (추가됨!)
     GameManager gm = GameManager.getInstance(MocPlugin.getInstance());
 
     public ArenaManager(MocPlugin plugin) {
@@ -35,7 +35,8 @@ public class ArenaManager {
     public void prepareArena(Location center) {
         this.gameCenter = center;
         World world = center.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
 
         // 1. [환경] 날씨 맑음, 시간 낮(1000)
         world.setStorm(false);
@@ -47,8 +48,8 @@ public class ArenaManager {
         // 2. [자기장] 기존 작업 종료 후, 설정값보다 2칸 작게 초기화
         stopTasks();
         // 게임이 끝나고 다시 시작할 때, 이전 게임의 '즉사 대미지' 설정이 남아있지 않게 안전하게 초기화/ 현재는 굳이 할 필요 없음.
-        //        world.getWorldBorder().setDamageBuffer(5.0);
-        //        world.getWorldBorder().setDamageAmount(0.2);
+        // world.getWorldBorder().setDamageBuffer(5.0);
+        // world.getWorldBorder().setDamageAmount(0.2);
         world.getWorldBorder().setCenter(center);
         world.getWorldBorder().setSize(config.map_size - 2);
 
@@ -64,7 +65,8 @@ public class ArenaManager {
     public void generateSquareFloor(Location center, int targetY) {
         this.gameCenter = center;
         World world = center.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
 
         // 1. 범위 계산 (map_size가 75라면 중심에서 양옆으로 37칸씩)
         int halfSize = config.map_size / 2;
@@ -90,7 +92,7 @@ public class ArenaManager {
                         clearManager.allCear();
 
                         // 플레이어들을 에메랄드 위로 소환
-                        if(config.spawn_tf){
+                        if (config.spawn_tf) {
                             Bukkit.getOnlinePlayers().forEach(p -> p.teleport(center.clone().add(0.5, 1.0, 0.5)));
                         }
                         this.cancel();
@@ -120,10 +122,52 @@ public class ArenaManager {
     }
 
     /**
+     * [전장 바닥 제거 기능 - 알렉스 능력 전용]
+     * 생성된 기반암 바닥을 모두 공기(AIR)로 제거합니다.
+     */
+    public void removeSquareFloor() {
+        if (this.gameCenter == null)
+            return;
+        World world = gameCenter.getWorld();
+        if (world == null)
+            return;
+
+        int targetY = gameCenter.getBlockY() - 1;
+        int halfSize = config.map_size / 2;
+        int cx = gameCenter.getBlockX();
+        int cz = gameCenter.getBlockZ();
+
+        // 한 번에 제거 (비동기 말고 동기로 처리해도 되지만, 양이 많으면 렉 유발 가능성 있음 -> 일단 루프 돌려서 제거)
+        // 알렉스 능력은 게임 중 발동되므로 Task로 나누는게 안전함.
+        new BukkitRunnable() {
+            int x = cx - halfSize;
+
+            @Override
+            public void run() {
+                for (int i = 0; i < 20; i++) {
+                    if (x > cx + halfSize) {
+                        this.cancel();
+                        return;
+                    }
+
+                    for (int z = cz - halfSize; z <= cz + halfSize; z++) {
+                        Block b = world.getBlockAt(x, targetY, z);
+                        if (b.getType() == Material.BEDROCK) {
+                            b.setType(Material.AIR, false);
+                        }
+                    }
+                    x++;
+                }
+            }
+        }.runTaskTimer(plugin, 0, 1);
+    }
+
+    /**
      * 자기장 좁아지기 및 최종 결전 시스템 (메시지 -> 7초 텔포 -> 1분 결투 -> 종료)
      */
     public void startBorderShrink() {
-        if (gameCenter == null) return;
+        if (gameCenter == null)
+            return;
         stopTasks(); // 중복 방지
 
         borderShrinkTask = new BukkitRunnable() {
@@ -157,7 +201,10 @@ public class ArenaManager {
 
                         @Override
                         public void run() {
-                            if (!gm.isRunning()) { this.cancel(); return; }
+                            if (!gm.isRunning()) {
+                                this.cancel();
+                                return;
+                            }
 
                             if (index < messages.length) {
                                 plugin.getServer().broadcastMessage(messages[index]);
@@ -188,7 +235,10 @@ public class ArenaManager {
 
             @Override
             public void run() {
-                if (!gm.isRunning()) { this.cancel(); return; }
+                if (!gm.isRunning()) {
+                    this.cancel();
+                    return;
+                }
 
                 if (timeLeft > 0) {
                     plugin.getServer().broadcastMessage("§e" + timeLeft);
@@ -221,7 +271,10 @@ public class ArenaManager {
 
             @Override
             public void run() {
-                if (!gm.isRunning()) { this.cancel(); return; }
+                if (!gm.isRunning()) {
+                    this.cancel();
+                    return;
+                }
 
                 if (battleTime <= 5 && battleTime > 0) {
                     plugin.getServer().broadcastMessage("§c[!] 최종 전투 종료까지 §e" + battleTime + "초");
@@ -256,9 +309,11 @@ public class ArenaManager {
      * 자기장 밖 대미지 처리를 시작합니다.
      */
     public void startBorderDamage() {
-        if (gameCenter == null) return;
+        if (gameCenter == null)
+            return;
         World world = gameCenter.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
 
         WorldBorder border = world.getWorldBorder();
 
@@ -269,7 +324,8 @@ public class ArenaManager {
         border.setDamageAmount(3.0);
 
         // 2. [메시지 알림 전용] 0.25초마다 검사하여 즉각 경고 메시지 전송
-        if (borderDamageTask != null) borderDamageTask.cancel(); // 중복 방지
+        if (borderDamageTask != null)
+            borderDamageTask.cancel(); // 중복 방지
 
         borderDamageTask = new BukkitRunnable() {
             @Override
@@ -278,10 +334,12 @@ public class ArenaManager {
                 Location center = border.getCenter();
 
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.getWorld().equals(world)) continue;
+                    if (!p.getWorld().equals(world))
+                        continue;
 
                     // 관전자는 무시
-                    if (p.getGameMode() == GameMode.SPECTATOR) continue;
+                    if (p.getGameMode() == GameMode.SPECTATOR)
+                        continue;
 
                     Location loc = p.getLocation();
                     // 3. [수학적 계산] 장벽 중심에서 플레이어의 거리가 장벽 반지름보다 큰지 확인
@@ -292,12 +350,15 @@ public class ArenaManager {
                         // p.damage(2.0); // (선택사항) 장벽 대미지가 약하다면 추가로 사용
 
                         // 액션바에 경고 표시 (메시지 도배 방지)
-                        p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!").color(net.kyori.adventure.text.format.NamedTextColor.RED).decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+                        p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!")
+                                .color(net.kyori.adventure.text.format.NamedTextColor.RED)
+                                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
                     }
                 }
             }
         }.runTaskTimer(plugin, 0, 5L); // 5틱(0.25초)마다 검사해서 반응 속도 4배 향상!
     }
+
     /**
      * 자기장 멈추기 및 모든 진행중인 타이머 강제 종료
      */
