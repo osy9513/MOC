@@ -31,7 +31,8 @@ public final class MocPlugin extends JavaPlugin {
         // [순서 1번!!] 명함부터 만듭니다.
         // 이게 다른 것들보다 뒤에 있으면, 다른 파일들이 명함을 찾으러 왔을 때 "명함 없는데요?" 라며 오류가 납니다.
         instance = this;
-
+        // 가장 먼저 설정 장부를 불러와야 합니다.
+        this.configManager = ConfigManager.getInstance();
         // [순서 3번] 나머지 관리자들을 차례대로 소환합니다.
         this.arenaManager = new ArenaManager(this);
         this.gameManager = new GameManager(this, arenaManager);
