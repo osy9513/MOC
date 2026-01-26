@@ -166,7 +166,7 @@ public class TrafalgarLaw extends Ability {
         roomCenters.put(p.getUniqueId(), p.getLocation().clone());
 
         // 2. 메시지 및 사운드
-        p.sendMessage("§bROOM.");
+        p.getServer().broadcastMessage("§b트라팔가 로우 : ROOM.");
 
         // [사운드] 바닐라 효과음 (기본)
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.5f);
@@ -212,13 +212,14 @@ public class TrafalgarLaw extends Ability {
      * 바닥 원 그리기
      */
     private void drawCircle(Location center, double radius) {
-        for (double a = 0; a < Math.PI * 2; a += Math.PI / 16) {
+        // [수정] 밀도 증가 (PI/16 -> PI/32)
+        for (double a = 0; a < Math.PI * 2; a += Math.PI / 32) {
             double x = Math.cos(a) * radius;
             double z = Math.sin(a) * radius;
             center.add(x, 0, z);
-            // 약간 더 짙은 파란색
+            // [수정] 크기 증가 (1.5f -> 2.0f)
             center.getWorld().spawnParticle(Particle.DUST, center, 1,
-                    new Particle.DustOptions(Color.fromRGB(0, 100, 200), 1.5f));
+                    new Particle.DustOptions(Color.fromRGB(0, 100, 200), 2.0f));
             center.subtract(x, 0, z);
         }
     }
@@ -228,7 +229,8 @@ public class TrafalgarLaw extends Ability {
      */
     // [수정] org.bukkit.util.Vector 명시적 사용
     private void drawRotatingSphere(Location center, double radius, double angleOffset) {
-        int points = 50; // 틱당 찍을 점의 개수 (너무 많으면 렉 유발)
+        // [수정] 점 개수 증가 (50 -> 100)
+        int points = 100;
         double phi = Math.PI * (3. - Math.sqrt(5.)); // 황금각
 
         for (int i = 0; i < points; i++) {
@@ -246,9 +248,14 @@ public class TrafalgarLaw extends Ability {
             org.bukkit.util.Vector vec = new org.bukkit.util.Vector(x, y * radius, z);
 
             center.add(vec);
-            // 밝은 하늘색
+            // [수정] 크기 증가 (1.0f -> 1.5f)
             center.getWorld().spawnParticle(Particle.DUST, center, 1,
-                    new Particle.DustOptions(Color.AQUA, 1.0f));
+                    new Particle.DustOptions(Color.AQUA, 1.5f));
+
+            // [추가] 가시성을 위해 END_ROD 파티클 섞기 (10개 중 1개 꼴)
+            if (i % 10 == 0) {
+                center.getWorld().spawnParticle(Particle.END_ROD, center, 1, 0, 0, 0, 0);
+            }
             center.subtract(vec);
         }
     }

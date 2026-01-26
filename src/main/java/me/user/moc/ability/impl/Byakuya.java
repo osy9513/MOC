@@ -1,23 +1,27 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.ability.Ability;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.*;
+import me.user.moc.ability.Ability;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 
 public class Byakuya extends Ability {
 
@@ -39,8 +43,7 @@ public class Byakuya extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§d전투 ● 쿠치키 뱌쿠야 (블리치)",
-                "§f철 검 우클릭 시 §d천본앵카게요시(千本桜景厳)§f를 전개합니다.",
-                "§f주변 30블럭 내에 벚꽃을 흩날리며 적을 섬멸합니다.");
+                "§f철 검 우클릭 시 §d만해(卍解)§f를 사용합니다.");
     }
 
     @Override
@@ -136,7 +139,7 @@ public class Byakuya extends Ability {
 
         // 3. 스킬 발동
         p.getServer().broadcast(
-                Component.text("쿠치키 바쿠야 : 흩날려라, 천본앵(千本桜).")
+                Component.text("쿠치키 바쿠야 : 흩날려라, 천본앵경엄.")
                         .color(TextColor.color(0xFFB6C1)));
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1.0f, 2.0f); // 칭!
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1.0f, 0.5f); // 웅장한 바람 소리

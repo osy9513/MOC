@@ -8,6 +8,9 @@ import me.user.moc.MocPlugin;
 import me.user.moc.game.GameManager;
 
 import java.util.List;
+import org.bukkit.Sound;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public abstract class Ability implements Listener {
     protected final JavaPlugin plugin;
@@ -43,6 +46,8 @@ public abstract class Ability implements Listener {
     protected final java.util.Map<java.util.UUID, Long> cooldowns = new java.util.HashMap<>();
     protected final java.util.Map<java.util.UUID, java.util.List<org.bukkit.entity.Entity>> activeEntities = new java.util.HashMap<>();
     protected final java.util.Map<java.util.UUID, java.util.List<org.bukkit.scheduler.BukkitTask>> activeTasks = new java.util.HashMap<>();
+    // [추가] 쿨타임 알림용 태스크 관리
+    protected final java.util.Map<java.util.UUID, BukkitTask> cooldownNotifyTasks = new java.util.HashMap<>();
 
     /**
      * [추가] 라운드가 시작되거나 게임이 리셋될 때 호출됩니다.
@@ -74,11 +79,38 @@ public abstract class Ability implements Listener {
             }
         }
         activeTasks.clear();
+
+        // 4. 예약된 쿨타임 알림 취소
+        for (BukkitTask t : cooldownNotifyTasks.values()) {
+            if (t != null && !t.isCancelled()) {
+                t.cancel();
+            }
+        }
+        cooldownNotifyTasks.clear();
     }
 
     // === [쿨타임 관련 헬퍼 메서드] ===
     protected void setCooldown(Player p, long seconds) {
         cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + (seconds * 1000));
+
+        // [추가] 기존 알림 취소
+        if (cooldownNotifyTasks.containsKey(p.getUniqueId())) {
+            cooldownNotifyTasks.get(p.getUniqueId()).cancel();
+        }
+
+        // [추가] 알림 스케줄링
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (p.isOnline()) {
+                    p.sendActionBar(net.kyori.adventure.text.Component.text("§a기술이 준비 되었습니다."));
+                    p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                }
+                cooldownNotifyTasks.remove(p.getUniqueId());
+            }
+        }.runTaskLater(plugin, seconds * 20L);
+
+        cooldownNotifyTasks.put(p.getUniqueId(), task);
     }
 
     protected boolean checkCooldown(Player p) {
@@ -104,6 +136,7 @@ public abstract class Ability implements Listener {
                     net.kyori.adventure.text.Component.text("§c쿨타임이 " + String.format("%.1f", left) + "초 남았습니다."));
             return false;
         }
+        // [수정] 자동 알림으로 변경되어 여기선 메시지 출력 제거 (true만 리턴)
         return true;
     }
 

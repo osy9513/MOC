@@ -39,9 +39,9 @@ public class Zenitsu extends Ability {
 
     @Override
     public List<String> getDescription() {
-        return Arrays.asList(
-                "§e검 우클릭 시 전방으로 초고속 돌진하며",
-                "§e경로상의 적을 벱니다. (벽력일섬)");
+        return List.of(
+                "§e전투 ● 아가츠마 젠이츠(귀멸의 칼날)",
+                "§f란사 델 렐람파고를 우클릭 시 전방에 발사합니다.");
     }
 
     @Override
