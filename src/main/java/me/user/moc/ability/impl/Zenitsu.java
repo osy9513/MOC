@@ -54,7 +54,7 @@ public class Zenitsu extends Ability {
         p.sendMessage("§f검을 들고 우클릭 시 §e벽력일섬(霹靂一閃)§f을 시전합니다.");
         p.sendMessage("§f전방 15블록을 순간 이동하며 경로상의 적에게 §c4칸의 피해§f를 입힙니다.");
         p.sendMessage("§f사용 직후 2초간 §b신속 3§f 버프를 얻습니다.");
-        p.sendMessage("§f쿨타임 : 15초");
+        p.sendMessage("§f쿨타임 : 4초");
     }
 
     @EventHandler
@@ -82,8 +82,8 @@ public class Zenitsu extends Ability {
     }
 
     private void useThunderclapAndFlash(Player p) {
-        // 쿨타임 설정 (15초)
-        setCooldown(p, 7);
+        // 쿨타임 설정 (4초)
+        setCooldown(p, 4);
 
         // 시전 메시지
         p.getServer().broadcastMessage("§e아가츠마 젠이츠 : 벽력일섬(霹靂一閃).");
@@ -119,6 +119,9 @@ public class Zenitsu extends Ability {
 
         // 텔레포트
         p.teleport(targetLoc);
+
+        // 순간이동 완료 후 원래 위치에 번개 소환
+        p.getWorld().strikeLightning(startLoc);
 
         // 파티클 (경로를 따라 생성)
         double distance = startLoc.distance(targetLoc);
