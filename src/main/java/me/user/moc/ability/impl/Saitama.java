@@ -1,6 +1,8 @@
 package me.user.moc.ability.impl;
 
+import me.user.moc.MocPlugin;
 import me.user.moc.ability.Ability;
+import me.user.moc.game.GameManager;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -94,6 +96,10 @@ public class Saitama extends Ability {
 
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
+        // [게임 상태 확인] 전투 시작 전에는 카운트 안 함
+        if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (!e.isSneaking())
             return; // 웅크릴 때만 카운트
         Player p = e.getPlayer();
@@ -102,6 +108,10 @@ public class Saitama extends Ability {
 
     @EventHandler
     public void onStat(PlayerStatisticIncrementEvent e) {
+        // [게임 상태 확인]
+        if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getStatistic() == Statistic.JUMP) {
             updateProgress(e.getPlayer(), 0, 1, 0);
         }
@@ -109,6 +119,10 @@ public class Saitama extends Ability {
 
     @EventHandler
     public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
+        // [게임 상태 확인]
+        if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         Player p = e.getPlayer();
 
         // 최적화: 블록이 변했을 때만 계산 (혹은 일정 거리 이상일 때만)

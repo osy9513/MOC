@@ -4,6 +4,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import me.user.moc.MocPlugin;
+import me.user.moc.game.GameManager;
+
 import java.util.List;
 
 public abstract class Ability implements Listener {
@@ -79,6 +82,16 @@ public abstract class Ability implements Listener {
     }
 
     protected boolean checkCooldown(Player p) {
+        // [게임 상태 확인] 전투 전에는 능력 사용 불가
+        MocPlugin moc = (MocPlugin) plugin;
+        GameManager gm = moc.getGameManager();
+
+        // 게임이 실행 중이 아니거나, 아직 무적(카운트다운) 상태라면
+        if (gm == null || !gm.isBattleStarted()) {
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c전투 시작 후에 사용할 수 있습니다."));
+            return false;
+        }
+
         if (!cooldowns.containsKey(p.getUniqueId()))
             return true; // 쿨타임 없음 (사용 가능)
 

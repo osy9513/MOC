@@ -74,6 +74,14 @@ public class GameManager implements Listener {
     }
 
     /**
+     * 전투가 실제로 시작되었는지 확인합니다.
+     * (게임이 실행 중이고, 무적/대기 시간이 끝난 상태)
+     */
+    public boolean isBattleStarted() {
+        return isRunning && !isInvincible;
+    }
+
+    /**
      * 다른 클래스(MocCommand)에서 특정 플레이어가 AFK인지 확인할 수 있게 해주는 함수입니다.
      */
     public boolean isAfk(String playerName) {

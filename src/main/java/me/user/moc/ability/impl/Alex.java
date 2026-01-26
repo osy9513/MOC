@@ -66,6 +66,10 @@ public class Alex extends Ability {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        // [게임 상태 확인] 전투 시작 전에는 해킹 불가
+        if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         Player p = e.getPlayer();
 
         // 1. 내 능력인지 확인
