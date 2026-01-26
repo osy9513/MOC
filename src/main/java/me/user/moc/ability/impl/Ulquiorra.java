@@ -99,22 +99,22 @@ public class Ulquiorra extends Ability {
                 return;
 
             // 쿨타임 설정 (20초)
-            setCooldown(p, 20);
+            setCooldown(p, 20); // 테스트 용
 
             // === [1단계: 시전 준비] ===
-            // 2. 구속 5 (Amplifier 4) 2초 (40 ticks)
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 4));
+            // 2. 구속 5 (Amplifier 4) 2초 -> 3초 (60 ticks)
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 4));
 
             // 3. 메시지 출력
             p.getServer().broadcastMessage("우르키오라 쉬퍼 : §2닫아라, 무르시엘라고");
 
-            // 4. 이펙트 (검녹색 연기) - 2초간 (기존보다 더 풍성하게)
+            // 4. 이펙트 (검녹색 연기) - 3초간
             org.bukkit.scheduler.BukkitTask chargeTask = new BukkitRunnable() {
                 int ticks = 0;
 
                 @Override
                 public void run() {
-                    if (ticks >= 40) {
+                    if (ticks >= 60) { // 시전 딜레이 3초
                         this.cancel();
                         return;
                     }
@@ -125,18 +125,24 @@ public class Ulquiorra extends Ability {
                     // 바닥에도 깔리게
                     p.getWorld().spawnParticle(Particle.DUST, p.getLocation(), 5, 0.5, 0.1, 0.5, dust);
 
+                    // [추가] 연기 나가는 효과음
+                    if (ticks % 4 == 0) {
+                        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 0.4f, 0.5f);
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BREEZE_CHARGE, 0.6f, 0.5f);
+                    }
+
                     ticks += 2;
                 }
             }.runTaskTimer(plugin, 0L, 2L);
             registerTask(p, chargeTask); // cleanup을 위해 등록
 
-            // === [2단계: 발사 (2초 후)] ===
+            // === [2단계: 발사 (3초 후)] ===
             org.bukkit.scheduler.BukkitTask launchTask = new BukkitRunnable() {
                 @Override
                 public void run() {
                     fireLanza(p);
                 }
-            }.runTaskLater(plugin, 40L); // 20 ticks = 1 sec -> 40 ticks = 2 sec
+            }.runTaskLater(plugin, 60L); // 60 ticks = 3 sec
             registerTask(p, launchTask);
         }
     }
@@ -152,11 +158,23 @@ public class Ulquiorra extends Ability {
         ItemDisplay projectile = p.getWorld().spawn(startLoc, ItemDisplay.class);
         projectile.setItemStack(new ItemStack(Material.TRIDENT));
 
-        // 크기 5배 (왕 큰 삼지창)
+        // [중요] 라운드 종료 시 삭제되도록 등록
+        registerSummon(p, projectile);
+
+        // [중앙 정렬] 아이템 디스플레이 타입을 FIXED로 설정하여 피벗을 중앙으로 맞춤
+        projectile.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+
+        // [크기 조정] 3배 크기
         Transformation transform = projectile.getTransformation();
-        transform.getScale().set(5.0f, 5.0f, 5.0f); // 5배 크기
-        // 회전 조절 - X축 90도 (눕히기)
-        transform.getLeftRotation().set(new AxisAngle4f((float) Math.toRadians(90), 1, 0, 0));
+        transform.getScale().set(3.0f, 3.0f, 3.0f);
+
+        // [회전 및 위치 보정]
+        // Y축 -90도에서 대각선이었다면, 45도 오차 보정 시도 -> -135도
+        transform.getLeftRotation().set(new AxisAngle4f((float) Math.toRadians(-135), 0, 1, 0));
+
+        // 모델의 중심이 소환 지점에 오도록 이동 (3배 크기에 맞춰 조정)
+        transform.getTranslation().set(0, 0, 0f);
+
         projectile.setTransformation(transform);
 
         // 끌려간 엔티티 목록 (중복 피격 방지 + 폭발 시 데미지 대상)
@@ -251,8 +269,8 @@ public class Ulquiorra extends Ability {
                 for (Entity e : draggedEntities) {
                     if (e.isValid() && !e.isDead()) {
                         Location target = currentLoc.clone();
-                        // 끌려갈 때 살짝 뒤에 위치하게 (시각적 개선)
-                        target.subtract(currentDir.clone().multiply(1.0));
+                        // 끌려갈 때 삼지창 끝부분에 위치하도록 뒤로 밀기
+                        target.subtract(currentDir.clone().multiply(1.5));
                         target.setYaw(e.getLocation().getYaw());
                         target.setPitch(e.getLocation().getPitch());
                         e.teleport(target);
@@ -273,13 +291,21 @@ public class Ulquiorra extends Ability {
                 // 검녹색 연기 옵션
                 Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(0, 50, 0), 2.0f);
 
+                // [수정] 파티클을 전체적으로 뒤로 밀어서 생성 (Offset)
+                // 현재 이동 방향(vector)의 반대 방향으로 약간 밀어줌 -> 창이 먼저 가고 연기가 따라가는 효과
+                Vector offset = vector.clone().normalize().multiply(-0.5);
+
                 for (int i = 0; i <= points; i++) {
                     double fraction = (double) i / points;
                     Location point = start.clone().add(vector.clone().multiply(fraction));
+
+                    // 오프셋 적용
+                    point.add(offset);
+
                     // 메인 줄기
                     point.getWorld().spawnParticle(Particle.DUST, point, 3, 0.3, 0.3, 0.3, dust);
-                    // 주변에 흩날리는 효과
-                    point.getWorld().spawnParticle(Particle.ASH, point, 2, 0.5, 0.5, 0.5, 0);
+                    // 삼지창 주변으로 좀 더 넓게 퍼지는 연기
+                    point.getWorld().spawnParticle(Particle.ASH, point, 2, 0.6, 0.6, 0.6, 0.01);
                 }
             }
 
@@ -296,7 +322,7 @@ public class Ulquiorra extends Ability {
         // 2. 데미지 처리 (수정됨: 40 -> 20)
         for (Entity e : targets) {
             if (e instanceof LivingEntity living) {
-                applyTrueDamage(living, 20); // 20 데미지 (하트 10칸)
+                applyTrueDamage(living, 0); // 5뎀
             }
         }
     }
