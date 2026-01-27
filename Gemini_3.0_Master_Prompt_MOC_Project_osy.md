@@ -3,7 +3,7 @@
 ## [V] Metadata & Versioning
 - **Project Name:** MOC (Minecraft Of Characters)
 - **Prompt Version:** 1.1.0 (Code-Based System Update)
-- **Last Updated:** 2026-01-27 v.4
+- **Last Updated:** 2026-01-27 v.5
 - **Target Model:** Gemini 3.0 Pro
 - **Environment:** Spigot/Paper API (Java 21, Minecraft 1.21.11)
 
