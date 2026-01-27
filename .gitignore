@@ -1,15 +1,29 @@
-# 디폴트 무시된 파일
+# [▼▼▼ 여기서부터 변경됨 ▼▼▼]
+
+## --- 인텔리제이 및 에디터 관련 ---
+.idea/
+*.iml
+*.iws
+*.ipr
 /shelf/
 /workspace.xml
-# 쿼리 파일을 포함한 무시된 디폴트 폴더
 /queries/
-# Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
-# 에디터 기반 HTTP 클라이언트 요청
 /httpRequests/
 
-# 빌드 관련
-/build/*
-/out/*
+## --- 빌드 및 컴파일 결과물 (가장 중요!) ---
+# 컴퓨터가 자동으로 만드는 파일들이라 깃에 올릴 필요가 없습니다.
+build/
+bin/
+out/
+.gradle/
+gradle/build-results/
 *.class
+
+## --- 로그 및 운영체제 임시 파일 ---
+*.log
+.DS_Store
+Thumbs.db
+
+# [▲▲▲ 여기까지 변경됨 ▲▲▲]
