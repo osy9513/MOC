@@ -13,3 +13,9 @@
 /build/*
 /out/*
 *.class
+/.vscode
+/.idea
+/.gradle
+/.minecraft
+/.minecraft-server
+/.minecraft-server/plugins
