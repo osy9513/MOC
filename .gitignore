@@ -26,4 +26,7 @@ gradle/build-results/
 .DS_Store
 Thumbs.db
 
-# [▲▲▲ 여기까지 변경됨 ▲▲▲]
+## --- 기타 로컬 설정 (VSCode, Minecraft) ---
+.vscode/
+.minecraft/
+.minecraft-server/
