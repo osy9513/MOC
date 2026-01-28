@@ -40,9 +40,9 @@ public class Ulquiorra extends Ability {
 
     @Override
     public List<String> getDescription() {
-        List<String> lore = new ArrayList<>();
-        lore.add("§f란사 델 렐람파고를 우클릭 시 전방에 발사합니다.");
-        return lore;
+        return List.of(
+                "§a전투 ● 우르키오라 쉬퍼(블리치)",
+                "§f란사 델 렐람파고를 우클릭 시 전방에 발사합니다.");
     }
 
     @Override

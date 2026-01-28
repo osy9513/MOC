@@ -57,6 +57,9 @@ public class AbilityManager {
         addAbility(new Meliodas(plugin)); // 멜리오다스 등록
         addAbility(new Ulquiorra(plugin)); // 우르키오라 쉬퍼 등록
         addAbility(new TrafalgarLaw(plugin)); // 트라팔가 로우 등록
+        addAbility(new CuChulainn(plugin)); // 쿠 훌린 등록
+        addAbility(new Naruto(plugin)); // 나루토 등록
+        addAbility(new Inuyasha(plugin)); // 이누야샤 등록
     }
 
     private void addAbility(Ability ability) {
@@ -130,67 +133,14 @@ public class AbilityManager {
         p.sendMessage("§f ");
         p.sendMessage("§e=== 당신의 능력은 ===");
 
-        // 능력 이름에 따라 서로 다른 설명을 출력합니다.
-        // 유틸, 전투, 복합 3개로만 구분할 예정
-        switch (abilityCode) {
-            case "001" -> {
-                p.sendMessage("§a유틸 ● 우에키(우에키의 법칙/배틀짱)");
-                p.sendMessage("§f묘목을 우클릭 시 주변에 떨어진 쓰레기들을 전부 나무로 변경한다.");
+        // [수정] 하드코딩 제거 -> 각 능력 파일의 getDescription() 활용
+        Ability ability = abilities.get(abilityCode);
+        if (ability != null) {
+            for (String line : ability.getDescription()) {
+                p.sendMessage(line);
             }
-            case "002" -> {
-                p.sendMessage("§c전투 ● 올라프(리그 오브 레전드)");
-                p.sendMessage("§f도끼(눈덩이)를 던져 적에게 강력한 고정 피해를 입힌다.");
-            }
-            case "003" -> {
-                p.sendMessage("§유틸 ● 미다스(그리스 신화)");
-                p.sendMessage("§f금괴로 블록을 우클릭하면 황금 블록으로 변환시킨다.");
-            }
-            case "004" -> {
-                p.sendMessage("§b복합 ● 매그너스(이터널 리턴)");
-                p.sendMessage("§f오토바이를 소환하여 전방으로 돌진 후 자폭한다.");
-            }
-            case "005" -> {
-                p.sendMessage("§c전투 ● 사이타마(원펀맨)");
-                p.sendMessage("§f사이타마 운동법을 완료하면 매우 강력해집니다.");
-            }
-            case "006" -> {
-                p.sendMessage("§c전투 ● 란가(전생슬라임)");
-                p.sendMessage("§f란가를 소환하여 적에게 강력한 고정 피해를 입힌다.");
-            }
-            case "011" -> {
-                p.sendMessage("§a전투 ● 람머스(롤)");
-                p.sendMessage("§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
-            }
-            case "013" -> {
-                p.sendMessage("§d전투 ● 쿠치키 뱌쿠야(블리치)");
-                p.sendMessage("§f철 검 우클릭 시 만해를 사용하여 광역 피해를 입힙니다.");
-            }
-            case "015" -> {
-                p.sendMessage("§a유틸 ● 금도끼 은도끼(이솝 우화/나무꾼과 헤르메스)");
-                p.sendMessage("§f도끼를 물에 빠트리면 도끼가 랜덤한 확률로 변합니다.");
-            }
-            case "020" -> {
-                p.sendMessage("§a유틸 ● 알렉스(이터널 리턴)");
-                p.sendMessage("§f에메랄드 시스템을 해킹하여 기반암을 제거합니다.");
-            }
-            case "021" -> {
-                p.sendMessage("§e전투 ● 아가츠마 젠이츠(귀멸의 칼날)");
-                p.sendMessage("§f검 우클릭 시 전방으로 초고속 돌진하며 적을 벱니다.");
-            }
-            case "022" -> {
-                p.sendMessage("§d전투 ● 멜리오다스(일곱 개의 대죄)");
-                p.sendMessage("§f검 우클릭 유지 시 받은 피해를 2배로 돌려줍니다.");
-            }
-            case "010" -> {
-                p.sendMessage("§a전투 ● 우르키오라 쉬퍼(블리치)");
-                p.sendMessage("§f란사 델 렐람파고를 우클릭 시 전방에 발사합니다.");
-            }
-            case "023" -> {
-                p.sendMessage("§c전투 ● 트라팔가 로우(원피스)");
-                p.sendMessage("§fROOM을 전개하여 대상과 위치를 바꾸고 절단합니다.");
-            }
-
-            default -> p.sendMessage("§7등록되지 않은 능력입니다.");
+        } else {
+            p.sendMessage("§7등록되지 않은 능력입니다.");
         }
 
         p.sendMessage("§f ");

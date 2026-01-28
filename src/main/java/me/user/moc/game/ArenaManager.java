@@ -15,8 +15,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 import me.user.moc.MocPlugin;
 import me.user.moc.config.ConfigManager;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ArenaManager {
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntitySpawnEvent;
+
+public class ArenaManager implements Listener {
     private final MocPlugin plugin;
     private final ConfigManager config = ConfigManager.getInstance();
     private final ClearManager clearManager;
@@ -29,6 +35,24 @@ public class ArenaManager {
     public ArenaManager(MocPlugin plugin) {
         this.plugin = plugin;
         this.clearManager = new ClearManager(plugin);
+        plugin.getServer().getPluginManager().registerEvents(this, plugin); // 이벤트 리스너 등록
+    }
+
+    // [이벤트] 자기장 밖 몬스터 소환 금지
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent e) {
+        if (gameCenter == null || e.getEntity() instanceof Player)
+            return;
+
+        WorldBorder border = gameCenter.getWorld().getWorldBorder();
+        double size = border.getSize() / 2.0; // 반지름
+        Location center = border.getCenter();
+        Location loc = e.getLocation();
+
+        // 자기장 밖이면 스폰 취소
+        if (Math.abs(loc.getX() - center.getX()) > size || Math.abs(loc.getZ() - center.getZ()) > size) {
+            e.setCancelled(true);
+        }
     }
 
     public void setGameManager(GameManager gm) {
@@ -174,7 +198,10 @@ public class ArenaManager {
     public void startBorderShrink() {
         if (gameCenter == null)
             return;
-        stopTasks(); // 중복 방지
+        // stopTasks(); // [수정] 이거 때문에 대미지/청소 태스크가 멈췄음! 주석 처리 또는 개별 취소로 변경.
+        if (borderShrinkTask != null) {
+            borderShrinkTask.cancel();
+        }
 
         borderShrinkTask = new BukkitRunnable() {
             @Override
@@ -226,7 +253,24 @@ public class ArenaManager {
                 }
 
                 // 아직 5보다 크다면 계속 2씩 줄여나갑니다.
-                gameCenter.getWorld().getWorldBorder().setSize(size - 2, 1);
+                gameCenter.getWorld().getWorldBorder().setSize(size - 2);
+
+                // [추가] 자기장이 줄어들 때 밖의 생명체들 확실히 제거 (요청사항 반영)
+                double currentRadius = (size - 2) / 2.0;
+                Location center = gameCenter.getWorld().getWorldBorder().getCenter();
+                for (org.bukkit.entity.LivingEntity entity : gameCenter.getWorld().getLivingEntities()) {
+                    if (entity instanceof Player)
+                        continue;
+                    if (!entity.isValid())
+                        continue;
+
+                    Location loc = entity.getLocation();
+                    if (Math.abs(loc.getX() - center.getX()) > currentRadius + 0.5
+                            || Math.abs(loc.getZ() - center.getZ()) > currentRadius + 0.5) {
+                        entity.setHealth(0);
+                        entity.remove();
+                    }
+                }
             }
         }.runTaskTimer(plugin, 0, 60L);
     }
@@ -334,11 +378,14 @@ public class ArenaManager {
             borderDamageTask.cancel(); // 중복 방지
 
         borderDamageTask = new BukkitRunnable() {
+            int tickCount = 0; // [최적화] 엔티티 청소 주기 관리용 카운터
+
             @Override
             public void run() {
                 double size = border.getSize() / 2.0;
                 Location center = border.getCenter();
 
+                // 1. 플레이어 대미지 및 경고 처리 (기존 로직 유지 - 0.25초마다 실행)
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (!p.getWorld().equals(world))
                         continue;
@@ -350,15 +397,44 @@ public class ArenaManager {
                     Location loc = p.getLocation();
                     // 3. [수학적 계산] 장벽 중심에서 플레이어의 거리가 장벽 반지름보다 큰지 확인
                     if (Math.abs(loc.getX() - center.getX()) > size || Math.abs(loc.getZ() - center.getZ()) > size) {
-
-                        // 직접 대미지를 주는 코드는 주석 처리하거나 보조용으로만 씁니다.
-                        // 왜냐하면 위에서 설정한 border.setDamageAmount가 훨씬 정확하게 때려줍니다.
-                        // p.damage(2.0); // (선택사항) 장벽 대미지가 약하다면 추가로 사용
-
                         // 액션바에 경고 표시 (메시지 도배 방지)
                         p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!")
                                 .color(net.kyori.adventure.text.format.NamedTextColor.RED)
                                 .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+                    }
+                }
+
+                // 2. [추가] 자기장 밖 생명체(플레이어 제외) 삭제 처리 (1초마다 실행)
+                if (tickCount++ % 4 == 0) {
+                    int removedCount = 0;
+                    // [중요] ConcurrentModificationException 방지를 위해 리스트 복사본 사용
+                    List<org.bukkit.entity.LivingEntity> entities = new ArrayList<>(world.getLivingEntities());
+
+                    for (org.bukkit.entity.LivingEntity entity : entities) {
+                        // 플레이어는 건드리지 않음
+                        if (entity instanceof Player)
+                            continue;
+                        if (!entity.isValid())
+                            continue; // 이미 죽거나 소멸된 엔티티 패스
+
+                        Location loc = entity.getLocation();
+                        // 자기장 밖인지 검사 (약간의 여유 0.5칸 줌)
+                        if (Math.abs(loc.getX() - center.getX()) > size + 0.5
+                                || Math.abs(loc.getZ() - center.getZ()) > size + 0.5) {
+                            // [수정] 확실한 제거를 위해 체력을 0으로 만들어 '사망' 처리 후 삭제
+                            entity.setHealth(0);
+                            entity.remove();
+                            removedCount++;
+                        }
+                    }
+
+                    // 디버깅용 로그 (10초에 한번만 출력)
+                    if (removedCount > 0) {
+                        plugin.getLogger()
+                                .info("[ArenaManager] 자기장 밖 생명체 " + removedCount + "마리 처형됨. (현재 반지름: " + size + ")");
+                    } else if (tickCount % 40 == 0) {
+                        // 작동 확인용 로그
+                        // plugin.getLogger().info("[ArenaManager] 생명체 스캔 중... (반지름: " + size + ")");
                     }
                 }
             }

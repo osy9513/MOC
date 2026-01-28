@@ -15,7 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,9 +41,9 @@ public class GoldSilverAxe extends Ability {
 
     @Override
     public List<String> getDescription() {
-        List<String> list = new ArrayList<>();
-        list.add("도끼를 물에 빠트리면 도끼가 랜덤한 확률로 변합니다.");
-        return list;
+        return Arrays.asList(
+                "§a유틸 ● 금도끼 은도끼(이솝 우화/나무꾼과 헤르메스)",
+                "§f도끼를 물에 빠트리면 산신령이 나타나 도끼를 건네줍니다.");
     }
 
     @Override

@@ -39,8 +39,9 @@ public class Alex extends Ability {
 
     @Override
     public List<String> getDescription() {
-        return Arrays.asList(
-                "§f맨손으로 에메랄드를 20초간 해킹하면",
+        return List.of(
+                "유틸 ● 알렉스(이터널 리턴)",
+                "§f에메랄드 블럭을 20초간 해킹하면",
                 "§f전장의 기반암이 전부 사라집니다.");
     }
 

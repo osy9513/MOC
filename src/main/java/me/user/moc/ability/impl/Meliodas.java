@@ -50,8 +50,8 @@ public class Meliodas extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§e검 우클릭 유지 시(최대 3초) 받은 피해를",
-                "§e2배로 증폭하여 되돌려줍니다. (풀 카운터)");
+                "§e전투 ● 멜리오다스 (일곱 개의 대죄)",
+                "§f받은 피해를 2배로 증폭하여 되돌려줍니다.");
     }
 
     @Override

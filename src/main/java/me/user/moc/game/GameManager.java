@@ -43,6 +43,7 @@ public class GameManager implements Listener {
     private int round = 0;
     // 태스크 관리 (타이머)
     private BukkitTask selectionTask; // 능력 추첨 타이머
+    private BukkitTask startGameTask; // [추가] 게임 시작 카운트다운 타이머
 
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
@@ -106,6 +107,11 @@ public class GameManager implements Listener {
             return;
         }
 
+        // [버그 수정] 이전에 예약된 시작 태스크가 있다면 취소 (빠른 재시작 방지)
+        if (startGameTask != null && !startGameTask.isCancelled()) {
+            startGameTask.cancel();
+        }
+
         isRunning = true;
         round = 0;
         scores.clear();
@@ -118,6 +124,7 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§e=== 마인크래프트 오브 캐릭터즈 (버전 0.1.1) ===");
+        Bukkit.broadcastMessage("§e=== 제작 : 원크, 알아서해 ===");
         Bukkit.broadcastMessage("§f기본 체력: 3줄(60칸)");
         Bukkit.broadcastMessage("§f기본 지급: 철칼, 구운 소고기64개, 물 양동이, 유리10개, 재생포션, 철 흉갑");
 
@@ -140,7 +147,7 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§e========================================");
 
         // 1-2. 2초 뒤 라운드 시작
-        new BukkitRunnable() {
+        startGameTask = new BukkitRunnable() {
             @Override
             public void run() {
                 startRound();
@@ -453,11 +460,22 @@ public class GameManager implements Listener {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
             return;
         }
+
+        // [버그 수정] 예약된 시작 태스크가 있다면 취소
+        if (startGameTask != null && !startGameTask.isCancelled()) {
+            startGameTask.cancel();
+        }
+
         if (selectionTask != null)
             selectionTask.cancel();
         arenaManager.stopTasks(); // 자기장 등 정지
         // 자기장=월드보더 초기화. 클리어매니저에서 가져옴
         plugin.getClearManager().worldBorderCear();
+
+        // [버그 수정] 능력 관련 엔티티(소환수, 투사체 등) 모두 제거
+        if (abilityManager != null) {
+            abilityManager.resetAbilities();
+        }
 
         // 점수 내림차순 정렬 및 출력
         List<Map.Entry<UUID, Integer>> sortedScores = new ArrayList<>(scores.entrySet());

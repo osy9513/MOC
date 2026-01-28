@@ -26,9 +26,9 @@ public class Saitama extends Ability {
     // private static final int GOAL_SNEAK = 500;
     // private static final int GOAL_JUMP = 500;
     // private static final int GOAL_DIST_CM = 50000; // 500 blocks = 50000 cm
-    private static final int GOAL_SNEAK = 1;
-    private static final int GOAL_JUMP = 1;
-    private static final int GOAL_DIST_CM = 100; // 500 blocks = 50000 cm
+    private static final int GOAL_SNEAK = 300;
+    private static final int GOAL_JUMP = 300;
+    private static final int GOAL_DIST_CM = 30000; // 500 blocks = 50000 cm
     private final Map<UUID, SaitamaProgress> progressMap = new HashMap<>();
 
     @Override
@@ -61,11 +61,11 @@ public class Saitama extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 사이타마(원펀맨)");
-        p.sendMessage("웅크리기(쉬프트) 연타 500번,\n" +
+        p.sendMessage("웅크리기(쉬프트) 연타 300번,\n" +
                 "\n" +
-                "점프(스페이스바) 연타 500번,\n" +
+                "점프(스페이스바) 연타 300번,\n" +
                 "\n" +
-                "블럭 이동 500블럭,\n" +
+                "블럭 이동 300블럭,\n" +
                 "\n" +
                 "위 3개의 조건을 완료하면\n" +
                 "\n" +
@@ -187,20 +187,20 @@ public class Saitama extends Ability {
 
     private void awaken(Player p) {
         // 1. 메시지 & 사운드
-        Bukkit.broadcast(Component.text("§c§l[MOC] §f" + p.getName() + " : 취미로 히어로를 하는 사람이다."));
+        Bukkit.broadcast(Component.text("§f사이타마 : 취미로 히어로를 하는 사람이다."));
         // 웅장한 소리
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1f, 1f);
         p.getWorld().playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
 
         // 2. 버프 부여
         // 힘V (Strength)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 3));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 4));
         // 이속V (Speed)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 3));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 4));
         // 저항V (Resistance)
         p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, PotionEffect.INFINITE_DURATION, 3));
         // 성급함V (Haste)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 3));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4));
     }
 
     private static class SaitamaProgress {

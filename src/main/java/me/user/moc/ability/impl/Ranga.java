@@ -43,7 +43,7 @@ public class Ranga extends Ability {
     @Override
     public List<String> getDescription() {
         return List.of(
-                "§c전투 ● 란가(전생슬)",
+                "§c전투 ● 란가(전생했더니슬라임이었던건에대하여)",
                 "§f라운드 시작 시 든든한 늑대 '란가'를 소환합니다.",
                 "§f란가는 강력한 전투력과 번개 능력을 가졌습니다.");
     }

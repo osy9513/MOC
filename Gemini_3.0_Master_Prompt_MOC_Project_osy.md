@@ -3,7 +3,7 @@
 ## [V] Metadata & Versioning
 - **Project Name:** MOC (Minecraft Of Characters)
 - **Prompt Version:** 1.1.0 (Code-Based System Update)
-- **Last Updated:** 2026-01-27 v.4
+- **Last Updated:** 2026-01-27 v.6
 - **Target Model:** Gemini 3.0 Pro
 - **Environment:** Spigot/Paper API (Java 21, Minecraft 1.21.11)
 
@@ -77,3 +77,22 @@
 - **MC Version:** 1.21.11
 - **Java Version:** 21
 - **Plugin Version:** 0.1.1
+
+---
+오승엽 커밋 메세지를 형태를 기억하기.
+
+사용자가 커밋 메세지 만들어 줘라고 말하면, 
+Git 스테이징된 변경 사항을 확인하여
+아래 오승엽 커밋 방식 형식에 맞춰서 markdown 형식으로 블록 처리하여 메세지를 보내줘야함.
+
+[제목]
+- 기능 작업 -
+신규 기능 구현
+   ㄴ 파일명 - 상세 내용
+기존 기능 수정
+   ㄴ 파일명 - 상세 내용
+- 능력 작업 - 
+신규 능력 구현 
+   ㄴ 능력명 - 상세 내용
+기존 능력 수정
+   ㄴ 능력명 - 상세 내용
