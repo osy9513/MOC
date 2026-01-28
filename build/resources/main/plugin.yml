@@ -1,7 +1,0 @@
-name: MocPlugin
-version: '1.0-SNAPSHOT'
-main: me.user.moc.MocPlugin
-api-version: '1.21'
-commands:
-  moc:
-    description: MOC 플러그인 메인 명령어
