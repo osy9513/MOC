@@ -5,19 +5,16 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Zombie;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.reflect.Method; // [필수] 리플렉션 도구
 import java.util.List;
 
 public class Naruto extends Ability {
@@ -48,19 +45,26 @@ public class Naruto extends Ability {
     public void giveItem(Player p) {
         ItemStack item = new ItemStack(Material.ORANGE_BANNER);
         var meta = item.getItemMeta();
-        meta.setDisplayName("§6금술 두루마리");
-        meta.setLore(List.of("§7우클릭 시 다중 그림자 분신술을 사용합니다."));
-        item.setItemMeta(meta);
+        if (meta != null) {
+            meta.setDisplayName("§6금술 두루마리");
+            meta.setLore(List.of("§7우클릭 시 다중 그림자 분신술을 사용합니다."));
+            item.setItemMeta(meta);
+        }
         p.getInventory().addItem(item);
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e[나루토] §f다중 그림자 분신술");
-        p.sendMessage("§7- 금술 두루마리 우클릭 시 분신 12명을 소환합니다.");
-        p.sendMessage("§7- 분신은 좀비 AI를 가지며, 사용자를 제외한 모든 생명체를 공격합니다.");
-        p.sendMessage("§7- 분신은 죽기 전까지 사라지지 않습니다.");
-        p.sendMessage("§7- 쿨타임: 30초");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§e복합 ㆍ 나루토(나루토)");
+        p.sendMessage("금술 두루마리를 우클릭하여 '다중 그림자 분신술'을 사용합니다.");
+        p.sendMessage("플레이어와 동일한 모습의 분신 12명을 즉시 소환하여 전장을 장악합니다.");
+        p.sendMessage("분신은 적을 추격하여 공격하며, 파괴되기 전까지 계속해서 적을 압박합니다.");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 30초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 금술 두루마리(오렌지색 현수막)");
+        p.sendMessage("장비 제거 : 없음");
     }
 
     @EventHandler
@@ -83,100 +87,78 @@ public class Naruto extends Ability {
     }
 
     private void spawnClones(Player p) {
-        p.sendMessage("§e나루토 : 다중 그림자 분신술!");
+        p.getServer().broadcastMessage("§e나루토 : 다중 그림자 분신술!");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 0.5f);
 
-        // 연기 효과 (2초간)
+        // 연기 효과
         new BukkitRunnable() {
             int count = 0;
 
             @Override
             public void run() {
-                if (count >= 40) { // 2초
+                if (count >= 10) {
                     this.cancel();
                     return;
                 }
-                p.getWorld().spawnParticle(Particle.CLOUD, p.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.05);
-                count += 2;
+                p.getWorld().spawnParticle(Particle.CLOUD, p.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.02);
+                count++;
             }
         }.runTaskTimer(plugin, 0L, 2L);
 
-        // 분신 12명 소환
+        // 12명의 분신 소환
         for (int i = 0; i < 12; i++) {
-            Zombie clone = (Zombie) p.getWorld().spawnEntity(p.getLocation(), EntityType.ZOMBIE);
+            double offsetX = (Math.random() - 0.5) * 6;
+            double offsetZ = (Math.random() - 0.5) * 6;
+            org.bukkit.Location spawnLoc = p.getLocation().add(offsetX, 0, offsetZ);
+            spawnLoc.setY(p.getWorld().getHighestBlockYAt(spawnLoc) + 1);
 
-            // 기본 설정
-            clone.setAdult();
-            clone.setCustomName("§e나루토의 분신");
+            Mannequin clone = (Mannequin) p.getWorld().spawnEntity(spawnLoc, EntityType.MANNEQUIN);
+
+            // [▼▼▼ 리플렉션 적용: 빨간 줄 완전 제거 ▼▼▼]
+            // VS Code가 ResolvableProfile을 못 찾아도, 실행 시점에 강제로 주입합니다.
+            try {
+                // 1. 플레이어의 프로필 가져오기 (반환 타입이 무엇이든 Object로 받음)
+                Object profile = p.getPlayerProfile();
+
+                // 2. 마네킹의 'setProfile' 메서드를 이름으로 찾기
+                Method setProfileMethod = null;
+                for (Method m : clone.getClass().getMethods()) {
+                    // setProfile 혹은 setPlayerProfile 이름이 있으면 채택
+                    if (m.getName().equals("setProfile") || m.getName().equals("setPlayerProfile")) {
+                        setProfileMethod = m;
+                        break;
+                    }
+                }
+
+                // 3. 메서드 실행 (프로필 주입)
+                if (setProfileMethod != null) {
+                    setProfileMethod.invoke(clone, profile);
+                }
+            } catch (Exception ex) {
+                // 실패 시 로그 없이 넘어감 (기본 스킨)
+                // 필요 시: p.sendMessage("§c스킨 적용 실패");
+            }
+            // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+
+            clone.setCustomName(p.getName());
             clone.setCustomNameVisible(false);
             clone.setMetadata("NarutoOwner", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
-            clone.setCanPickupItems(false);
 
-            // 능력치 조정
-            clone.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(3.0);
-
-            // [수정] 장비 복제 (머리, 갑옷, 양손)
-            // 갑옷 복사
-            ItemStack[] armorContents = p.getInventory().getArmorContents();
-            ItemStack[] cloneArmor = new ItemStack[4];
-            for (int j = 0; j < 4; j++) {
-                if (armorContents[j] != null)
-                    cloneArmor[j] = armorContents[j].clone();
+            if (clone.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
+                clone.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(4.0);
             }
-            clone.getEquipment().setArmorContents(cloneArmor);
 
-            // 머리는 플레이어 스킨 강제 적용 (헬멧이 덮어씌워질 수 있으므로 확인 필요하지만, 요청상 스킨 머리가 중요하면 헬멧 자리에 덮어씀)
-            // 사용자 요청: "내 캐릭터가 여러명 소환되는 것" -> 갑옷을 입고 있다면 갑옷을 입는게 더 비슷함.
-            // 하지만 얼굴 식별을 위해 헬멧 대신 머리를 씌우길 원할 수도 있음.
-            // 여기서는 "내 캐릭터(장비 포함)"를 원했으므로 갑옷을 우선하되, 헬멧이 없다면 머리를 씌우는 식으로?
-            // 아니면 그냥 플레이어 머리를 씌우고 나머지만 갑옷?
-            // 보통 "분신"은 얼굴이 보여야 하므로 헬멧 자리에 머리를 씌우고 나머지 갑옷을 입히는게 가장 분신다움.
+            // 장비 복제
+            clone.getEquipment().setArmorContents(p.getInventory().getArmorContents());
+            clone.getEquipment().setItemInMainHand(p.getInventory().getItemInMainHand());
+            clone.getEquipment().setItemInOffHand(p.getInventory().getItemInOffHand());
 
-            ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta skullMeta = (SkullMeta) head.getItemMeta();
-            skullMeta.setOwningPlayer(p);
-            head.setItemMeta(skullMeta);
-            clone.getEquipment().setHelmet(head); // 헬멧은 항상 머리로 고정
-
-            // 손 아이템 복사
-            if (p.getInventory().getItemInMainHand() != null)
-                clone.getEquipment().setItemInMainHand(p.getInventory().getItemInMainHand().clone());
-            if (p.getInventory().getItemInOffHand() != null)
-                clone.getEquipment().setItemInOffHand(p.getInventory().getItemInOffHand().clone());
-
-            clone.getEquipment().setHelmetDropChance(0f);
-            clone.getEquipment().setChestplateDropChance(0f);
-            clone.getEquipment().setLeggingsDropChance(0f);
-            clone.getEquipment().setBootsDropChance(0f);
-            clone.getEquipment().setItemInMainHandDropChance(0f);
-            clone.getEquipment().setItemInOffHandDropChance(0f);
-
-            // 타겟팅 AI (모든 생명체 공격)
-            startAI(p, clone);
-
-            // 통합 관리 등록
+            startCloneAI(p, clone);
             registerSummon(p, clone);
         }
     }
 
-    /**
-     * [중요] 분신이 주인을 공격하지 못하도록 막는 이벤트
-     */
-    @EventHandler
-    public void onTarget(org.bukkit.event.entity.EntityTargetLivingEntityEvent e) {
-        if (e.getEntity() instanceof Zombie zombie && e.getTarget() instanceof Player targetPlayer) {
-            // 이 좀비가 나루토 분신인지 확인
-            if (zombie.hasMetadata("NarutoOwner")) {
-                String ownerUUID = zombie.getMetadata("NarutoOwner").get(0).asString();
-                // 타겟이 주인이라면 공격 취소
-                if (targetPlayer.getUniqueId().toString().equals(ownerUUID)) {
-                    e.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    private void startAI(Player owner, Zombie clone) {
+    private void startCloneAI(Player owner, Mannequin clone) {
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -185,28 +167,37 @@ public class Naruto extends Ability {
                     return;
                 }
 
-                // 타겟이 없거나 죽었으면 새로운 타겟 탐색
-                if (clone.getTarget() == null || clone.getTarget().isDead() || clone.getTarget().equals(owner)) {
-                    LivingEntity nearest = null;
-                    double minDistance = 20.0; // 감지 범위
-
-                    for (org.bukkit.entity.Entity e : clone.getNearbyEntities(minDistance, 10, minDistance)) {
-                        if (e instanceof LivingEntity target && !e.equals(owner)
-                                && !(e instanceof Zombie && e.hasMetadata("NarutoOwner"))) {
-                            double dist = e.getLocation().distance(clone.getLocation());
-                            if (dist < minDistance) {
-                                minDistance = dist;
-                                nearest = target;
+                // Mannequin -> Mob 캐스팅 (안전하게 처리)
+                if (clone instanceof Mob) {
+                    Mob aiBody = (Mob) clone;
+                    LivingEntity target = aiBody.getTarget();
+                    if (target == null || target.isDead() || target.equals(owner)) {
+                        LivingEntity nearest = null;
+                        double minDistance = 20.0;
+                        for (Entity e : clone.getNearbyEntities(minDistance, 5, minDistance)) {
+                            if (e instanceof LivingEntity victim && !e.equals(owner) && !e.hasMetadata("NarutoOwner")) {
+                                double dist = e.getLocation().distance(clone.getLocation());
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    nearest = victim;
+                                }
                             }
                         }
-                    }
-
-                    if (nearest != null) {
-                        clone.setTarget(nearest);
+                        if (nearest != null)
+                            aiBody.setTarget(nearest);
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L); // 1초마다 타겟 갱신 확인
+        }.runTaskTimer(plugin, 0L, 10L);
+    }
+
+    @EventHandler
+    public void onTarget(org.bukkit.event.entity.EntityTargetLivingEntityEvent e) {
+        if (e.getEntity().hasMetadata("NarutoOwner") && e.getTarget() instanceof Player p) {
+            String ownerUUID = e.getEntity().getMetadata("NarutoOwner").get(0).asString();
+            if (p.getUniqueId().toString().equals(ownerUUID))
+                e.setCancelled(true);
+        }
     }
 
     private boolean hasAbility(Player p) {

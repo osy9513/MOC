@@ -52,10 +52,16 @@ public class Alex extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§a유틸 ● 알렉스 (이터널 리턴)");
-        p.sendMessage("§f맨손으로 에메랄드 블록을 20초간 지속적으로 우클릭하면");
-        p.sendMessage("§c전장의 기반암이 모두 사라집니다.");
-        p.sendMessage("§f성공 시 본인에게 느린 낙하 3 효과(20초)가 부여됩니다.");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§a유틸 ㆍ 알렉스(이터널 리턴)");
+        p.sendMessage("맨손으로 에메랄드 블록을 20초간 우클릭하여 해킹하면 전장의 기반암을 파괴합니다.");
+        p.sendMessage("해킹 성공 시 자신은 20초간 느린 낙하 효과를 얻어 추락사하지 않습니다.");
+        p.sendMessage("전장의 판도를 바꾸는 데 특화된 유틸리티 능력입니다.");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 없음");
+        p.sendMessage("장비 제거 : 없음");
     }
 
     @Override

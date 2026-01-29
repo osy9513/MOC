@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * AbilityManager: 게임 내 모든 '능력'을 관리하는 클래스입니다.
@@ -16,11 +17,11 @@ public class AbilityManager {
 
     private final MocPlugin plugin;
     // 능력 이름(String)을 통해 실제 능력 객체(Ability)를 찾기 위한 지도(Map)
-    private final Map<String, Ability> abilities = new HashMap<>();
+    private final Map<String, Ability> abilities = new ConcurrentHashMap<>();
     // 어떤 플레이어(UUID)가 어떤 능력 코드를 가지고 있는지 저장하는 지도
-    private final Map<UUID, String> playerAbilities = new HashMap<>();
+    private final Map<UUID, String> playerAbilities = new ConcurrentHashMap<>();
     // 플레이어별로 남은 리롤 횟수를 저장하는 지도
-    private final Map<UUID, Integer> rerollCounts = new HashMap<>();
+    private final Map<UUID, Integer> rerollCounts = new ConcurrentHashMap<>();
 
     private static AbilityManager instance;
 

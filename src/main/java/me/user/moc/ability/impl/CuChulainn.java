@@ -89,11 +89,17 @@ public class CuChulainn extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e[쿠 훌린] §c꿰어뚫는 죽음의 나는 창 - 게이 볼그");
-        p.sendMessage("§7- [좌] 적 타격 시 10초간 위더 I 저주를 겁니다. (쿨 9초)");
-        p.sendMessage("§7- [우] 3초간 구속 후, 저주 걸린 대상에게 창을 발사합니다. (쿨 20초)");
-        p.sendMessage("§7       창은 지형을 관통하며 25 대미지를 줍니다.");
-        p.sendMessage("§7       ※ 타겟이 없으면 본인이 맞습니다!");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§e전투 ㆍ 쿠 훌린(FATE)");
+        p.sendMessage("좌클릭으로 적을 타격하면 10초간 '위더 저주'를 부여합니다.");
+        p.sendMessage("(쿨타임 : 9초, 우클릭 사용 시 20초)");
+        p.sendMessage("우클릭 시 저주에 걸린 대상을 추격하여 25의 강력한 피해를 주는");
+        p.sendMessage("마창 '게이 볼그'를 투척합니다. 만약 대상이 없으면 자신이 피해를 입습니다.");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 20초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 게이 볼그");
+        p.sendMessage("장비 제거 : 철 검");
     }
 
     // [좌클릭] 저주 부여
