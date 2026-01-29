@@ -61,23 +61,14 @@ public class Saitama extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 사이타마(원펀맨)");
-        p.sendMessage("웅크리기(쉬프트) 연타 300번,\n" +
-                "\n" +
-                "점프(스페이스바) 연타 300번,\n" +
-                "\n" +
-                "블럭 이동 300블럭,\n" +
-                "\n" +
-                "위 3개의 조건을 완료하면\n" +
-                "\n" +
-                "라운드 종료까지 힘V, 이속V, 저항V, 성급함V 버프를 부여합니다.\n" +
-                "\n" +
-                "쿨타임 : 0초.\n" +
-                "\n" +
-                "---\n" +
-                "\n" +
-                "추가 장비: 없음.\n" +
-                "\n" +
-                "장비 제거: 철 갑옷, 철 흉갑.");
+        p.sendMessage("§f사이타마 운동법(웅크리기 300회, 점프 300회, 이동 300블록)을 완료하세요.");
+        p.sendMessage("§f운동을 모두 완료하면 라운드 종료까지 강력한 버프를 얻습니다.");
+        p.sendMessage("§f버프 : 힘V, 이속V, 저항IV, 성급함V");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 없음");
+        p.sendMessage("§7장비 제거 : 철 갑옷, 철 흉갑");
     }
 
     @Override
@@ -197,7 +188,7 @@ public class Saitama extends Ability {
         p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 4));
         // 이속V (Speed)
         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 4));
-        // 저항V (Resistance)
+        // 저항IV (Resistance)
         p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, PotionEffect.INFINITE_DURATION, 3));
         // 성급함V (Haste)
         p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4));

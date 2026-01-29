@@ -53,12 +53,16 @@ public class Magnus extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e[매그너스] §f오토바이 탑승 및 돌진");
-        p.sendMessage("§7- 우클릭 시 10초간 오토바이를 탑승합니다.");
-        p.sendMessage("§7- 점점 빠른 속도로 이동하며, 마우스로 방향을 조절합니다.");
-        p.sendMessage("§7- 충돌 시 또는 하차 후 1초 뒤 폭발하여 36(하트 18칸) 대미지를 줍니다.");
-        p.sendMessage("§7- 본인은 폭발 대미지를 입지 않습니다.");
-        p.sendMessage("§7- 쿨타임: 20초");
+        p.sendMessage("§e복합 ● 매그너스(이터널 리턴)");
+        p.sendMessage("§f우클릭 시 10초간 오토바이를 탑승하여 질주합니다.");
+        p.sendMessage("§f점점 빠른 속도로 이동하며, 마우스로 방향을 조절합니다.");
+        p.sendMessage("§f충돌 시 또는 하차 후 1초 뒤 폭발하여 강력한 광역 피해를 줍니다.");
+        p.sendMessage("§f본인은 폭발 대미지를 입지 않습니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 20초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 오토바이(광산 수레)");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @EventHandler

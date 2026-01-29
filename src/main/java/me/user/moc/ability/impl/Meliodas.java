@@ -61,12 +61,16 @@ public class Meliodas extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● 멜리오다스 (일곱 개의 대죄)");
+        p.sendMessage("§e전투 ● 멜리오다스(일곱 개의 대죄)");
         p.sendMessage("§f검을 우클릭하면 3초간 §d'준비'§f 상태가 됩니다.");
         p.sendMessage("§f준비 상태에서는 받는 피해가 §a50% 감소§f하며, 피해량이 누적됩니다.");
         p.sendMessage("§f3초 후 또는 해제 시 주변 5블록 적에게 §c누적 피해의 200%§f를 입힙니다.");
         p.sendMessage("§f발동 후 3초간 움직일 수 없습니다.");
-        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 30초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 없음");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @Override
@@ -125,7 +129,7 @@ public class Meliodas extends Ability {
         // 하지만 "증폭하여 돌려준다"는 컨셉상 원본 대미지 누적이 더 '뽕맛'이 좋으므로 원본 기준 누적.
         // 혹은 감소된 대미지를 누적하려면 e.getFinalDamage()를 써야하는데 타이밍상 어려움.
         // 여기서는 originalDamage 사용.
-        accumulatedDamageMap.merge(p.getUniqueId(), originalDamage, Double::sum);
+        accumulatedDamageMap.merge(p.getUniqueId(), originalDamage, (a, b) -> a + b);
 
         // 시각 효과: 맞았을 때 보라색 히트 이펙트
         p.getWorld().spawnParticle(Particle.WITCH, p.getLocation().add(0, 1, 0), 5, 0.5, 0.5, 0.5, 0.1);

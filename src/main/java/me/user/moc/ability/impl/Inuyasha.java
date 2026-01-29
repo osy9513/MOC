@@ -59,11 +59,15 @@ public class Inuyasha extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e[이누야샤] §f바람의 상처");
-        p.sendMessage("§7- 철쇄아 우클릭 시 전방 5방향으로 검기를 발사합니다.");
-        p.sendMessage("§7- 검기는 3초간 유지되며, 무적 시간을 무시하고 대미지를 줍니다.");
-        p.sendMessage("§7- 벽을 뚫을 수 없으나, 기반암 위에서는 미끄러지듯 이동합니다.");
-        p.sendMessage("§7- 쿨타임: 15초");
+        p.sendMessage("§e전투 ● 이누야샤(이누야샤)");
+        p.sendMessage("§f철쇄아 우클릭 시 전방 5방향으로 검기를 발사합니다.");
+        p.sendMessage("§f검기는 3초간 유지되며, 무적 시간을 무시하고 데미지를 줍니다.");
+        p.sendMessage("§f벽을 뚫을 수 없고, 하나의 검기에 최대 20의 데미지를 줍니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 15초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 철쇄아(철 검)");
+        p.sendMessage("§7장비 제거 : 철 검");
     }
 
     @EventHandler

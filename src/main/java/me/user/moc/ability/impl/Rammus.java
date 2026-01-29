@@ -36,23 +36,20 @@ public class Rammus extends Ability {
     public List<String> getDescription() {
         return List.of(
                 "§a유틸● 람머스(롤)",
-                "§f거북이 모자를 착용하여 몸 말아 웅크리기를 시전합니다.");
+                "§f가시박힌 껍질을 착용하여 몸 말아 웅크리기를 시전합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§a유틸● 람머스(롤)");
-        p.sendMessage("거북이 모자 착용 중엔 구속 2가 걸린다.\n" +
-                "\n" +
-                "거북이 모자 미착용 시 풀린다.\n" +
-                "\n" +
-                "쿨타임 : 0초.\n" +
-                "\n" +
-                "---\n" +
-                "\n" +
-                "추가 장비: 거북이 모자(가시 20 인첸트).\n" +
-                "\n" +
-                "장비 제거: 없음.");
+        p.sendMessage("§a유틸 ● 람머스(리그 오브 레전드)");
+        p.sendMessage("§f가시박힌 껍질(가시 20)를 착용하면 '몸 말아 웅크리기'를 사용하여 구속 2가 걸립니다.");
+        p.sendMessage("§f가시박힌 껍질에는 강력한 가시 인챈트가 부여되어 있습니다.");
+        p.sendMessage("§f모자를 벗으면 구속 효과가 즉시 해제됩니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 가시박힌 껍질");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @Override
@@ -60,7 +57,7 @@ public class Rammus extends Ability {
         ItemStack helmet = new ItemStack(Material.TURTLE_HELMET);
         ItemMeta meta = helmet.getItemMeta();
         if (meta != null) {
-            meta.displayName(Component.text("§a거북이 모자"));
+            meta.displayName(Component.text("§a가시박힌 껍질"));
             meta.addEnchant(Enchantment.THORNS, 20, true);
             helmet.setItemMeta(meta);
         }
@@ -102,7 +99,7 @@ public class Rammus extends Ability {
         boolean hasSlowness = p.hasPotionEffect(PotionEffectType.SLOWNESS);
 
         if (isWearingTurtle) {
-            // 거북이 모자를 쓰고 있는데, 슬로우가 없다면 (방금 썼다는 뜻)
+            // 가시박힌 껍질을 쓰고 있는데, 슬로우가 없다면 (방금 썼다는 뜻)
             if (!hasSlowness) {
                 // 효과 적용
                 p.addPotionEffect(
@@ -111,7 +108,7 @@ public class Rammus extends Ability {
                 p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_TURTLE, 1f, 1f);
             }
         } else {
-            // 거북이 모자를 안 쓰고 있는데, 슬로우가 있다면 (방금 벗었다는 뜻)
+            // 가시박힌 껍질을 안 쓰고 있는데, 슬로우가 있다면 (방금 벗었다는 뜻)
             // 주의: 다른 이유로 슬로우가 걸렸을 수도 있으니 조심해야 하지만,
             // 람머스 능력 메커니즘상 '모자 미착용 시 풀린다'라고 명시됨.
             if (hasSlowness) {
