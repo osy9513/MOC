@@ -64,6 +64,7 @@ public class AbilityManager {
         addAbility(new KingHassan(plugin)); // 산의 노인(FATE) 등록
         addAbility(new EmiyaShirou(plugin)); // 에미야 시로 등록
         addAbility(new Windbreaker(plugin)); // 윈드브레이커(메이플) 등록
+        addAbility(new Pantheon(plugin)); // 빵테온 등록
     }
 
     private void addAbility(Ability ability) {

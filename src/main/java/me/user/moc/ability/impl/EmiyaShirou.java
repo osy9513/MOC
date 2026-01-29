@@ -20,6 +20,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.AxisAngle4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Arrays;
@@ -42,6 +43,25 @@ public class EmiyaShirou extends Ability {
 
     private static final String KEY_UBW_SWORD = "MOC_UBW_SWORD";
     private static final String KEY_SHOOT_SWORD = "MOC_SHOOT_SWORD";
+    private static final String KEY_SWORD_MAT = "MOC_SWORD_MAT";
+
+    // Stuck Sword Management
+    private static class StuckSword {
+        UUID ownerUUID;
+        ItemDisplay visual;
+        // Location loc; // Unused
+        // long timestamp; // Unused
+
+        public StuckSword(UUID owner, ItemDisplay visual) {
+            this.ownerUUID = owner;
+            this.visual = visual;
+            // this.loc = visual.getLocation();
+            // this.timestamp = System.currentTimeMillis();
+        }
+    }
+
+    private final java.util.List<StuckSword> stuckSwords = new java.util.ArrayList<>();
+    private BukkitTask pickupTask;
 
     public EmiyaShirou(JavaPlugin plugin) {
         super(plugin);
@@ -141,6 +161,15 @@ public class EmiyaShirou extends Ability {
         p.sendMessage("§c[System] Unlimited Blade Works 발동!");
         p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1f, 1f);
 
+        // Start Pickup Task (Global for this ability instance, or per user?)
+        // Since Ability instance is singleton, one task handles all.
+        // But UBW duration is per user basically.
+        // Let's ensure task is running if list not empty, or just always run/start
+        // once.
+        if (pickupTask == null || pickupTask.isCancelled()) {
+            startPickupTask();
+        }
+
         // 30초간 실행
         BukkitTask ubwTask = new BukkitRunnable() {
             int tickMap = 0;
@@ -167,24 +196,7 @@ public class EmiyaShirou extends Ability {
     }
 
     private void spawnFallingSword(Player owner) {
-        // 전장 범위 내 랜덤 위치 (GameManager의 spawn point 기준 적당히.. 하지만 여기선 그냥 owner 주변이나 맵 전체가
-        // 나을듯)
-        // Description says "전장 내 랜덤한 위치". ArenaManager knows the center/radius usually,
-        // but standard is current world border or config spawn.
-        // Let's use config spawn point from Main plugin if possible, or owner location
-        // if not.
-
-        // Since we can't easily access ArenaManager's radius here without a getter,
-        // let's assume a reasonable range around the spawn point.
-        // Or just assume the active play area is around 50-60 blocks.
-        // Try to get center from config if available (via plugin instance is hard
-        // without public getter chain, but I can ask owner loc)
-        // Usually battle is around 0,0 or wherever players are.
-        // Let's use owner location as center for now to ensure swords fall near action,
-        // or purely random if players are scattered is better.
-        // Requirements say "전장 내".
-
-        // Let's pick a random x, z within 40 blocks of owner for now to be effective.
+        // 전장 범위 내 랜덤 위치
         double range = 40.0;
         double dx = (Math.random() * range * 2) - range;
         double dz = (Math.random() * range * 2) - range;
@@ -192,51 +204,116 @@ public class EmiyaShirou extends Ability {
         Location spawnLoc = owner.getLocation().add(dx, 0, dz);
         spawnLoc.setY(spawnLoc.getWorld().getHighestBlockYAt(spawnLoc) + 64);
 
-        // Spawn Arrow
+        // Spawn Arrow (Core projectile)
         Arrow arrow = owner.getWorld().spawn(spawnLoc, Arrow.class);
-        arrow.setShooter(owner); // Shooter makes it not damage owner usually? No, arrow self-damage exists.
-        arrow.setPierceLevel(127); // High pierce
-        arrow.setDamage(5.0); // Base damage, but we'll override in event
-        arrow.setVelocity(new Vector(0, -3, 0)); // Fast drop
+        arrow.setShooter(owner);
+        arrow.setPierceLevel(127);
+        arrow.setDamage(5.0);
+        arrow.setVelocity(new Vector(0, -3, 0));
         arrow.setMetadata(KEY_UBW_SWORD, new FixedMetadataValue(plugin, owner.getUniqueId().toString()));
         arrow.setSilent(true);
-        arrow.setCritical(true); // Particle effect
+        arrow.setCritical(true);
 
         // Visual: ItemDisplay riding Arrow
         ItemDisplay itemDisplay = owner.getWorld().spawn(spawnLoc, ItemDisplay.class);
-        itemDisplay.setItemStack(new ItemStack(Material.IRON_SWORD));
-        // Rotate to look down
+
+        // Random Sword Material (Restricted to Netheite, Diamond, Iron)
+        Material[] swords = { Material.NETHERITE_SWORD, Material.DIAMOND_SWORD, Material.IRON_SWORD };
+        Material randomSword = swords[(int) (Math.random() * swords.length)];
+        itemDisplay.setItemStack(new ItemStack(randomSword));
+
+        // Store material in metadata for safe retrieval
+        arrow.setMetadata(KEY_SWORD_MAT, new FixedMetadataValue(plugin, randomSword.name()));
+
+        // Random Rotation for dynamic look
+        float randomZ = (float) Math.toRadians((Math.random() * 40) - 20); // +/- 20 degrees tilt
+        float randomY = (float) Math.toRadians(Math.random() * 360); // Random facing
+
         itemDisplay.setTransformation(new Transformation(
                 new Vector3f(0, 0, 0),
-                new AxisAngle4f((float) Math.toRadians(180), 1, 0, 0), // Rotate 180 x
-                new Vector3f(1, 1, 1),
+                new AxisAngle4f(
+                        new Quaternionf().rotateX((float) Math.toRadians(180)).rotateZ(randomZ).rotateY(randomY)),
+                new Vector3f(1.5f, 1.5f, 1.5f),
                 new AxisAngle4f()));
+
+        itemDisplay.setGlowing(true); // Mystical effect
 
         arrow.addPassenger(itemDisplay);
 
         registerSummon(owner, arrow);
         registerSummon(owner, itemDisplay);
+
+        // Add trail particle effect runnable
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (arrow.isDead() || arrow.isOnGround()) {
+                    this.cancel();
+                    return;
+                }
+                arrow.getWorld().spawnParticle(org.bukkit.Particle.CRIT, arrow.getLocation(), 2, 0.1, 0.1, 0.1, 0);
+                arrow.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT, arrow.getLocation(), 1, 0.1, 0.1, 0.1, 0.1);
+            }
+        }.runTaskTimer(plugin, 0L, 2L);
     }
 
     // === Event Listeners ===
 
     @EventHandler
     public void onHit(ProjectileHitEvent e) {
-        if (e.getEntity() instanceof Arrow arrow && arrow.hasMetadata(KEY_UBW_SWORD)) {
-            // Remove visual passenger
-            if (!arrow.getPassengers().isEmpty()) {
-                arrow.getPassengers().forEach(Entity::remove);
+        if (e.getEntity() instanceof Arrow arrow
+                && (arrow.hasMetadata(KEY_UBW_SWORD) || arrow.hasMetadata(KEY_SHOOT_SWORD))) {
+            String key = arrow.hasMetadata(KEY_UBW_SWORD) ? KEY_UBW_SWORD : KEY_SHOOT_SWORD;
+
+            // Resolve Material: Try Metadata first, then passenger
+            Material displayMat = Material.IRON_SWORD;
+            if (arrow.hasMetadata(KEY_SWORD_MAT)) {
+                try {
+                    displayMat = Material.valueOf(arrow.getMetadata(KEY_SWORD_MAT).get(0).asString());
+                } catch (IllegalArgumentException ignored) {
+                }
             }
 
-            // If hit block -> Drop Item
+            // Always remove visual passengers (Fixes duplication bug)
+            if (!arrow.getPassengers().isEmpty()) {
+                for (Entity passenger : arrow.getPassengers()) {
+                    // Fallback if metadata failed
+                    if (!arrow.hasMetadata(KEY_SWORD_MAT) && passenger instanceof ItemDisplay display
+                            && display.getItemStack() != null) {
+                        displayMat = display.getItemStack().getType();
+                    }
+                    passenger.remove();
+                }
+            }
+
+            // If hit block -> Stick to ground (Don't drop item)
             if (e.getHitBlock() != null) {
-                // Drop sword item
                 Location dropLoc = arrow.getLocation();
-                ItemStack swordItem = new ItemStack(Material.IRON_SWORD); // Visual item on ground
-                // We need to mark this item so we know to convert it when picked up
-                org.bukkit.entity.Item droppedItem = dropLoc.getWorld().dropItem(dropLoc, swordItem);
-                droppedItem.setMetadata(KEY_UBW_SWORD,
-                        new FixedMetadataValue(plugin, arrow.getMetadata(KEY_UBW_SWORD).get(0).value()));
+
+                // Impact visuals
+                dropLoc.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, dropLoc, 10, 0.2, 0.2, 0.2, 0.05);
+                dropLoc.getWorld().spawnParticle(org.bukkit.Particle.BLOCK, dropLoc, 15, 0.2, 0.2, 0.2,
+                        e.getHitBlock().getBlockData());
+                dropLoc.getWorld().playSound(dropLoc, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.5f);
+                dropLoc.getWorld().playSound(dropLoc, Sound.ENTITY_ITEM_BREAK, 0.5f, 0.5f);
+
+                Location stickLoc = dropLoc.clone().add(0, 0.8, 0); // Raised overlap check (0.5 -> 0.8)
+
+                float randomY = (float) Math.toRadians(Math.random() * 360);
+                float randomTilt = (float) Math.toRadians((Math.random() * 30) - 15);
+
+                ItemDisplay newDisplay = dropLoc.getWorld().spawn(stickLoc, ItemDisplay.class);
+                newDisplay.setItemStack(new ItemStack(displayMat));
+                newDisplay.setTransformation(new Transformation(
+                        new Vector3f(0, 0, 0),
+                        new AxisAngle4f(new Quaternionf().rotateZ((float) Math.toRadians(135)).rotateY(randomY)
+                                .rotateX(randomTilt)),
+                        new Vector3f(1.5f, 1.5f, 1.5f),
+                        new AxisAngle4f()));
+                newDisplay.setGlowing(true);
+
+                UUID ownerUUID = UUID.fromString(arrow.getMetadata(key).get(0).asString());
+                stuckSwords.add(new StuckSword(ownerUUID, newDisplay));
 
                 arrow.remove();
             }
@@ -247,22 +324,6 @@ public class EmiyaShirou extends Ability {
             // But wait, "on block hit -> itemize". "if entity hit -> pierce".
             // Piercing arrow hits entity -> event fires -> arrow continues.
             // If it hits block -> stops -> event fires.
-        }
-
-        // Handle Shooting Sword (Launched by player)
-        if (e.getEntity() instanceof Arrow arrow && arrow.hasMetadata(KEY_SHOOT_SWORD)) {
-            if (e.getHitBlock() != null) {
-                // Drop item
-                Location dropLoc = arrow.getLocation();
-                ItemStack swordItem = new ItemStack(Material.IRON_SWORD);
-                org.bukkit.entity.Item droppedItem = dropLoc.getWorld().dropItem(dropLoc, swordItem);
-                droppedItem.setMetadata(KEY_UBW_SWORD,
-                        new FixedMetadataValue(plugin, arrow.getMetadata(KEY_SHOOT_SWORD).get(0).value())); // Recycle
-                                                                                                            // as UBW
-                                                                                                            // sword for
-                                                                                                            // pickup
-                arrow.remove();
-            }
         }
     }
 
@@ -296,45 +357,15 @@ public class EmiyaShirou extends Ability {
         }
     }
 
+    // Old ItemPickup event handler removed/ignored since we don't drop items
+    // anymore.
     @EventHandler
     public void onItemPickup(EntityPickupItemEvent e) {
+        // Legacy cleanup or handling if other items dropped?
         if (e.getEntity() instanceof Player p && e.getItem().hasMetadata(KEY_UBW_SWORD)) {
-            String ownerUUIDStr = e.getItem().getMetadata(KEY_UBW_SWORD).get(0).asString();
-            UUID ownerUUID = UUID.fromString(ownerUUIDStr);
-
-            e.setCancelled(true); // Cancel default pickup
-            e.getItem().remove(); // Remove world item
-
-            ItemStack newItem;
-            if (p.getUniqueId().equals(ownerUUID)) {
-                // Owner gets Diamond Sword
-                newItem = new ItemStack(Material.DIAMOND_SWORD);
-            } else {
-                // Others get Stone Sword
-                newItem = new ItemStack(Material.STONE_SWORD);
-            }
-
-            // Mark the item as a UBW sword so Emiya can shoot it (and maybe others can't?)
-            // Requirement: "Emiya Shirou can right click ALL swords to shoot" -> "Every
-            // sword he picks up"? Or just these swords?
-            // "Emiya Shirou is able to shoot all swords by right clicking immediately like
-            // crossbow" -> The wording implies specifically these dropped swords or maybe
-            // any sword?
-            // Prompt: "Emiya Shirou can right click all swords...".
-            // "Fallen swords converted to Diamond... Others Stone... Emiya can right click
-            // all swords".
-            // It says "all swords" contextually might mean "these swords".
-            // Let's verify: "Dropped swords when picked up by Emiya -> Diamond. By others
-            // -> Stone."
-            // "Emiya can right click all swords...".
-            // Text says "모든 검을 우클릭하여".
-            // Let's add lore or NBT to identify it as a UBW projectile capable sword, OR
-            // just check if player is Emiya and holding a sword.
-            // Simpler: Check if player is Emiya in InteractEvent.
-
-            // Add to inventory
-            p.getInventory().addItem(newItem);
-            p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f);
+            e.setCancelled(true);
+            e.getItem().remove();
+            // Just in case any persist
         }
     }
 
@@ -378,38 +409,48 @@ public class EmiyaShirou extends Ability {
             arrow.setDamage(5.0); // Base
             arrow.setMetadata(KEY_SHOOT_SWORD, new FixedMetadataValue(plugin, p.getUniqueId().toString()));
             arrow.setPierceLevel(0); // Regular shot
-            // Visual
-            ItemDisplay itemDisplay = p.getWorld().spawn(arrow.getLocation(), ItemDisplay.class);
-            itemDisplay.setItemStack(new ItemStack(Material.IRON_SWORD)); // Visual always iron? Or matches held item?
-            // Prompt says: "Hit target takes damage same as that sword".
-            // "Matches sword damage"?
-            // "Fallen sword -> Diamond (7 dmg) / Stone (5 dmg)".
-            // "Target hit by thrown sword takes damage same as that sword".
-            // We should set damage based on material.
+
             Material mat = handItem.getType();
-            // Prompt says "Falling sword 5 hearts (10 damage)".
-            // "Thrown sword... same damage as that sword".
-            // If Diamond Sword is 7 damage. Stone is 5 damage.
-            // We'll use vanilla values or just map them.
+            arrow.setMetadata(KEY_SWORD_MAT, new FixedMetadataValue(plugin, mat.name()));
+
             arrow.setDamage(getSwordDamage(mat));
 
-            // Visual adjustment
-            itemDisplay.setItemStack(new ItemStack(mat));
-            itemDisplay.setTransformation(new Transformation(
-                    new Vector3f(0, 0, 0),
-                    new AxisAngle4f((float) Math.toRadians(-90), 1, 0, 0), // Adjust for projectile (point forward)
-                    new Vector3f(1, 1, 1),
-                    new AxisAngle4f()));
-            arrow.addPassenger(itemDisplay);
-            p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 0.5f);
+            // Visual - Schedule 1 tick later to ensure arrow invalidity doesn't glitch
+            // passenger
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (arrow.isDead() || !arrow.isValid())
+                        return;
 
-            registerSummon(p, arrow); // Track for cleanup
-            registerSummon(p, itemDisplay);
+                    ItemDisplay itemDisplay = p.getWorld().spawn(arrow.getLocation(), ItemDisplay.class);
+                    itemDisplay.setItemStack(new ItemStack(mat));
+
+                    // Rotate to point forward (Item default is Up, Arrow forward is Z? No, local)
+                    // -90 X rotation makes top point forward relative to entity look
+                    itemDisplay.setTransformation(new Transformation(
+                            new Vector3f(0, 0, 0),
+                            new AxisAngle4f(new Quaternionf().rotateX((float) Math.toRadians(-90))),
+                            new Vector3f(1.2f, 1.2f, 1.2f),
+                            new AxisAngle4f()));
+                    itemDisplay.setGlowing(true);
+
+                    arrow.addPassenger(itemDisplay);
+                    registerSummon(p, itemDisplay);
+                }
+            }.runTaskLater(plugin, 1L);
+
+            p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 0.5f);
+            p.playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 0.5f, 2.0f); // High pitch magic sound
+
+            registerSummon(p, arrow);
         }
     }
 
     private double getSwordDamage(Material mat) {
         switch (mat) {
+            case NETHERITE_SWORD:
+                return 8.0;
             case DIAMOND_SWORD:
                 return 7.0;
             case IRON_SWORD:
@@ -438,5 +479,111 @@ public class EmiyaShirou extends Ability {
     public void cleanup(Player p) {
         super.cleanup(p);
         p.resetPlayerTime();
+
+        // 1. 실행 중인 태스크(무한의 검제, 영창 등) 강제 취소
+        if (activeTasks.containsKey(p.getUniqueId())) {
+            List<BukkitTask> tasks = activeTasks.get(p.getUniqueId());
+            if (tasks != null) {
+                // 리스트 복사본으로 반복하여 안전하게 취소 (ConcurrentModification 방지)
+                for (BukkitTask t : new java.util.ArrayList<>(tasks)) {
+                    if (t != null && !t.isCancelled()) {
+                        t.cancel();
+                    }
+                }
+            }
+            activeTasks.remove(p.getUniqueId());
+        }
+
+        // Remove swords specific to this player
+        java.util.Iterator<StuckSword> it = stuckSwords.iterator();
+        while (it.hasNext()) {
+            StuckSword sword = it.next();
+            if (sword.ownerUUID.equals(p.getUniqueId())) {
+                if (sword.visual != null && !sword.visual.isDead()) {
+                    sword.visual.remove();
+                }
+                it.remove();
+            }
+        }
+
+        // Stop task only if no swords left
+        if (stuckSwords.isEmpty() && pickupTask != null && !pickupTask.isCancelled()) {
+            pickupTask.cancel();
+            pickupTask = null;
+        }
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        // [수정] 게임 초기화 시 모든 꽂힌 검 제거
+        for (StuckSword sword : stuckSwords) {
+            if (sword.visual != null && !sword.visual.isDead()) {
+                sword.visual.remove();
+            }
+        }
+        stuckSwords.clear();
+
+        if (pickupTask != null && !pickupTask.isCancelled()) {
+            pickupTask.cancel();
+            pickupTask = null;
+        }
+    }
+
+    private void startPickupTask() {
+        pickupTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (stuckSwords.isEmpty())
+                    return;
+
+                java.util.Iterator<StuckSword> it = stuckSwords.iterator();
+                while (it.hasNext()) {
+                    StuckSword sword = it.next();
+                    if (sword.visual == null || sword.visual.isDead()) {
+                        it.remove();
+                        continue;
+                    }
+
+                    // Simple optimization: check validity of world
+                    if (sword.visual.getWorld() == null) {
+                        it.remove();
+                        continue;
+                    }
+
+                    // Check for nearby players
+                    for (Player p : sword.visual.getWorld().getPlayers()) {
+                        if (p.getLocation().distanceSquared(sword.visual.getLocation()) <= 2.25) { // 1.5 blocks
+                            // Pickup!
+                            giveSword(p, sword);
+                            sword.visual.remove();
+                            // Visual Effect on pickup
+                            p.getWorld().playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_DIAMOND, 1f, 1.5f);
+                            p.getWorld().spawnParticle(org.bukkit.Particle.WAX_OFF,
+                                    sword.visual.getLocation().add(0, 0.5, 0), 5, 0.2, 0.2, 0.2, 0.1);
+                            it.remove();
+                            break; // One sword per person? or one person picks up? One pickup only.
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 4L); // Check every 0.2s
+    }
+
+    private void giveSword(Player p, StuckSword sword) {
+        if (p.getInventory().firstEmpty() == -1) {
+            p.sendMessage("§c인벤토리가 가득 차 검을 주울 수 없습니다.");
+            return;
+        }
+
+        ItemStack item;
+        if (p.getUniqueId().equals(sword.ownerUUID)) {
+            item = new ItemStack(Material.DIAMOND_SWORD);
+        } else {
+            item = new ItemStack(Material.STONE_SWORD);
+        }
+
+        p.getInventory().addItem(item);
+        // p.sendMessage("§7검을 획득했습니다.");
     }
 }
