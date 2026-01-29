@@ -9,60 +9,38 @@ version = '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
+        name = "papermc"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 }
 
 dependencies {
-    // [중요] 여기가 바로 버전을 결정하는 핵심 코드입니다.
-    // 기존에 1.21.4 같은 낮은 버전이 적혀있다면 지우고 아래 걸로 바꾸세요.
+    // [중요] libs 참조 코드를 완전히 지웠습니다. 
+    // 이제 방해꾼 없이 인터넷 창고에서 진짜 '1.21.11 API'만 가져옵니다.
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
 }
 
-tasks {
-    runServer {
-        // Configure the Minecraft version for our task.
-        // This is the only required configuration besides applying the plugin.
-        // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21.11")
-    }
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }
 
-def targetJavaVersion = 21
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
-    }
 }
 
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand props
+tasks {
+    runServer {
+        minecraftVersion("1.21.11")
     }
 }
-
-
 
 tasks.register('copyPlugin', Copy) {
     from tasks.jar.archiveFile
-    // 사용 중인 경로인 D 드라이브로 수정했습니다!
     into "D:/ai/MOC_Server/plugins"
 }
 
-// jar 작업이 끝나면 자동으로 복사 실행
 tasks.jar.finalizedBy('copyPlugin')
