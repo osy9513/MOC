@@ -1,7 +1,7 @@
 name: MocPlugin
 version: '${version}'
 main: me.user.moc.MocPlugin
-api-version: '1.21'
+api-version: '1.21.11'
 commands:
   moc:
     description: MOC 플러그인 메인 명령어

@@ -58,13 +58,19 @@ public class GoldSilverAxe extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§a유틸 ● 금도끼 은도끼(이솝 우화/나무꾼과 헤르메스)");
-        p.sendMessage("§f도끼를 물에 던지면 흰 연기가 나오며 도끼가 사라집니다.");
-        p.sendMessage("§f아래의 확률에 따라 랜덤한 도끼 선택됩니다.");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§a유틸 ㆍ 금도끼 은도끼(이솝 우화/나무꾼과 헤르메스)");
+        p.sendMessage("도끼를 물속에 던지면 산신령의 힘으로 새로운 도끼로 교환해줍니다.");
+        p.sendMessage("아래의 확률로 도끼와 전투 인챈트가 부여됩니다.");
+        p.sendMessage(" ");
         p.sendMessage("§f나무 도끼 - 20%, 돌 도끼 - 20%, 철 도끼 - 30%");
         p.sendMessage("§f다이아 도끼 - 20%, 네더라이트 도끼 - 10%");
-        p.sendMessage("§f해당 도끼에 인첸트 레벨 1 ~ 5 사이의 칼에 부여 가능한 인챈트를 랜덤하게 2개 부여합니다.");
-        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f해당 도끼에 인챈트 레벨 1 ~ 5 사이의 전투 인챈트 2개 랜덤 부여");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 나무 도끼");
+        p.sendMessage("장비 제거 : 철 검");
     }
 
     @EventHandler

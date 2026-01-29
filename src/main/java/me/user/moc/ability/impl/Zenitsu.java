@@ -41,7 +41,7 @@ public class Zenitsu extends Ability {
     public List<String> getDescription() {
         return List.of(
                 "§e전투 ● 아가츠마 젠이츠(귀멸의 칼날)",
-                "§f란사 델 렐람파고를 우클릭 시 전방에 발사합니다.");
+                "§e벽력일섬(霹靂一閃)§f을 시전합니다.");
     }
 
     @Override
@@ -50,11 +50,16 @@ public class Zenitsu extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● 아가츠마 젠이츠 (귀멸의 칼날)");
-        p.sendMessage("§f검을 들고 우클릭 시 §e벽력일섬(霹靂一閃)§f을 시전합니다.");
-        p.sendMessage("§f전방 6블록을 순간 이동하며 경로상의 적에게 §c4칸의 피해§f를 입힙니다.");
-        p.sendMessage("§f사용 직후 1초간 §b신속 1§f 버프를 얻습니다.");
-        p.sendMessage("§f쿨타임 : 4초");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§e전투 ㆍ 아가츠마 젠이츠(귀멸의 칼날)");
+        p.sendMessage("검을 들고 우클릭 시 '벽력일섬'을 시전하여 전방으로 빠르게 순간이동합니다.");
+        p.sendMessage("경로상의 모든 적에게 8(4칸)의 고정 피해를 입히며 번개를 소환합니다.");
+        p.sendMessage("기술 사용 직후 짧은 시간 동안 신속 버프를 획득합니다.");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 4초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 없음");
+        p.sendMessage("장비 제거 : 없음");
     }
 
     @EventHandler

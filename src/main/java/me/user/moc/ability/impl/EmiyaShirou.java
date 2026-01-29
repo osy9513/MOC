@@ -78,21 +78,19 @@ public class EmiyaShirou extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e=== 에미야 시로 상세 정보 ===");
-        p.sendMessage("§6[영창] §f라운드 시작 시 8초간 영창을 외웁니다.");
-        p.sendMessage("§7영창 중에는 하늘이 주황색으로 변합니다.");
-        p.sendMessage("§7영창 중 사망 시 능력이 취소됩니다.");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§e전투 ㆍ 에미야 시로(FATE)");
+        p.sendMessage("라운드가 시작되면 8초간 영창을 시작하며, 완료 시 '무한의 검제'를 전개합니다.");
+        p.sendMessage("하늘에서 수많은 검이 쏟아져 적들에게 5칸(10) 피해를 입힙니다.");
+        p.sendMessage("떨어진 검을 주워 공격할 수 있으며, 우클릭으로 직접 투척할 수도 있습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§c[무한의 검제] §f영창 완료 후 30초간 칼비가 내립니다.");
-        p.sendMessage("§7- 검 생성: 초당 10개 (랜덤 위치)");
-        p.sendMessage("§7- 대미지: 피격 시 5칸(10) 피해");
-        p.sendMessage("§7- 관통: 생명체 관통, 바닥에 닿으면 아이템화");
-        p.sendMessage("§7- 면역: 본인은 떨어지는 칼에 맞지 않음");
-        p.sendMessage(" ");
-        p.sendMessage("§b[무기 활용]");
         p.sendMessage("§7떨어진 검을 본인이 획득 -> 다이아몬드 검");
         p.sendMessage("§7떨어진 검을 타인이 획득 -> 돌 검");
-        p.sendMessage("§7우클릭으로 검을 투척하여 공격 가능 (소모성)");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 없음");
+        p.sendMessage("장비 제거 : 철 검");
     }
 
     private void startChant(Player p) {

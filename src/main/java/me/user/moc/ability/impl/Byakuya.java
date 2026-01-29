@@ -55,16 +55,16 @@ public class Byakuya extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§d[ 능력 상세 정보 ]");
-        p.sendMessage("§e능력명: §f쿠치키 뱌쿠야 (블리치)");
-        p.sendMessage("§e타입: §c전투 / 광역 제어");
-        p.sendMessage("§e발동 조건: §f철 검 우클릭");
-        p.sendMessage("§e쿨타임: §f20초");
-        p.sendMessage("§e지속 시간: §f10초");
-        p.sendMessage("§e효과:");
-        p.sendMessage("  §7- §d만해(卍解)§7를 사용하여 반경 30블록을 벚꽃으로 뒤덮습니다.");
-        p.sendMessage("  §7- 범위 내 §c자신을 제외한 모든 생명체§7에게 1초당 2의 피해(1칸)를 입힙니다.");
-        p.sendMessage("  §7- 사용자는 이동 속도가 10% 감소합니다.");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§d전투 ㆍ 쿠치키 뱌쿠야(블리치)");
+        p.sendMessage("철 검 우클릭 시 '만해 : 천본앵경엄'을 시전하여 주변을 벚꽃으로 덮습니다.");
+        p.sendMessage("반경 30블록 내의 모든 적에게 초당 2(1칸)의 지속 피해를 10초간 입히며,");
+        p.sendMessage("시전 중에는 이동 속도가 10% 감소하지만 적의 접근을 방해합니다.");
+        p.sendMessage(" ");
+        p.sendMessage("쿨타임 : 20초");
+        p.sendMessage("---");
+        p.sendMessage("추가 장비 : 없음");
+        p.sendMessage("장비 제거 : 없음");
     }
 
     @Override

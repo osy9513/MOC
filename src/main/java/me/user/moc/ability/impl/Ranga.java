@@ -50,20 +50,17 @@ public class Ranga extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 란가(전생했더니 슬라임이었던 건에 대하여)");
-        p.sendMessage("라운드를 시작하면 란가를 옆에 소환합니다.");
-        p.sendMessage("란가는 덩치 큰 검은 늑대이며, 체력 3줄(60)에 늑대 갑옷을 입고,");
-        p.sendMessage("영구 지속 이속 2 버프를 보유했습니다.");
+        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
+        p.sendMessage("§c전투 ㆍ 란가(전생했더니 슬라임이었던 건에 대하여)");
+        p.sendMessage("라운드를 시작하면 옆에 강력한 늑대 '란가'를 소환합니다.");
+        p.sendMessage("란가는 영구적인 이동 속도 II 버프를 가진 검은 늑대이며,");
+        p.sendMessage("공격 시 40% 확률로 강력한 번개를 떨어뜨려 적을 공격합니다.");
+        p.sendMessage("란가가 사망하면 주인의 그림자로 돌아가 주인에게 이동 속도 II를 부여합니다.");
         p.sendMessage(" ");
-        p.sendMessage("란가의 공격력은 체력 5칸이며 공격 시 40% 확률로 번개가 칩니다.");
-        p.sendMessage("란가는 주인을 공격하지 않으며, 주인의 적을 함께 공격합니다.");
-        p.sendMessage(" ");
-        p.sendMessage("란가가 사망 시 주인의 그림자에 들어가 주인에게 영구지속 이속 2 버프를 줍니다.");
-        p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초.");
+        p.sendMessage("쿨타임 : 0초");
         p.sendMessage("---");
-        p.sendMessage("추가 장비: 없음.");
-        p.sendMessage("장비 제거: 없음.");
+        p.sendMessage("추가 장비 : 없음");
+        p.sendMessage("장비 제거 : 없음");
     }
 
     @Override
