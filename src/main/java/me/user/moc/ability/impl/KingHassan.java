@@ -3,6 +3,8 @@ package me.user.moc.ability.impl;
 import me.user.moc.MocPlugin;
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -46,27 +48,21 @@ public class KingHassan extends Ability {
     @Override
     public List<String> getDescription() {
         return List.of(
-                "§e=== §5산의 노인(FATE) §e상세 정보 ===    ",
-                "§7[패시브]",
-                "§f라운드 시작 시 §7[은신, 구속 3, 재생] §f버프를 영구히 얻습니다.",
-                "§f최대 체력이 §c10칸(20HP)§f으로 고정되며, 핫바가 §b첫 번째 칸§f으로 고정됩니다.",
-                "§f다른 아이템은 사용할 수 없습니다.",
-                " ",
-                "§7[무기]",
-                "§5산의 노인의 검§f: 기본 대미지 §c16§f을 입히며, §c적의 방어력을 무시§f합니다.");
+                "§e유틸 ● 산의 노인(FATE)",
+                "§f산의 노인으로 변합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e=== §5산의 노인(FATE) §e상세 정보 ===");
-        p.sendMessage("§7[패시브]");
+        p.sendMessage("§5전투 ● 산의 노인(FATE)");
         p.sendMessage("§f라운드 시작 시 §7[은신, 구속 3, 재생] §f버프를 영구히 얻습니다.");
         p.sendMessage("§f최대 체력이 §c10칸(20HP)§f으로 고정되며, 핫바가 §b첫 번째 칸§f으로 고정됩니다.");
-        p.sendMessage("§f다른 아이템은 사용할 수 없습니다.");
+        p.sendMessage("§f다른 아이템은 사용할 수 없으며, §5산의 노인의 대검§f은 방어력을 무시합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7[무기]");
-        p.sendMessage("§5산의 노인의 검§f: 기본 대미지 §c16§f을 입히며, §c적의 방어력을 무시§f합니다.");
-        p.sendMessage("§e==================================");
+        p.sendMessage("§7쿨타임 : 0초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 산의 노인의 대검");
+        p.sendMessage("§7장비 제거 : 모든 기본 지급 장비");
     }
 
     @Override
@@ -81,8 +77,8 @@ public class KingHassan extends Ability {
         // 2. 능력 전용 아이템 지급
         ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = sword.getItemMeta();
-        meta.setDisplayName("§5산의 노인의 검");
-        meta.setLore(List.of("§7만종은 그대의 이름을 가리켰다.", "§c방어력 무시 16 대미지"));
+        meta.setDisplayName("§5산의 노인의 대검");
+        meta.setLore(List.of("§7만종은 그대의 이름을 가리켰다.", "§c방어력 무시 32 대미지"));
         meta.setUnbreakable(true);
         sword.setItemMeta(meta);
 
@@ -119,10 +115,7 @@ public class KingHassan extends Ability {
                                                                                                                    // (재생)
 
         // 4. 이펙트 및 메시지 출력
-        p.sendMessage(" ");
-        p.sendMessage(" ");
-        p.sendMessage("§5[산의 노인] §f듣거라. 만종은 그대의 이름을 가리켰다.");
-        p.sendMessage(" ");
+        Bukkit.broadcastMessage("§5산의 노인 : §f듣거라. 만종은 그대의 이름을 가리켰다.");
         p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f); // 웅장한 소리 (위더 소환음 낮게)
 
         // 4초간 연기 이펙트
@@ -181,7 +174,7 @@ public class KingHassan extends Ability {
         // 적이 살아있는 엔티티인지 확인
         if (e.getEntity() instanceof LivingEntity victim) {
             // 방어력 무시 대미지 로직
-            double trueDamage = 16.0;
+            double trueDamage = 32.0;
 
             // 기본 대미지 이벤트는 0으로 만들어서 넉백만 적용되게 하거나,
             // 0.0001로 설정하여 피격 모션/넉백만 남김.

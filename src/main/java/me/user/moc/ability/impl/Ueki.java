@@ -52,19 +52,13 @@ public class Ueki extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§a유틸 ● 우에키(우에키의 법칙)");
-        p.sendMessage("묘목을 우클릭 하면 주변 20블럭 이내 \n" +
-                "\n" +
-                "모든 생명체와 바닥에 떨어진 아이템들이\n" +
-                "\n" +
-                "나무로 변합니다.\n" +
-                "\n" +
-                "쿨타임 : 7초.\n" +
-                "\n" +
-                "---\n" +
-                "\n" +
-                "추가 장비: 묘목 64개.\n" +
-                "\n" +
-                "장비 제거: 없음.");
+        p.sendMessage("§f묘목을 우클릭하면 주변 20블록 이내의 모든 생명체와 아이템을 나무로 바꿉니다.");
+        p.sendMessage("§f나무로 변한 대상(몹/아이템)은 즉시 소멸하며, 플레이어는 나무 속에 갇힙니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 7초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 참나무 묘목 64개");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @Override

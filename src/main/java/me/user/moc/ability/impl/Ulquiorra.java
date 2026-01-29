@@ -64,12 +64,14 @@ public class Ulquiorra extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§a전투 ● 우르키오라 쉬퍼(블리치)");
-        p.sendMessage("§f란사 델 렐람파고를 우클릭하면 본인에게 구속 5를 2초간 부여하고");
-        p.sendMessage("§e'닫아라, 무르시엘라고'§f 메세지가 출력됩니다.");
-        p.sendMessage("§f2초 후 §a'란사 델 렐람파고'§f 메세지와 함께 거대한 삼지창을 날리며");
-        p.sendMessage("§f적중한 생명체를 30블럭까지 끌고가 §c체력 1줄(20)의 방어 무시 피해§f를 줍니다.");
+        p.sendMessage("§f란사 델 렐람파고를 우클릭하면 2초간 준비 후 거대한 삼지창을 날립니다.");
+        p.sendMessage("§f적중한 적을 30블록까지 끌고 가며 체력 1줄(20)의 방어 무시 피해를 줍니다.");
+        p.sendMessage("§f준비 중에는 구속 5 효과가 부여됩니다.");
+        p.sendMessage(" ");
         p.sendMessage("§7쿨타임 : 20초");
-        p.sendMessage("§7특징 : 기반암을 제외한 모든 블럭을 관통합니다.");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 란사 델 렐람파고");
+        p.sendMessage("§7장비 제거 : 철 검");
     }
 
     @EventHandler

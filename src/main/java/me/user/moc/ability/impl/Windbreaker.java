@@ -59,7 +59,7 @@ public class Windbreaker extends Ability {
         lore.add("§f메이플 보우를 들고 §a쉬프트 2번§f을 누르면 천공의 노래를 발동합니다.");
         lore.add("§f ");
         lore.add("§6천공의 노래 : §f5초간 화살을 마구마구 쏩니다.");
-        lore.add("§f쿨타임 : 20초");
+        lore.add("§f쿨타임 : 15초");
         return lore;
     }
 
@@ -106,16 +106,14 @@ public class Windbreaker extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§f ");
-        p.sendMessage("§a[ 윈드브레이커 상세 정보 ]");
-        p.sendMessage("§f기본 무기로 §a메이플 보우§f가 지급됩니다.");
-        p.sendMessage("§f패시브로 §b신속 I§f 효과를 항상 받습니다.");
-        p.sendMessage("§f활을 들고 §e쉬프트 키를 빠르게 두 번§f 누르면");
-        p.sendMessage("§6천공의 노래§f가 발동됩니다.");
-        p.sendMessage("§f발동 시 5초 동안 전방으로 화살을 난사합니다.");
-        p.sendMessage("§f이 화살들은 초록색 궤적을 남깁니다.");
-        p.sendMessage("§7쿨타임: 20초");
-        p.sendMessage("§f ");
+        p.sendMessage("§a전투 ● 윈드브레이커(메이플스토리)");
+        p.sendMessage("§f활을 들고 쉬프트를 빠르게 두 번 누르면 '천공의 노래'가 발동됩니다.");
+        p.sendMessage("§f5초 동안 전방으로 화살을 50발 발사하며, 신속 I 효과를 상시 받습니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§7쿨타임 : 15초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 메이플 보우, 화살 1개");
+        p.sendMessage("§7장비 제거 : 철 검");
     }
 
     @EventHandler
@@ -147,7 +145,7 @@ public class Windbreaker extends Ability {
     private void startSongOfHeaven(Player p) {
         if (!checkCooldown(p))
             return;
-        setCooldown(p, 20);
+        setCooldown(p, 15);
 
         p.sendMessage(" ");
         p.sendMessage("§a천공의 노래!");

@@ -55,16 +55,15 @@ public class Naruto extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
-        p.sendMessage("§e복합 ㆍ 나루토(나루토)");
-        p.sendMessage("금술 두루마리를 우클릭하여 '다중 그림자 분신술'을 사용합니다.");
-        p.sendMessage("플레이어와 동일한 모습의 분신 12명을 즉시 소환하여 전장을 장악합니다.");
-        p.sendMessage("분신은 적을 추격하여 공격하며, 파괴되기 전까지 계속해서 적을 압박합니다.");
+        p.sendMessage("§e복합 ● 나루토(나루토)");
+        p.sendMessage("§f금술 두루마리를 우클릭하여 '다중 그림자 분신술'을 사용합니다.");
+        p.sendMessage("§f플레이어와 동일한 모습의 분신 12명을 즉시 소환하여 전장을 장악합니다.");
+        p.sendMessage("§f분신은 적을 추격하여 공격하며, 파괴되기 전까지 계속해서 적을 압박합니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 30초");
+        p.sendMessage("§7쿨타임 : 30초");
         p.sendMessage("---");
-        p.sendMessage("추가 장비 : 금술 두루마리(오렌지색 현수막)");
-        p.sendMessage("장비 제거 : 없음");
+        p.sendMessage("§7추가 장비 : 금술 두루마리(오렌지색 현수막)");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @EventHandler

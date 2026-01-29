@@ -1,9 +1,12 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.MocPlugin;
-import me.user.moc.ability.Ability;
-import me.user.moc.ability.AbilityManager;
-import org.bukkit.*;
+import java.util.List;
+
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -18,8 +21,9 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-import java.util.Arrays;
-import java.util.List;
+import me.user.moc.MocPlugin;
+import me.user.moc.ability.Ability;
+import me.user.moc.ability.AbilityManager;
 
 public class Zenitsu extends Ability {
 
@@ -50,16 +54,15 @@ public class Zenitsu extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
-        p.sendMessage("§e전투 ㆍ 아가츠마 젠이츠(귀멸의 칼날)");
-        p.sendMessage("검을 들고 우클릭 시 '벽력일섬'을 시전하여 전방으로 빠르게 순간이동합니다.");
-        p.sendMessage("경로상의 모든 적에게 8(4칸)의 고정 피해를 입히며 번개를 소환합니다.");
-        p.sendMessage("기술 사용 직후 짧은 시간 동안 신속 버프를 획득합니다.");
+        p.sendMessage("§e전투 ● 아가츠마 젠이츠(귀멸의 칼날)");
+        p.sendMessage("§f검을 우클릭하면 '벽력일섬'을 시전하여 전방으로 8칸 순간이동합니다.");
+        p.sendMessage("§f경로상의 적에게 8의 고정 피해를 입힙니다.");
+        p.sendMessage("§f시전 직후 짧은 시간 동안 신속 버프를 얻습니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 4초");
+        p.sendMessage("§7쿨타임 : 8초");
         p.sendMessage("---");
-        p.sendMessage("추가 장비 : 없음");
-        p.sendMessage("장비 제거 : 없음");
+        p.sendMessage("§7추가 장비 : 없음");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @EventHandler
@@ -87,8 +90,8 @@ public class Zenitsu extends Ability {
     }
 
     private void useThunderclapAndFlash(Player p) {
-        // 쿨타임 설정 (4초)
-        setCooldown(p, 4);
+        // 벽력일섬 기술의 재사용 대기시간(쿨타임)을 8초로 설정합니다.
+        setCooldown(p, 8);
 
         // 시전 메시지
         p.getServer().broadcastMessage("§e아가츠마 젠이츠 : 벽력일섬(霹靂一閃).");
@@ -99,7 +102,9 @@ public class Zenitsu extends Ability {
 
         Location startLoc = p.getLocation();
         Vector dir = startLoc.getDirection().normalize();
-        double maxDistance = 6.0;
+        // 이 변수는 젠이츠가 '벽력일섬' 기술을 사용했을 때 한 번에 이동할 수 있는 최대 거리를 결정합니다.
+        // 숫자가 클수록 더 먼 거리를 순식간에 이동하게 됩니다. (현재 설정값: 8블록)
+        double maxDistance = 8.0;
 
         // 벽 통과 방지 RayTrace
         RayTraceResult result = p.getWorld().rayTraceBlocks(

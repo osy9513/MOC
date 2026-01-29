@@ -66,14 +66,15 @@ public class TrafalgarLaw extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 트라팔가 로우(원피스)");
-        p.sendMessage("§f웅크리기(Shift) + 검 우클릭 시 §bROOM§f을 전개합니다.");
-        p.sendMessage("§f - 범위: 반경 15블록 (5초 지속)");
-        p.sendMessage("§f - 쿨타임: 30초");
+        p.sendMessage("§f웅크리기(Shift) + 검 우클릭 시 5초간 §bROOM§f을 전개합니다.");
+        p.sendMessage("§fROOM 내부의 대상을 바라보고 우클릭 시 §e위치를 맞바꿉니다(샴블즈)§f.");
+        p.sendMessage("§f교환된 대상에게는 10의 피해를 입힙니다.");
+        p.sendMessage("§f룸 지속시간 동안 횟수 제한 없이 사용 가능합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§fROOM 안에서 대상을 바라보고 §e우클릭 §f시:");
-        p.sendMessage("§f - 대상과 §e위치를 맞바꿉니다§f (샴블즈).");
-        p.sendMessage("§f - 대상에게 §c고정 피해 10§f과 §5멀미(2초)§f를 부여합니다.");
-        p.sendMessage("§f - 룸 지속시간 동안 §a횟수 제한 없이§f 사용 가능.");
+        p.sendMessage("§7쿨타임 : 30초");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 없음");
+        p.sendMessage("§7장비 제거 : 없음");
     }
 
     @Override
@@ -325,7 +326,8 @@ public class TrafalgarLaw extends Ability {
 
         // 피해 및 상태이상
         target.damage(DAMAGE_AMOUNT, p); // 10 데미지 (하트 5칸)
-        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 0)); // 멀미 2초 (40 ticks)
+        // target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 0)); //
+        // 멀미 2초 (40 ticks)
 
         // 대상에게도 메시지 (플레이어인 경우)
         if (target instanceof Player tPlayer) {

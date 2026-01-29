@@ -78,19 +78,18 @@ public class EmiyaShirou extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        // [디테일 정보 출력] 사용자 요청 포맷에 맞게 수정됨
-        p.sendMessage("§e전투 ㆍ 에미야 시로(FATE)");
-        p.sendMessage("라운드가 시작되면 8초간 영창을 시작하며, 완료 시 '무한의 검제'를 전개합니다.");
-        p.sendMessage("하늘에서 수많은 검이 쏟아져 적들에게 5칸(10) 피해를 입힙니다.");
-        p.sendMessage("떨어진 검을 주워 공격할 수 있으며, 우클릭으로 직접 투척할 수도 있습니다.");
+        p.sendMessage("§e전투 ● 에미야 시로(FATE)");
+        p.sendMessage("§f라운드가 시작되면 8초간 영창을 시작하며, 완료 시 '무한의 검제'를 전개합니다.");
+        p.sendMessage("§f하늘에서 수많은 검이 쏟아져 적들에게 5칸(10) 피해를 입힙니다.");
+        p.sendMessage("§f떨어진 검을 주워 공격할 수 있으며, 우클릭으로 직접 투척할 수도 있습니다.");
         p.sendMessage(" ");
         p.sendMessage("§7떨어진 검을 본인이 획득 -> 다이아몬드 검");
         p.sendMessage("§7떨어진 검을 타인이 획득 -> 돌 검");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초");
+        p.sendMessage("§7쿨타임 : 0초");
         p.sendMessage("---");
-        p.sendMessage("추가 장비 : 없음");
-        p.sendMessage("장비 제거 : 철 검");
+        p.sendMessage("§7추가 장비 : 없음");
+        p.sendMessage("§7장비 제거 : 철 검");
     }
 
     private void startChant(Player p) {

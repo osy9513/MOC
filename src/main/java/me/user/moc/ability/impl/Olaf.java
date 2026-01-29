@@ -49,16 +49,15 @@ public class Olaf extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● 올라프(리그 오브 레전드)");
-        p.sendMessage("§f우클릭 시 도끼를 상대에게 던져 체력 8칸(Damage 8)의 피해를 줍니다.");
-        p.sendMessage("§f맞은 상대는 §e구속 1§f이 1초간 걸립니다.");
-        p.sendMessage("§f도끼는 플레이어 혹은 블럭에 접촉하면 땅에 떨어집니다.");
-        p.sendMessage("§f(단, §b유리 블럭§f은 부수고 계속 날아갑니다.)");
-        p.sendMessage("§f땅에 떨어진 도끼는 §a올라프 본인만§f 주울 수 있으며,");
-        p.sendMessage("§f도끼를 주우면 §b쿨타임이 초기화§f됩니다.");
+        p.sendMessage("§f우클릭 시 도끼를 던져 적중한 적에게 8 대미지와 구속을 부여합니다.");
+        p.sendMessage("§f도끼는 블럭이나 대상 접촉 시 땅에 떨어지며, 올라프만 회수 가능합니다.");
+        p.sendMessage("§f떨어진 도끼를 주우면 즉시 쿨타임이 초기화됩니다.");
+        p.sendMessage("§f(도끼는 유리 블럭을 부숩니다.)");
+        p.sendMessage(" ");
         p.sendMessage("§7쿨타임 : 5초");
-        p.sendMessage("§---");
-        p.sendMessage("§7추가 장비: 철 도끼 2개");
-        p.sendMessage("§7장비 제거: 철 검");
+        p.sendMessage("---");
+        p.sendMessage("§7추가 장비 : 철 도끼 2개");
+        p.sendMessage("§7장비 제거 : 철 검");
     }
 
     @Override
