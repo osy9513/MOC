@@ -42,7 +42,7 @@ public class KingHassan extends Ability {
 
     @Override
     public String getName() {
-        return "산의 노인(FATE)";
+        return "산의 노인";
     }
 
     @Override
