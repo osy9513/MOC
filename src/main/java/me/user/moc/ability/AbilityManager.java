@@ -68,6 +68,7 @@ public class AbilityManager {
         addAbility(new TheKingOfGockgangE(plugin)); // 왕 쩌는 곡갱이 등록
         addAbility(new Rimuru(plugin)); // 리무르 등록
         addAbility(new Kaneki(plugin)); // 카네키 켄 등록
+        addAbility(new PaulPhoenix(plugin)); // 폴 피닉스 등록
     }
 
     private void addAbility(Ability ability) {
