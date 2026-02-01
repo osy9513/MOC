@@ -42,7 +42,7 @@ public class Rammus extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§a유틸 ● 람머스(리그 오브 레전드)");
-        p.sendMessage("§f가시박힌 껍질(가시 100)를 착용하면 '몸 말아 웅크리기'를 사용하여 구속 2가 걸립니다.");
+        p.sendMessage("§f가시박힌 껍질(가시 800)를 착용하면 '몸 말아 웅크리기'를 사용하여 구속 2가 걸립니다.");
         p.sendMessage("§f가시박힌 껍질에는 강력한 가시 인챈트가 부여되어 있습니다.");
         p.sendMessage("§f모자를 벗으면 구속 효과가 즉시 해제됩니다.");
         p.sendMessage(" ");
@@ -58,7 +58,7 @@ public class Rammus extends Ability {
         ItemMeta meta = helmet.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text("§a가시박힌 껍질"));
-            meta.addEnchant(Enchantment.THORNS, 100, true);
+            meta.addEnchant(Enchantment.THORNS, 800, true);
             helmet.setItemMeta(meta);
         }
         p.getInventory().addItem(helmet);
