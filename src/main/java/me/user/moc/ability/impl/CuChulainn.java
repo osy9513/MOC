@@ -267,8 +267,8 @@ public class CuChulainn extends Ability {
                     target.removeMetadata("GeiBolgCurse", plugin);
                     target.setNoDamageTicks(0);
 
-                    // 대미지 적용
-                    target.damage(25.0, shooter);
+                    // 대미지 적용 (체력 20칸 = 40)
+                    target.damage(40.0, shooter);
 
                     // 번개 효과
                     target.getWorld().strikeLightningEffect(target.getLocation());

@@ -53,8 +53,10 @@ public class Pantheon extends Ability {
         p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
         p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
         p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
+        // [장비 제거] 구운 소고기 제거
+        p.getInventory().remove(Material.COOKED_BEEF);
 
-        p.sendMessage("난 항상 제빵사가 되고 싶었지.");
+        p.getServer().broadcastMessage("§c빵테온 : 난 항상 제빵사가 되고 싶었지.");
     }
 
     @Override
@@ -70,7 +72,7 @@ public class Pantheon extends Ability {
         p.sendMessage("쿨타임 : 0초");
         p.sendMessage("---");
         p.sendMessage("추가 장비 : 빵 64 * 3개 지급.");
-        p.sendMessage("장비 제거 : 철 칼.");
+        p.sendMessage("장비 제거 : 철 칼, 구운 소고기.");
     }
 
     @EventHandler

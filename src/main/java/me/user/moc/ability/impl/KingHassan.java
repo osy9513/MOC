@@ -185,7 +185,7 @@ public class KingHassan extends Ability {
             victim.setHealth(newHealth);
 
             // 피격 효과 수동 재생 (대미지가 0이라 소리가 안 날 수 있으므로)
-            // [Fix] Suppress deprecation for HURT or use it if available
+            // [Fix] visual effect
             victim.playEffect(org.bukkit.EntityEffect.HURT);
         }
     }

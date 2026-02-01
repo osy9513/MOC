@@ -44,6 +44,7 @@ public class GameManager implements Listener {
     // 태스크 관리 (타이머)
     private BukkitTask selectionTask; // 능력 추첨 타이머
     private BukkitTask startGameTask; // [추가] 게임 시작 카운트다운 타이머
+    private BukkitTask borderStartTask; // [추가] 자기장 시작 대기 타이머
 
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
@@ -391,9 +392,15 @@ public class GameManager implements Listener {
             giveBattleItems(p);
         }
 
+        // 태스크 관리 (타이머)
+
         // 4-3. 자기장 타이머 시작 (콘피그 final_time 후 줄어듦)
         if (configManager.final_fight) {
-            new BukkitRunnable() {
+            // [버그 수정] 기존에 예약된 자기장 시작 태스크가 있다면 취소
+            if (borderStartTask != null) {
+                borderStartTask.cancel();
+            }
+            borderStartTask = new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (!isRunning)
@@ -464,6 +471,12 @@ public class GameManager implements Listener {
         // [버그 수정] 예약된 시작 태스크가 있다면 취소
         if (startGameTask != null && !startGameTask.isCancelled()) {
             startGameTask.cancel();
+        }
+
+        // [버그 수정] 자기장 시작 대기 태스크 취소
+        if (borderStartTask != null) {
+            borderStartTask.cancel();
+            borderStartTask = null;
         }
 
         if (selectionTask != null)

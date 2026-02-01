@@ -28,7 +28,7 @@ public class Saitama extends Ability {
     // private static final int GOAL_DIST_CM = 50000; // 500 blocks = 50000 cm
     private static final int GOAL_SNEAK = 300;
     private static final int GOAL_JUMP = 300;
-    private static final int GOAL_DIST_CM = 30000; // 500 blocks = 50000 cm
+    private static final int GOAL_DIST_CM = 30000; // 300 blocks = 30000 cm
     private final Map<UUID, SaitamaProgress> progressMap = new HashMap<>();
 
     @Override

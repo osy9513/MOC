@@ -64,6 +64,8 @@ public class PaulPhoenix extends Ability {
     public void giveItem(Player p) {
         // 폴 피닉스는 맨손 격투가이므로 기본 지급된 철검 제거
         p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
+        // 상시 힘 1 버프
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, false, false));
     }
 
     @EventHandler

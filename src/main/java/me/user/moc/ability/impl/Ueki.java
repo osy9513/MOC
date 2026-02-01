@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class Ueki extends Ability {
 
-    private final int COOLDOWN_TIME = 7; // 쿨타임 7초
+    private final int COOLDOWN_TIME = 5; // 쿨타임 5초
 
     public Ueki(JavaPlugin plugin) {
         super(plugin);
