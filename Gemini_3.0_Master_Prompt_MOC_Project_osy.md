@@ -129,6 +129,11 @@
 - **Java Version:** 21
 - **Plugin Version:** 0.1.1
 
+
+Implementation Plan 및 Task 전달 시
+반드시 한국어로 전달하시오.
+
+
 ---
 
 ## [W] 커밋 메세지 규격 (**오승엽 커밋 메세지 규칙**)

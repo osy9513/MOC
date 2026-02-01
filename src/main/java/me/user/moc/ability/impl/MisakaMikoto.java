@@ -11,9 +11,11 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -45,12 +47,7 @@ public class MisakaMikoto extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f미사카 미코토 (어떤 과학의 초전자포)",
-                "§f레일건을 쏩니다.",
-                "§7[우클릭] §f코인(프리즈머린 수정) 1개를 소모하여",
-                "§f전면 직선으로 레일건을 발사합니다. (사거리 15, 대미지 8)",
-                "§7[전력] §f전력(네더의 별)은 소모되지 않으며 15초마다 사용 가능합니다.",
-                "§f3초간 차징 후 엄청난 위력의 전기를 발사합니다. (사거리 50, 대미지 28)",
-                "§8쿨타임: 3초 (코인), 15초 (전력)");
+                "§f레일건을 쏩니다.");
     }
 
     @Override
@@ -83,18 +80,13 @@ public class MisakaMikoto extends Ability {
                 // 쿨타임 체크
                 if (!checkCooldown(p))
                     return;
+                setCooldown(p, 3); // 쿨타임 3초
 
                 // 코인 1개 소모
                 item.setAmount(item.getAmount() - 1);
-
                 // 레일건 발사
                 fireRailgun(p);
-
-                // [▼▼▼ 수정됨: 코인 쿨타임 3초 ▼▼▼]
-                setCooldown(p, 3);
-                // [▲▲▲ 여기까지 수정됨 ▲▲▲]
-
-                // 코인 전부 소모 체크
+                // 코인 소모 체크
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -108,18 +100,15 @@ public class MisakaMikoto extends Ability {
         if (item.getType() == Material.NETHER_STAR) {
             if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 if (item.getItemMeta() != null && "§e전력".equals(item.getItemMeta().getDisplayName())) {
-
-                    // [▼▼▼ 수정됨: 전력 쿨타임 및 소모 제거 ▼▼▼]
                     // 쿨타임 체크 (코인 쿨타임과 공유됨)
                     if (!checkCooldown(p))
                         return;
+                    setCooldown(p, 15); // 전력 쿨타임 15초
 
                     // 아이템 소모 코드 삭제됨 (무한 사용)
                     // item.setAmount(item.getAmount() - 1);
 
                     fireFullPower(p);
-                    setCooldown(p, 15); // 전력 쿨타임 15초
-                    // [▲▲▲ 여기까지 수정됨 ▲▲▲]
                 }
             }
         }
@@ -137,7 +126,7 @@ public class MisakaMikoto extends Ability {
 
         if (totalCoins <= 0) {
             // [수정] 안내 메시지 변경
-            p.sendMessage("§b[MOC] §f코인을 모두 소모했습니다. 15초 후 전력을 사용할 수 있습니다.");
+            p.sendMessage("§f코인을 모두 소모했습니다. 15초 후 전력을 사용할 수 있습니다.");
 
             new BukkitRunnable() {
                 @Override
@@ -161,8 +150,9 @@ public class MisakaMikoto extends Ability {
         Bukkit.broadcastMessage("§b미사카 미코토 : §f있지, 레일건이라는 말 알아?");
         p.playSound(p.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1f, 1f);
 
-        // [안전한 파티클 유지] CRIT (오류 없음)
-        p.getWorld().spawnParticle(Particle.CRIT, p.getEyeLocation(), 10, 0.5, 0.5, 0.5, 0.1);
+        // [▼▼▼ 파티클 완전 교체: 오류 방지 ▼▼▼]
+        // CRIT 대신 WAX_ON (반짝이는 별) 사용 - 데이터 불필요, 안전함
+        p.getWorld().spawnParticle(Particle.WAX_ON, p.getEyeLocation(), 10, 0.5, 0.5, 0.5, 0.1);
 
         var result = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 15, 0.5,
                 e -> e instanceof LivingEntity && e != p
@@ -170,14 +160,15 @@ public class MisakaMikoto extends Ability {
 
         Vector dir = p.getEyeLocation().getDirection();
         for (int i = 0; i < 15; i++) {
-            // [안전한 파티클 유지] END_ROD (오류 없음)
+            // END_ROD (흰색 막대) - 안전함
             p.getWorld().spawnParticle(Particle.END_ROD, p.getEyeLocation().add(dir.clone().multiply(i)), 1, 0, 0, 0,
                     0);
         }
 
         if (result != null && result.getHitEntity() instanceof LivingEntity target) {
             target.damage(8.0, p);
-            target.getWorld().spawnParticle(Particle.FLASH, target.getLocation(), 1);
+            // FLASH는 Color 데이터가 필수입니다.
+            target.getWorld().spawnParticle(Particle.FLASH, target.getLocation(), 1, Color.YELLOW);
         }
     }
 
@@ -191,7 +182,7 @@ public class MisakaMikoto extends Ability {
             @Override
             public void run() {
                 if (count >= 3) {
-                    shootFullPowerVerify(p);
+                    launchFullPowerProjectile(p);
                     cancel();
                     return;
                 }
@@ -205,33 +196,80 @@ public class MisakaMikoto extends Ability {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    private void shootFullPowerVerify(Player p) {
-        Vector dir = p.getEyeLocation().getDirection();
-        DustOptions electricOptions = new DustOptions(Color.YELLOW, 1.5f);
+    // [▼▼▼ 새로운 메서드: 블레이즈 막대 투사체 발사 ▼▼▼]
+    private void launchFullPowerProjectile(Player p) {
+        // 1. 투사체(화살) 생성 - 중력 무시, 빠른 속도
+        Arrow arrow = p.launchProjectile(Arrow.class);
+        arrow.setShooter(p);
+        arrow.setVelocity(p.getLocation().getDirection().multiply(4.0)); // 매우 빠름
+        arrow.setMetadata("MisakaFullPower", new FixedMetadataValue(plugin, true));
+        arrow.setSilent(true);
+        arrow.setGravity(false); // 직선으로 날아감
 
-        for (int i = 0; i < 50; i++) {
-            org.bukkit.Location particleLoc = p.getEyeLocation().add(dir.clone().multiply(i));
-            p.getWorld().spawnParticle(Particle.DUST, particleLoc, 1, 0.1, 0.1, 0.1, 0, electricOptions);
+        // 2. 시각 효과 (블레이즈 막대) - ItemDisplay 사용
+        ItemDisplay display = (ItemDisplay) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ITEM_DISPLAY);
+        display.setItemStack(new ItemStack(Material.BLAZE_ROD));
+        // 화살에 탑승시킴 (같이 이동)
+        arrow.addPassenger(display);
 
-            if (i % 2 == 0) {
-                // [안전한 파티클 유지] CRIT
-                p.getWorld().spawnParticle(Particle.CRIT, particleLoc, 1, 0.3, 0.3, 0.3, 0.1);
+        // 3. 파티클 트레일 (노란색 전기) - Runnable로 따라가며 생성
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 화살이 사라지거나 땅에 박히면 종료 (이벤트에서 처리하지만 안전장치)
+                if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround()) {
+                    display.remove(); // 디스플레이 제거
+                    this.cancel();
+                    return;
+                }
+
+                // 파티클 생성 (화살 위치)
+                DustOptions electricOptions = new DustOptions(Color.YELLOW, 1.5f);
+                // DUST (노랑) + WAX_ON (별)
+                arrow.getWorld().spawnParticle(Particle.DUST, arrow.getLocation(), 5, 0.2, 0.2, 0.2, 0,
+                        electricOptions);
+                arrow.getWorld().spawnParticle(Particle.WAX_ON, arrow.getLocation(), 2, 0.1, 0.1, 0.1, 0);
             }
-        }
+        }.runTaskTimer(plugin, 0L, 1L); // 매 틱마다 실행
+    }
 
-        for (int i = 1; i <= 50; i++) {
-            var loc = p.getEyeLocation().add(dir.clone().multiply(i));
-            for (Entity e : p.getWorld().getNearbyEntities(loc, 1.5, 1.5, 1.5)) {
-                if (e instanceof LivingEntity le && e != p) {
-                    if (le instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
+    // [▼▼▼ 투사체 적중 이벤트: 번개 및 대미지 처리 ▼▼▼]
+    @EventHandler
+    public void onProjectileHit(ProjectileHitEvent e) {
+        if (e.getEntity() instanceof Arrow arrow && arrow.hasMetadata("MisakaFullPower")) {
+            // 적중 위치 계산
+            org.bukkit.Location hitLoc;
+            if (e.getHitBlock() != null) {
+                hitLoc = e.getHitBlock().getLocation().add(0.5, 1, 0.5);
+            } else if (e.getHitEntity() != null) {
+                hitLoc = e.getHitEntity().getLocation();
+            } else {
+                hitLoc = arrow.getLocation();
+            }
+
+            // 1. 번개 내리꽂기 (반드시!)
+            arrow.getWorld().strikeLightningEffect(hitLoc);
+            arrow.getWorld().playSound(hitLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2f, 1f);
+
+            // 2. 광역 대미지 (3x3 범위, 약 반경 2블록)
+            for (Entity nearby : arrow.getWorld().getNearbyEntities(hitLoc, 2, 2, 2)) {
+                if (nearby instanceof LivingEntity target && target != arrow.getShooter()) {
+                    if (target instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
                         continue;
-
-                    le.damage(28.0, p);
-                    le.getWorld().strikeLightningEffect(le.getLocation());
+                    // 전력 데미지
+                    target.damage(28.0, (Player) arrow.getShooter());
                 }
             }
+
+            // 3. 시각 효과 제거 및 화살 삭제
+            if (!arrow.getPassengers().isEmpty()) {
+                arrow.getPassengers().forEach(Entity::remove); // ItemDisplay 제거
+            }
+            arrow.remove();
         }
     }
+    // [▲▲▲ 여기까지 추가됨 ▲▲▲]
+
 
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
@@ -247,9 +285,9 @@ public class MisakaMikoto extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● §f미사카 미코토 (어떤 과학의 초전자포)");
         p.sendMessage("§f레일건을 쏩니다.");
-        p.sendMessage("§7[우클릭] §f코인 1개를 소모하여 전면 직선으로 레일건 발사 (사거리 15, 대미지 8)");
-        p.sendMessage("§7[전력] §f코인을 모두 소모하면 15초 후 전력 사용 가능 (소모X)");
-        p.sendMessage("§f- 3초 차징 후 대미지 28 발사 (사거리 50)");
+        p.sendMessage("§f코인 우클릭 시 1개를 소모하여 전면 직선으로 레일건 발사 (사거리 15, 대미지 8)");
+        p.sendMessage("§f코인을 모두 소모하면 15초 후 전력 사용 가능");
+        p.sendMessage("§f전력 우클릭 시 3초 차징 후 발사 (사거리 50, 대미지 28)");
         p.sendMessage("§8쿨타임: 3초 (코인), 15초 (전력)");
     }
 }

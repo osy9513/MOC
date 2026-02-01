@@ -423,10 +423,8 @@ public class GameManager implements Listener {
     private void giveBattleItems(Player p) {
         p.getInventory().clear();
 
-        // 1. 철 칼 (나나야 시키 제외)
-        if (abilityManager == null || !abilityManager.hasAbility(p, "035")) {
-            p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
-        }
+        // 1. 철 칼
+        p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
         // 2. 구운 소고기 64개
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
         // 3. 물 양동이

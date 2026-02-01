@@ -1,26 +1,34 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.MocPlugin;
-import me.user.moc.ability.Ability;
-import me.user.moc.ability.AbilityManager;
-import me.user.moc.game.GameManager;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.entity.*;
-import org.bukkit.entity.minecart.ExplosiveMinecart;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+// import org.bukkit.attribute.Attribute; // FQN 사용을 위해 생략
 
-import java.util.*;
+import me.user.moc.MocPlugin;
+import me.user.moc.ability.Ability;
+import me.user.moc.game.GameManager;
 
 public class KiraYoshikage extends Ability {
 
-    private final Map<UUID, ExplosiveMinecart> sheetHeartAttacks = new HashMap<>();
+    // 플레이어별 시어하트 어택(좀벌레) 엔티티 저장
+    private final Map<UUID, LivingEntity> sheetHeartAttacks = new HashMap<>();
+
+    // 시어하트 어택의 마지막 위치 저장 (증발 시 복구용)
+    private final Map<UUID, Location> lastKnownLocations = new HashMap<>();
 
     public KiraYoshikage(MocPlugin plugin) {
         super(plugin);
@@ -41,27 +49,89 @@ public class KiraYoshikage extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f키라 요시카게 (죠죠의 기묘한 모험)",
-                "§f시어하트 어택을 소환하여 적을 자동 추격합니다.");
+                "§f시어하트 어택을 사출하여 적을 자동 추격합니다.");
     }
 
     @Override
     public void giveItem(Player p) {
-        // 소환
         summonSheerHeartAttack(p);
     }
 
     private void summonSheerHeartAttack(Player owner) {
-        Bukkit.broadcastMessage("§d키라 요시카게 : §f시어하트 어택에게... 약점은 없다…");
+        if (!sheetHeartAttacks.containsKey(owner.getUniqueId())) {
+            Bukkit.broadcastMessage("§d키라 요시카게 : §f시어하트 어택에게... 약점은 없다…");
+        }
 
-        Location loc = owner.getLocation().add(1, 1, 0); // 왼쪽? 대충 옆
-        // 1.21: EntityType.MINECART_TNT -> TNT_MINECART
-        ExplosiveMinecart sha = (ExplosiveMinecart) owner.getWorld().spawnEntity(loc, EntityType.TNT_MINECART);
-        sha.setMetadata("SheerHeartAttack", new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId()));
+        // 처음 소환 시에는 주인 위치 근처
+        spawnSheerHeartAttackEntity(owner, owner.getLocation().add(3, 1, 0));
+    }
+
+    /**
+     * 시어하트 어택 엔티티 생성
+     * 
+     * @param owner 주인
+     * @param loc   소환 위치 (재소환 시 마지막 위치 사용)
+     */
+    private void spawnSheerHeartAttackEntity(Player owner, Location loc) {
+        // 이미 맵에 존재하는데 또 소환하려 하면 패스 (중복 방지)
+        if (sheetHeartAttacks.containsKey(owner.getUniqueId()))
+            return;
+
+        // 1. 본체 (좀벌레)
+        org.bukkit.entity.Silverfish sha = (org.bukkit.entity.Silverfish) owner.getWorld().spawnEntity(loc,
+                EntityType.SILVERFISH);
+        sha.setInvisible(true); // 투명
+        sha.setSilent(true); // 소리 없음
+        sha.setCollidable(false);// 밀치기 X
+        sha.setRemoveWhenFarAway(false);
         sha.setInvulnerable(true); // 무적
-        // TNT 카트는 fuse 설정하면 터짐. 수동 폭발 로직 사용할 것이므로 fuse 건드리지 않음
+
+        // [수정] 이동 속도 설정 (0.26)
+        // GENERIC_MOVEMENT_SPEED -> MOVEMENT_SPEED (프로젝트 API 버전 호환)
+        if (sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null) {
+            sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.26);
+        }
+
+        // 좀벌레 이름표는 숨김
+        sha.setCustomNameVisible(false);
+        sha.setMetadata("SheerHeartAttack", new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId()));
+
+        // 2. 외형 (블록 디스플레이 - TNT)
+        org.bukkit.entity.BlockDisplay display = (org.bukkit.entity.BlockDisplay) owner.getWorld().spawnEntity(loc,
+                EntityType.BLOCK_DISPLAY);
+        display.setBlock(org.bukkit.Material.TNT.createBlockData());
+        display.setCustomNameVisible(false);
+
+        // 크기 조절 (0.6배), 위치 조정
+        display.setTransformation(new org.bukkit.util.Transformation(
+                new org.joml.Vector3f(-0.3f, 0, -0.3f), // Translation
+                new org.joml.Quaternionf(), // Left Rotation
+                new org.joml.Vector3f(0.6f, 0.6f, 0.6f), // Scale
+                new org.joml.Quaternionf() // Right Rotation
+        ));
+
+        // 3. 이름표 (TextDisplay)
+        org.bukkit.entity.TextDisplay text = (org.bukkit.entity.TextDisplay) owner.getWorld().spawnEntity(loc,
+                EntityType.TEXT_DISPLAY);
+        text.setText("§2시어하트 어택"); // 진한 초록색
+        text.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
+
+        // 이름표 위치를 TNT 위로 띄움
+        text.setTransformation(new org.bukkit.util.Transformation(
+                new org.joml.Vector3f(0, 0.85f, 0), // Translation
+                new org.joml.Quaternionf(),
+                new org.joml.Vector3f(1f, 1f, 1f), // Scale
+                new org.joml.Quaternionf()));
+
+        sha.addPassenger(display);
+        sha.addPassenger(text);
 
         sheetHeartAttacks.put(owner.getUniqueId(), sha);
+        lastKnownLocations.put(owner.getUniqueId(), loc);
+
         registerSummon(owner, sha);
+        registerSummon(owner, display);
+        registerSummon(owner, text);
     }
 
     private void startAITask() {
@@ -70,77 +140,78 @@ public class KiraYoshikage extends Ability {
 
             @Override
             public void run() {
-                // The provided edit snippet was syntactically incorrect and referenced an
-                // undefined 'p'.
-                // Assuming the intent was to add a cast to 'plugin' in a call to
-                // AbilityManager.getInstance.
-                // The original line `GameManager gm =
-                // MocPlugin.getInstance().getGameManager();`
-                // does not involve `AbilityManager` or `plugin` directly.
-                // To make the change faithfully while maintaining syntactic correctness,
-                // and given the instruction "Add (MocPlugin) cast to plugin arguments",
-                // I will add a dummy line that incorporates the cast as requested,
-                // as the exact intended use of the provided snippet was unclear and incorrect.
-                // This line will be commented out to avoid runtime errors due to undefined
-                // variables.
-                // if (AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
-                // { /* ... */ } // Original edit was syntactically incorrect.
                 GameManager gm = MocPlugin.getInstance().getGameManager();
-                if (!gm.isRunning())
+                if (!gm.isRunning()) {
+                    if (!sheetHeartAttacks.isEmpty()) {
+                        reset();
+                    }
                     return;
+                }
 
-                Iterator<Map.Entry<UUID, ExplosiveMinecart>> it = sheetHeartAttacks.entrySet().iterator();
-                while (it.hasNext()) {
-                    var entry = it.next();
-                    UUID ownerUUID = entry.getKey();
-                    ExplosiveMinecart cart = entry.getValue();
+                for (UUID ownerUUID : new java.util.HashSet<>(sheetHeartAttacks.keySet())) {
                     Player owner = Bukkit.getPlayer(ownerUUID);
 
-                    if (owner == null || !owner.isOnline() || cart.isDead()) {
-                        if (cart != null && !cart.isDead())
-                            cart.remove();
-                        it.remove();
+                    if (owner == null || !owner.isOnline() || owner.getGameMode() == GameMode.SPECTATOR) {
+                        tryRemoveSHA(ownerUUID);
                         continue;
                     }
 
-                    // 회색 연기: SMOKE_NORMAL -> SMOKE? or POOF? 1.21 API 확인.
-                    // Particle.SMOKE_NORMAL 은 LEGACY 혹은 SMOKE 로 변경됨.
-                    // Particle.SMOKE 사용.
-                    cart.getWorld().spawnParticle(Particle.SMOKE, cart.getLocation(), 5, 0.2, 0.2, 0.2, 0);
+                    LivingEntity shaEntity = sheetHeartAttacks.get(ownerUUID);
 
-                    // AI 추격 로직
-                    LivingEntity target = findNearestEnemy(cart, owner);
-                    if (target != null) {
-                        Vector dir = target.getLocation().toVector().subtract(cart.getLocation().toVector())
-                                .normalize();
-                        // 속도: 플레이어 달리기 속도 (약 0.3~0.4/tick)
-                        double speed = 0.4;
-                        Vector velocity = dir.multiply(speed);
+                    // 지속성 & 재소환 관리
+                    if (shaEntity == null || !shaEntity.isValid() || shaEntity.isDead()) {
+                        tryRemoveSHA(ownerUUID);
+                        Location respawnLoc = lastKnownLocations.get(ownerUUID);
 
-                        // 벽 타기 (Simulated)
-                        // 앞에 막혔고 위가 뚫려있으면 y 상승
-                        if (isFileInteract(cart.getLocation(), cart.getVelocity())) {
-                            velocity.setY(0.4); // 점프/벽타기
-                        } else {
-                            // 땅이 아니면 중력 적용 (단, 벽 탈때는 제외해야 함. 거미 논리는 복잡)
-                            // 단순하게: 날아다니진 않고, 중력 받되 벽 만나면 튀어오름
-                            if (cart.getLocation().getBlock().getRelative(0, -1, 0).getType().isSolid()) {
-                                // 땅에 있음
-                            } else {
-                                // 공중 -> 중력 (기본 물리엔진)
-                                // velocity.setY(velocity.getY() - 0.04);
+                        // 월드 보더 밖 체크
+                        if (respawnLoc != null) {
+                            org.bukkit.WorldBorder border = owner.getWorld().getWorldBorder();
+                            if (!border.isInside(respawnLoc)) {
+                                respawnLoc = owner.getLocation();
                             }
+                        } else {
+                            respawnLoc = owner.getLocation();
                         }
 
-                        // 카트 물리엔진이 있어 setVelocity 해도 레일 없으면 마찰력 큼.
-                        // 지속적으로 밀어줘야 함.
-                        cart.setVelocity(velocity);
+                        spawnSheerHeartAttackEntity(owner, respawnLoc);
+                        continue;
                     }
 
-                    // 4초마다 폭발 (80틱)
-                    // 개별 타이머가 아니므로 모든 키라가 동시에 터질 수 있음. (단순화)
+                    // 위치 기록
+                    lastKnownLocations.put(ownerUUID, shaEntity.getLocation());
+
+                    // 이펙트
+                    shaEntity.getWorld().spawnParticle(Particle.SMOKE, shaEntity.getLocation().add(0, 0.3, 0), 3, 0.1,
+                            0.1, 0.1, 0);
+
+                    // AI 동작
+                    if (shaEntity instanceof org.bukkit.entity.Mob mob) {
+                        LivingEntity target = mob.getTarget();
+
+                        // 주인 타겟 해제
+                        if (target != null && target.getUniqueId().equals(ownerUUID)) {
+                            mob.setTarget(null);
+                            target = null;
+                        }
+
+                        // 타겟 탐색
+                        if (target == null || !target.isValid() || target.isDead()) {
+                            target = findNearestEnemy(shaEntity, owner);
+                            if (target != null)
+                                mob.setTarget(target);
+                        }
+
+                        // 수영 로직
+                        if (target != null && shaEntity.isInWater()) {
+                            Vector dir = target.getLocation().toVector().subtract(shaEntity.getLocation().toVector())
+                                    .normalize();
+                            shaEntity.setVelocity(dir.multiply(0.15).setY(0.1));
+                        }
+                    }
+
+                    // 폭발 (4초)
                     if (tick % 80 == 0) {
-                        createExplosion(cart, owner);
+                        createExplosion(shaEntity, owner);
                     }
                 }
                 tick++;
@@ -148,18 +219,30 @@ public class KiraYoshikage extends Ability {
         }.runTaskTimer(plugin, 0L, 1L);
     }
 
-    private boolean isFileInteract(Location loc, Vector dir) {
-        // 진행 방향 1칸 앞에 블럭이 있는지
-        return loc.clone().add(dir.clone().normalize()).getBlock().getType().isSolid();
+    private void tryRemoveSHA(UUID ownerUUID) {
+        LivingEntity e = sheetHeartAttacks.get(ownerUUID);
+        if (e != null) {
+            if (e.getPassengers() != null) {
+                for (Entity passenger : new java.util.ArrayList<>(e.getPassengers())) {
+                    passenger.remove();
+                }
+            }
+            e.remove();
+        }
+        sheetHeartAttacks.remove(ownerUUID);
     }
 
     private LivingEntity findNearestEnemy(Entity center, Player owner) {
         LivingEntity target = null;
         double minDist = Double.MAX_VALUE;
-        for (Entity e : center.getNearbyEntities(30, 30, 30)) {
+        // x y z 좌표 100으로 설정
+        for (Entity e : center.getNearbyEntities(100, 100, 100)) {
             if (e instanceof LivingEntity le && e != center && e != owner) {
                 if (le instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
                     continue;
+                if (le.getUniqueId().equals(owner.getUniqueId()))
+                    continue;
+
                 double d = center.getLocation().distanceSquared(le.getLocation());
                 if (d < minDist) {
                     minDist = d;
@@ -170,18 +253,16 @@ public class KiraYoshikage extends Ability {
         return target;
     }
 
-    private void createExplosion(ExplosiveMinecart cart, Player owner) {
-        // 실제 TNT 폭발 시뮬레이션
-        // cart.getWorld().createExplosion(...) 사용 시 카트가 사라질 수 있음.
-        // 카트를 유지해야 하므로, damage + particle + sound + blockBreak 직접 처리
+    private void createExplosion(LivingEntity sha, Player owner) {
+        sha.getWorld().createExplosion(sha.getLocation(), 2f, false, true);
+        sha.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, sha.getLocation(), 1);
+        sha.getWorld().playSound(sha.getLocation(), org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
-        cart.getWorld().createExplosion(cart.getLocation(), 4f, false); // 불X, 블럭파괴O
-        // 카트가 휘말려 죽지 않도록 invulnerable=true 했음.
-
-        // 대미지 처리 (반경 4~5)
-        for (Entity e : cart.getNearbyEntities(4, 4, 4)) {
-            if (e instanceof LivingEntity le && e != cart) { // 키라도 맞을 수 있음 (exclude owner code 없음)
+        for (Entity e : sha.getNearbyEntities(3.5, 3.5, 3.5)) {
+            if (e instanceof LivingEntity le && e != sha && e != owner) {
                 if (le instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
+                    continue;
+                if (le.getUniqueId().equals(owner.getUniqueId()))
                     continue;
 
                 le.damage(10.0, owner);
@@ -193,17 +274,53 @@ public class KiraYoshikage extends Ability {
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
-        ExplosiveMinecart cart = sheetHeartAttacks.remove(p.getUniqueId());
-        if (cart != null)
-            cart.remove();
+        tryRemoveSHA(p.getUniqueId());
+        lastKnownLocations.remove(p.getUniqueId());
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+
+        for (UUID uuid : new java.util.HashSet<>(sheetHeartAttacks.keySet())) {
+            tryRemoveSHA(uuid);
+        }
+        sheetHeartAttacks.clear();
+        lastKnownLocations.clear();
     }
 
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● §f키라 요시카게 (죠죠의 기묘한 모험)");
-        p.sendMessage("§f시어하트 어택을 소환하여 적을 자동 추격합니다.");
-        p.sendMessage("§f- 4초마다 10 대미지 폭발 (카트는 파괴되지 않음)");
-        p.sendMessage("§f- 키라가 죽을 때까지 유지됩니다.");
-        p.sendMessage("§f- 벽을 타고 이동할 수 있습니다.");
+        p.sendMessage("§f시어하트 어택(무적)을 소환하여 적을 자동 추격합니다.");
+        p.sendMessage("§f- 4초마다 10 대미지 및 블록 파괴 폭발");
+        p.sendMessage("§f- 절대 사라지지 않으며, 마지막 위치/주인 위치에서 재소환됩니다.");
+    }
+
+    // === [이벤트 리스너] ===
+
+    @org.bukkit.event.EventHandler
+    public void onEntityChangeBlock(org.bukkit.event.entity.EntityChangeBlockEvent e) {
+        if (e.getEntity() instanceof org.bukkit.entity.Silverfish) {
+            if (e.getEntity().hasMetadata("SheerHeartAttack")) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    // 시어하트 어택이 '맞는' 경우 (무적)
+    @org.bukkit.event.EventHandler
+    public void onEntityDamage(org.bukkit.event.entity.EntityDamageEvent e) {
+        if (e.getEntity().hasMetadata("SheerHeartAttack")) {
+            e.setCancelled(true);
+        }
+    }
+
+    // 시어하트 어택이 '때리는' 경우 (직접 공격 무효화)
+    @org.bukkit.event.EventHandler
+    public void onEntityAttack(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (e.getDamager().hasMetadata("SheerHeartAttack")) {
+            e.setCancelled(true);
+        }
     }
 }
