@@ -31,7 +31,7 @@ public class ConfigManager {
     public int re_point = 1; // 능력 다시 뽑기 기회 (1번)
     public int start_time = 30; // 능력 추첨 제한 시간 (30초)
     public boolean final_fight = true; // 시간이 지나면 자기장이 생기나요?
-    public int final_time = 300; // 게임 시작 몇 초 뒤에 자기장이 생기나요? (300초 = 5분)
+    public int final_time = 120; // 게임 시작 몇 초 뒤에 자기장이 생기나요? (120초 = 2분)
     public boolean map_end = true; // 전장 외곽 벽을 활성화할까요?
     public int map_size = 75; // 전장(경기장)의 크기
     public int win_value = 40; // 몇 점을 먼저 따면 최종 우승인가요?

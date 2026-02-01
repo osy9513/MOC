@@ -199,7 +199,7 @@ public class Rimuru extends Ability {
         // 0), 10, 0.5, 0.5, 0.5);
         // -> 슬라임 위치로 이동됨
         p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
-        Bukkit.broadcastMessage("§b[MOC] §f" + p.getName() + "님이 히포쿠테 초와 마광석을 섭취하여 성장했습니다! (횟수: "
+        Bukkit.broadcastMessage("§f리무루가 히포쿠테 초와 마광석을 섭취하여 성장했습니다! (횟수: "
                 + damageStacks.get(p.getUniqueId()) + ")");
     }
 

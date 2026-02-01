@@ -80,7 +80,7 @@ public class EmiyaShirou extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§e[전투] §f무한의 검제 (Infinite Sword Glitch)",
+                "§e전투 ● §f무한의 검제 (Infinite Sword Glitch)",
                 "§7라운드 시작 시 고유 영창을 수행합니다.",
                 "§7영창이 완료되면 전장에 수많은 검이 쏟아집니다.",
                 "§7떨어진 검을 주워 투척할 수 있습니다.");

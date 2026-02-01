@@ -54,7 +54,7 @@ public class Jjanggu extends Ability {
         p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
 
         // [장비 지급] 초코비(쿠키) 10개
-        ItemStack chocobi = new ItemStack(Material.COOKIE, 10);
+        ItemStack chocobi = new ItemStack(Material.COOKIE, 2);
         ItemMeta meta = chocobi.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§6초코비");
@@ -69,13 +69,13 @@ public class Jjanggu extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 짱구(짱구는 못말려)");
-        p.sendMessage("배고픔을 20칸 채워주는 초코비 10개를 얻습니다.");
+        p.sendMessage("배고픔을 20칸 채워주는 초코비 2개를 얻습니다.");
         p.sendMessage("쉬프트를 눌리면 0.2초간 이동 속도가 엄청 빨라집니다.");
         p.sendMessage("이동 속도가 높아진 상태에서 생명체에게 부딪치면 체력 2칸의 고정 피해를 줍니다.");
         p.sendMessage(" ");
         p.sendMessage("쿨타임 : 0초");
         p.sendMessage("---");
-        p.sendMessage("추가 장비 : 초코비(쿠키) 10개.");
+        p.sendMessage("추가 장비 : 초코비(쿠키) 2개.");
         p.sendMessage("장비 제거 : 구운 소고기.");
     }
 
@@ -113,8 +113,8 @@ public class Jjanggu extends Ability {
         dashingPlayers.add(p.getUniqueId());
 
         // 1. 신속 효과 부여 (0.2초 = 4틱)
-        // 신속 50 정도면 매우 빠름. 화면이 확 줌인되는 효과도 있음.
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 50, false, false, false));
+        // 신속 30 정도면 매우 빠름. 화면이 확 줌인되는 효과도 있음.
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 30, false, false, false));
 
         // 2. 부리부리 소리 (돼지 소리?)
         p.playSound(p.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1f, 1.5f);
@@ -134,8 +134,8 @@ public class Jjanggu extends Ability {
 
                 // 2칸 대미지 충돌 판정
                 // 플레이어 주변 2칸 내의 엔티티 검색 (속도가 빨라 범위 상향)
-                // [밸런스 패치] 범위 축소 2.0 -> 1.0 (너무 잘 맞음)
-                for (Entity target : p.getNearbyEntities(1.0, 1.0, 1.0)) {
+                // [밸런스 패치] 범위 추가 축소 1.0 -> 0.6 (더욱 근접해야 함)
+                for (Entity target : p.getNearbyEntities(0.6, 0.6, 0.6)) {
                     if (target instanceof LivingEntity livingTarget && target != p) {
                         if (livingTarget instanceof Player pl && pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)
                             continue;
@@ -149,7 +149,7 @@ public class Jjanggu extends Ability {
                         livingTarget.setVelocity(dir);
 
                         // [밸런스 패치] 실제로 맞췄을 때만 메시지 출력 (도배 방지)
-                        p.sendMessage("§e부리부리! §f(적중!)");
+                        p.getServer().broadcastMessage("§c짱구 : §e부리부리~");
                         // 타격음
                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
                         // }

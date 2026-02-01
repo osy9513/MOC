@@ -48,18 +48,8 @@ public class Windbreaker extends Ability {
     @Override
     public List<String> getDescription() {
         List<String> lore = new ArrayList<>();
-        lore.add("§f ");
-        lore.add("§e[ 능력 설명 ]");
-        lore.add("§b전투 : §f윈드브레이커 (메이플 스토리)");
+        lore.add("§b전투 ● §f윈드브레이커 (메이플 스토리)");
         lore.add("§f천공의 노래를 사용합니다.");
-        lore.add("§f ");
-        lore.add("§e[ 상세 설명 ]");
-        lore.add("§f메이플 보우를 얻습니다. 신속 1 버프가 상시 부여됩니다.");
-        lore.add("§f우클릭 시 활을 쏩니다.");
-        lore.add("§f메이플 보우를 들고 §a쉬프트 2번§f을 누르면 천공의 노래를 발동합니다.");
-        lore.add("§f ");
-        lore.add("§6천공의 노래 : §f5초간 화살을 마구마구 쏩니다.");
-        lore.add("§f쿨타임 : 15초");
         return lore;
     }
 
@@ -146,10 +136,7 @@ public class Windbreaker extends Ability {
         if (!checkCooldown(p))
             return;
         setCooldown(p, 15);
-
-        p.sendMessage(" ");
-        p.sendMessage("§a천공의 노래!");
-        p.sendMessage(" ");
+        p.getServer().broadcastMessage("§a윈드브레이커 : 천공의 노래!");
 
         BukkitTask rapidFire = new BukkitRunnable() {
             int count = 0;

@@ -423,8 +423,10 @@ public class GameManager implements Listener {
     private void giveBattleItems(Player p) {
         p.getInventory().clear();
 
-        // 1. 철 칼
-        p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
+        // 1. 철 칼 (나나야 시키 제외)
+        if (abilityManager == null || !abilityManager.hasAbility(p, "035")) {
+            p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
+        }
         // 2. 구운 소고기 64개
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
         // 3. 물 양동이
@@ -516,7 +518,7 @@ public class GameManager implements Listener {
         if (sortedScores.size() > 1) {
             Map.Entry<UUID, Integer> second = sortedScores.get(1);
             Bukkit.broadcastMessage(
-                    "§72등 : " + Bukkit.getOfflinePlayer(second.getKey()).getName() + " [" + second.getValue() + "점]");
+                    "§f2등 : " + Bukkit.getOfflinePlayer(second.getKey()).getName() + " [" + second.getValue() + "점]");
         }
         if (sortedScores.size() > 2) {
             Map.Entry<UUID, Integer> third = sortedScores.get(2);
@@ -752,12 +754,12 @@ public class GameManager implements Listener {
         if (!readyPlayers.contains(p.getUniqueId())) {
             readyPlayers.add(p.getUniqueId());
             p.sendMessage("§a[MOC] 준비 완료!");
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage(" ");
+            p.sendMessage(" ");
+            p.sendMessage(" ");
+            p.sendMessage(" ");
+            p.sendMessage(" ");
+            p.sendMessage(" ");
+            p.sendMessage(" ");
         }
     }
 
