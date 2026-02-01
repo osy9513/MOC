@@ -42,7 +42,7 @@ public class KingHassan extends Ability {
 
     @Override
     public String getName() {
-        return "산의 노인";
+        return "산의 노인(FATE)";
     }
 
     @Override
@@ -67,7 +67,7 @@ public class KingHassan extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 1. 기존 아이템 제거 (기본 지급템 모두 제거)
+        // 1. 기존 아이템 제거
         p.getInventory().clear();
         p.getInventory().setHelmet(null);
         p.getInventory().setChestplate(null);
@@ -87,69 +87,29 @@ public class KingHassan extends Ability {
         p.getInventory().setHeldItemSlot(0);
 
         // 3. 스탯 및 버프 적용
-        // 최대 체력 20 고정 (기본값이지만 확실하게 설정)
-        // [Fix] Attribute.GENERIC_MAX_HEALTH -> Attribute.GENERIC_MAX_HEALTH (Standard)
-        // If compilation fails again, it might mean Spigot 1.21 uses GenericAttributes
-        // (NMS) or similar,
-        // but Attribute.GENERIC_MAX_HEALTH is the standard Bukkit API.
-        // Wait, the previous error said 'cannot find symbol variable
-        // GENERIC_MAX_HEALTH'.
-        // I will try Attribute.MAX_HEALTH as it is the most common alternative in some
-        // mappings.
         if (p.getAttribute(Attribute.MAX_HEALTH) != null) {
             p.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);
         }
         p.setHealth(p.getAttribute(Attribute.MAX_HEALTH).getValue());
 
-        // 버프 적용 (무한 지속)
+        // 버프 적용
         p.addPotionEffect(
                 new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 2, false, false)); // 구속
-                                                                                                                         // 3
-                                                                                                                         // (Amplifier
-                                                                                                                         // 2)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 2, false, false));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false)); // 즉시
-                                                                                                                   // 체력
-                                                                                                                   // 회복
-                                                                                                                   // (재생)
+                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false));
 
         // 4. 이펙트 및 메시지 출력
         Bukkit.broadcastMessage("§5산의 노인 : §f듣거라. 만종은 그대의 이름을 가리켰다.");
-        p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f); // 웅장한 소리 (위더 소환음 낮게)
+        p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
 
-        // 4초간 연기 이펙트
-        // [Fix] BukkitRunnable -> BukkitTask assignment
-        BukkitTask particleTask = new BukkitRunnable() {
-            int tick = 0;
-
-            @Override
-            public void run() {
-                if (tick >= 80) { // 4초 (20 ticks * 4)
-                    this.cancel();
-                    return;
-                }
-                if (!p.isOnline()) {
-                    this.cancel();
-                    return;
-                }
-
-                // 검은색(SMOKE) & 보라색(DRAGON_BREATH or WITCH) 연기
-                p.getWorld().spawnParticle(Particle.SMOKE, p.getLocation().add(0, 1, 0), 10, 0.5, 1, 0.5, 0.05);
-                p.getWorld().spawnParticle(Particle.DRAGON_BREATH, p.getLocation().add(0, 1, 0), 5, 0.5, 1, 0.5, 0.05);
-
-                tick += 5;
-            }
-        }.runTaskTimer(plugin, 0L, 5L);
-
-        registerTask(p, particleTask);
+        // [수정됨] 등장(리스폰) 시 연기 이펙트 제거
+        // 기존의 particleTask 부분을 삭제하여 죽은 뒤 부활할 때 시야를 가리는 효과를 없앴습니다.
     }
 
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
-        // 능력 해제 시 스탯/인벤토리 복구는 GameManager나 ClearManager에서 일괄 처리되지만,
-        // 혹시 모르니 포션 효과 등은 여기서 지워주는 것이 안전함.
         if (p.isOnline()) {
             p.removePotionEffect(PotionEffectType.INVISIBILITY);
             p.removePotionEffect(PotionEffectType.SLOWNESS);
@@ -167,25 +127,18 @@ public class KingHassan extends Ability {
     public void onAttack(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player attacker))
             return;
-        // [Fix] Added MocPlugin import, so this works now.
+
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
             return;
 
-        // 적이 살아있는 엔티티인지 확인
         if (e.getEntity() instanceof LivingEntity victim) {
-            // 방어력 무시 대미지 로직
             double trueDamage = 32.0;
 
-            // 기본 대미지 이벤트는 0으로 만들어서 넉백만 적용되게 하거나,
-            // 0.0001로 설정하여 피격 모션/넉백만 남김.
             e.setDamage(0.0001);
 
-            // 실제 체력 깎기 (방어력 연산 건너뜀)
             double newHealth = Math.max(0, victim.getHealth() - trueDamage);
             victim.setHealth(newHealth);
 
-            // 피격 효과 수동 재생 (대미지가 0이라 소리가 안 날 수 있으므로)
-            // [Fix] visual effect
             victim.playEffect(org.bukkit.EntityEffect.HURT);
         }
     }
@@ -204,7 +157,7 @@ public class KingHassan extends Ability {
         }
     }
 
-    // 3. 인벤토리 이동 방지 (아이템 위치 변경 금지)
+    // 3. 인벤토리 이동 방지
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player p))

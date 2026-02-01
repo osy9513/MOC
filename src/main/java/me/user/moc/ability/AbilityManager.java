@@ -72,6 +72,14 @@ public class AbilityManager {
         addAbility(new Jjanggu(plugin)); // 짱구 등록
         addAbility(new Naofumi(plugin)); // 이와타니 나오후미 등록
         addAbility(new Yugi(plugin)); // 유희 등록
+        // [신규 능력 등록]
+        addAbility(new Gaara(plugin)); // 036 가아라
+        addAbility(new MisakaMikoto(plugin)); // 034 미사카 미코토
+        addAbility(new NanayaShiki(plugin)); // 035 나나야 시키
+        addAbility(new AizenSosuke(plugin)); // 037 아이젠 소스케
+        addAbility(new KurosakiIchigo(plugin)); // 038 쿠로사키 이치고
+        addAbility(new KiraYoshikage(plugin)); // 039 키라 요시카게
+        addAbility(new KimDokja(plugin)); // 040 김독자
     }
 
     private void addAbility(Ability ability) {
@@ -83,6 +91,15 @@ public class AbilityManager {
     public Set<String> getAbilityCodes() {
         // 맵에 들어있는 모든 키(능력 코드들)를 복사해서 줍니다.
         return abilities.keySet();
+    }
+
+    // [추가] 김독자 능력 등에서 사용하기 위한 Getter
+    public Map<UUID, String> getPlayerAbilities() {
+        return playerAbilities;
+    }
+
+    public Ability getAbility(String code) {
+        return abilities.get(code);
     }
 
     /**

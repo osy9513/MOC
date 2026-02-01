@@ -68,14 +68,13 @@ public class Kaneki extends Ability {
         p.getInventory().clear();
 
         // 2. 썩은 고기 100개 지급 (64 + 36)
-        p.getInventory().addItem(new ItemStack(Material.ROTTEN_FLESH, 64));
         p.getInventory().addItem(new ItemStack(Material.ROTTEN_FLESH, 36));
 
-        // 3. 기본 버프 (재생 7, 허기 1)
-        // 재생 7 (Amplifier 6)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 6, false, false));
-        // 허기 5 (Amplifier 0) - 시각 효과용
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 999999, 4, false, false));
+        // 3. 기본 버프 (재생 5, 허기 1)
+        // 재생 5 (Amplifier 4)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
+        // 허기 11 (Amplifier 0) - 시각 효과용
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 999999, 10, false, false));
 
         // 4. 메시지
         Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
@@ -116,9 +115,9 @@ public class Kaneki extends Ability {
     @EventHandler
     public void onConsume(PlayerItemConsumeEvent e) {
         Player p = e.getPlayer();
-        // 재생 7 & 허기 효과로 능력자 식별
+        // 재생 5 & 허기 효과로 능력자 식별 (또는 AbilityManager 사용)
         boolean isKaneki = p.getPotionEffect(PotionEffectType.REGENERATION) != null &&
-                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() == 6;
+                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() == 4;
 
         if (!isKaneki)
             return;
@@ -144,7 +143,7 @@ public class Kaneki extends Ability {
             return;
 
         if (p.getPotionEffect(PotionEffectType.REGENERATION) == null ||
-                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() != 6)
+                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() != 4)
             return;
 
         if (!checkCooldown(p))
@@ -198,9 +197,28 @@ public class Kaneki extends Ability {
                 boolean drainHunger = (tickCount % 100 == 0);
 
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    // 능력자 확인
                     PotionEffect regen = p.getPotionEffect(PotionEffectType.REGENERATION);
-                    if (regen == null || regen.getAmplifier() != 6)
-                        continue;
+                    boolean hasRegenAbility = (regen != null && regen.getAmplifier() == 4);
+
+                    // 만약 공허라면 재생 제거 (다시 적용되지 않게 확인)
+                    if (hasRegenAbility && p.getLocation().getY() < -64) {
+                        p.removePotionEffect(PotionEffectType.REGENERATION);
+                        hasRegenAbility = false;
+                    }
+
+                    if (!hasRegenAbility) {
+                        // 만약 공허가 아닌데 재생이 없고, 카네키 능력자라면 재생 부여
+                        if (p.getLocation().getY() >= -64 && me.user.moc.ability.AbilityManager
+                                .getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
+                            if (p.getPotionEffect(PotionEffectType.REGENERATION) == null) {
+                                p.addPotionEffect(
+                                        new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
 
                     int food = p.getFoodLevel();
 

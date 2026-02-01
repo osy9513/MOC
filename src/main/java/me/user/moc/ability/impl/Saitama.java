@@ -1,9 +1,10 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.MocPlugin;
-import me.user.moc.ability.Ability;
-import me.user.moc.game.GameManager;
-import net.kyori.adventure.text.Component;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -16,19 +17,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import me.user.moc.MocPlugin;
+import me.user.moc.ability.Ability;
+import net.kyori.adventure.text.Component;
 
 public class Saitama extends Ability {
 
     // private static final int GOAL_SNEAK = 500;
     // private static final int GOAL_JUMP = 500;
     // private static final int GOAL_DIST_CM = 50000; // 500 blocks = 50000 cm
-    private static final int GOAL_SNEAK = 300;
-    private static final int GOAL_JUMP = 300;
-    private static final int GOAL_DIST_CM = 30000; // 300 blocks = 30000 cm
+    private static final int GOAL_SNEAK = 100;
+    private static final int GOAL_JUMP = 200;
+    private static final int GOAL_DIST_CM = 300; // 300 blocks
     private final Map<UUID, SaitamaProgress> progressMap = new HashMap<>();
 
     @Override
@@ -61,7 +61,7 @@ public class Saitama extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 사이타마(원펀맨)");
-        p.sendMessage("§f사이타마 운동법(웅크리기 300회, 점프 300회, 이동 300블록)을 완료하세요.");
+        p.sendMessage("§f사이타마 운동법(웅크리기 100회, 점프 200회, 이동 300블록)을 완료하세요.");
         p.sendMessage("§f운동을 모두 완료하면 라운드 종료까지 강력한 버프를 얻습니다.");
         p.sendMessage("§f버프 : 힘V, 이속V, 저항IV, 성급함V");
         p.sendMessage(" ");

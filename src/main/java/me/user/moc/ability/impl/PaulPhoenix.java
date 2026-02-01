@@ -137,7 +137,7 @@ public class PaulPhoenix extends Ability {
 
         // A. 기합 소리
         w.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0f, 0.6f);
-        p.sendMessage("§c뚜~아-!");
+        p.sendMessage("§c폴 피닉스 : 뚜~아-!");
 
         // B. 화면 반동 (Recoil) 제거 요청으로 삭제됨.
         // p.setVelocity(...) 삭제

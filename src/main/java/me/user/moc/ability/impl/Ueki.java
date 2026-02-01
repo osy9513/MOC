@@ -24,7 +24,7 @@ import java.util.UUID;
 
 public class Ueki extends Ability {
 
-    private final int COOLDOWN_TIME = 5; // 쿨타임 5초
+    private final int COOLDOWN_TIME = 7; // 쿨타임 7초
 
     public Ueki(JavaPlugin plugin) {
         super(plugin);
@@ -96,6 +96,12 @@ public class Ueki extends Ability {
         for (Entity entity : p.getNearbyEntities(20, 20, 20)) {
             // 아이템이거나, 시전자가 아닌 생명체인 경우
             if (entity instanceof Item || (entity instanceof LivingEntity && !entity.equals(p))) {
+
+                // [추가] 관전 모드 플레이어는 대상에서 제외
+                if (entity instanceof Player targetPlayer
+                        && targetPlayer.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                    continue;
+                }
 
                 // [▼▼▼ 여기서부터 변경됨: 블록 설치 대신 나무 생성 로직으로 변경 ▼▼▼]
                 Location loc = entity.getLocation();
