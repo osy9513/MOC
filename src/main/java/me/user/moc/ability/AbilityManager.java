@@ -69,6 +69,9 @@ public class AbilityManager {
         addAbility(new Rimuru(plugin)); // 리무르 등록
         addAbility(new Kaneki(plugin)); // 카네키 켄 등록
         addAbility(new PaulPhoenix(plugin)); // 폴 피닉스 등록
+        addAbility(new Jjanggu(plugin)); // 짱구 등록
+        addAbility(new Naofumi(plugin)); // 이와타니 나오후미 등록
+        addAbility(new Yugi(plugin)); // 유희 등록
     }
 
     private void addAbility(Ability ability) {
