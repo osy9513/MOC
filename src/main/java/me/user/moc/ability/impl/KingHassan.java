@@ -42,7 +42,7 @@ public class KingHassan extends Ability {
 
     @Override
     public String getName() {
-        return "산의 노인(FATE)";
+        return "산의 노인";
     }
 
     @Override
@@ -59,10 +59,10 @@ public class KingHassan extends Ability {
         p.sendMessage("§f최대 체력이 §c10칸(20HP)§f으로 고정되며, 핫바가 §b첫 번째 칸§f으로 고정됩니다.");
         p.sendMessage("§f다른 아이템은 사용할 수 없으며, §5산의 노인의 대검§f은 방어력을 무시합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 산의 노인의 대검");
-        p.sendMessage("§7장비 제거 : 모든 기본 지급 장비");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 산의 노인의 대검");
+        p.sendMessage("§f장비 제거 : 모든 기본 지급 장비");
     }
 
     @Override

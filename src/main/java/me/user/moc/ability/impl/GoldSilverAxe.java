@@ -66,10 +66,10 @@ public class GoldSilverAxe extends Ability {
         p.sendMessage("§f다이아 도끼 - 20%, 네더라이트 도끼 - 10%");
         p.sendMessage("§f해당 도끼에 인챈트 레벨 1 ~ 5 사이의 전투 인챈트 2개 랜덤 부여");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 나무 도끼");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 나무 도끼");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @EventHandler

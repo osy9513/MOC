@@ -170,13 +170,14 @@ public class NanayaShiki extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● §f나나야 시키 (월희)");
+        p.sendMessage("§c전투 ● 나나야 시키(월희)");
         p.sendMessage("§f극사 나나야를 사용합니다.");
-        p.sendMessage("§7[우클릭] §f칼을 던져(사거리 15) 적중 시 대상 위로 순간이동 후 45 대미지를 줍니다.");
+        p.sendMessage("§f나나츠요루 우클릭 시 칼을 던집니다(사거리 15).");
+        p.sendMessage("§f적중 시 대상 위로 순간이동하며 45의 치명적인 대미지를 입힙니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 18초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : §b나나츠요루");
-        p.sendMessage("§7장비 제거 : 철칼");
+        p.sendMessage("§f쿨타임 : 18초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 나나츠요루");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 }

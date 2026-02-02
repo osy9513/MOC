@@ -95,10 +95,10 @@ public class CuChulainn extends Ability {
         p.sendMessage("§f우클릭 시 저주에 걸린 대상을 추격하여 25의 강력한 피해를 주는");
         p.sendMessage("§f마창 '게이 볼그'를 투척합니다. 만약 대상이 없으면 자신이 피해를 입습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 20초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 게이 볼그");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 20초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 게이 볼그");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     // [좌클릭] 저주 부여

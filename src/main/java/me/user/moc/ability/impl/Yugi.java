@@ -84,20 +84,20 @@ public class Yugi extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 유희(유희왕)");
-        p.sendMessage("카드 덱을 우클릭 시 아래의 확률에 따라 랜덤한 카드를 뽑습니다.");
-        p.sendMessage("이미 카드가 있는 경우, 가지고 있는 카드는 없어지고 카드를 뽑습니다.");
+        p.sendMessage("§f카드 덱을 우클릭 시 아래의 확률에 따라 랜덤한 카드를 뽑습니다.");
+        p.sendMessage("§f이미 카드가 있는 경우, 가지고 있는 카드는 없어지고 카드를 뽑습니다.");
         p.sendMessage(" ");
-        p.sendMessage("20% 빛의 봉인 검 - 전방에 구속 3이 3초간 걸리는 화살 3개를 3갈래로 발사.");
-        p.sendMessage("20% 번개 - 조준선이 가르키는 블럭에 번개을 침.");
-        p.sendMessage("20% 빅 실드 가드너 - 빅 실드 가드너 소환. (아군을 지켜줌.)");
-        p.sendMessage("20% 크리보 - 크리보 소환. (크리보가 살아있으면 유희에게 데미지가 들어오지 않음.)");
-        p.sendMessage("15% 죽은 자의 소생 - 불사의 토템 획득.");
-        p.sendMessage("5% 엑조디아 - 엑조디아를 5 번 뽑으면 엑조드 파이어를 발사합니다.");
+        p.sendMessage("§f20% 빛의 봉인 검 - 전방에 구속 3이 3초간 걸리는 화살 3개를 3갈래로 발사");
+        p.sendMessage("§f20% 번개 - 조준선이 가르키는 블럭에 번개을 침");
+        p.sendMessage("§f20% 빅 실드 가드너 - 빅 실드 가드너 소환 (아군을 지켜줌)");
+        p.sendMessage("§f20% 크리보 - 크리보 소환 (크리보가 살아있으면 유희에게 데미지가 들어오지 않음)");
+        p.sendMessage("§f15% 죽은 자의 소생 - 불사의 토템 획득");
+        p.sendMessage("§f5% 엑조디아 - 엑조디아를 5 번 뽑으면 엑조드 파이어를 발사합니다");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 7초");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 카드 덱(네더라이트 파편).");
-        p.sendMessage("장비 제거 : 없음.");
+        p.sendMessage("§f쿨타임 : 7초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 카드 덱(네더라이트 파편)");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

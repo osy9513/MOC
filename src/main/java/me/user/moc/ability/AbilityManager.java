@@ -265,6 +265,8 @@ public class AbilityManager {
         if (abilityCode != null && abilities.containsKey(abilityCode)) {
             // Ability 클래스(Ueki.java 등)에 정의된 giveItem 메서드를 실행합니다.
             abilities.get(abilityCode).giveItem(p);
+            // [고도화 1] 아이템 지급 시 상세 설명도 한 번 보여줍시다.
+            abilities.get(abilityCode).detailCheck(p);
         }
     }
 

@@ -55,10 +55,10 @@ public class Ranga extends Ability {
         p.sendMessage("§f란가는 영구적인 이동 속도 II와 강력한 번개 공격(40% 확률) 능력을 가집니다.");
         p.sendMessage("§f란가가 사망하면 그림자로 돌아가 주인에게 이동 속도 II를 부여합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

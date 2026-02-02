@@ -54,10 +54,10 @@ public class Olaf extends Ability {
         p.sendMessage("§f떨어진 도끼를 주우면 즉시 쿨타임이 초기화됩니다.");
         p.sendMessage("§f(도끼는 유리 블럭을 부숩니다.)");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 5초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 철 도끼 2개");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 5초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 철 도끼 2개");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @Override

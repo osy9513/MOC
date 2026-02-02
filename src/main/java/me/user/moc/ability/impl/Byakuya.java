@@ -55,15 +55,15 @@ public class Byakuya extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§d전투 ● 쿠치키 뱌쿠야 (블리치)");
+        p.sendMessage("§d전투 ● 쿠치키 뱌쿠야(블리치)");
         p.sendMessage("§f철 검 우클릭 시 '만해 : 천본앵경엄'을 시전하여 주변을 벚꽃으로 덮습니다.");
         p.sendMessage("§f반경 30블록 내의 모든 적에게 초당 2(1칸)의 지속 피해를 10초간 입히며,");
         p.sendMessage("§f시전 중에는 이동 속도가 10% 감소하지만 적의 접근을 방해합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 20초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 20초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

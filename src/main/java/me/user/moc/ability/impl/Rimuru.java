@@ -89,21 +89,21 @@ public class Rimuru extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§b전투 ● 리무루 템페스트(전생했더니 슬라임이었던 건에 대하여)");
-        p.sendMessage("슬라임으로 변신합니다.");
-        p.sendMessage("상대와 부딪치거나 겹치면 상대에게 8 데미지를 줍니다.");
-        p.sendMessage("기본 체력이 5줄(100칸)이며 배고픔이 달지 않습니다.");
-        p.sendMessage("넉백 저항 100%가 있으며 점프 시 블럭 3칸을 올라갑니다.");
-        p.sendMessage("물 양동이를 제외한 땅에 떨어진 아이템을 먹을 때마다 크기가 커집니다(무한).");
-        p.sendMessage("아이템 섭취 시 체력이 10칸(20) 회복되며, 부딪히는 데미지가 영구적으로 5 증가합니다.");
-        p.sendMessage("물 양동이 이외 모든 아이템은 자동으로 사라집니다.");
-        p.sendMessage("수압 추진을 배워 물 속에서 이동 속도가 빠릅니다.");
-        p.sendMessage("상시 재생 1 버프를 가지고 있습니다.");
-        p.sendMessage("일심동체: 본체와 슬라임의 체력이 공유됩니다.");
+        p.sendMessage("§f슬라임으로 변신합니다.");
+        p.sendMessage("§f상대와 부딪치거나 겹치면 상대에게 8 데미지를 줍니다.");
+        p.sendMessage("§f기본 체력이 5줄(100칸)이며 배고픔이 달지 않습니다.");
+        p.sendMessage("§f넉백 저항 100%가 있으며 점프 시 블럭 3칸을 올라갑니다.");
+        p.sendMessage("§f물 양동이를 제외한 땅에 떨어진 아이템을 먹을 때마다 크기가 커집니다(무한).");
+        p.sendMessage("§f아이템 섭취 시 체력이 10칸(20) 회복되며, 부딪히는 데미지가 영구적으로 5 증가합니다.");
+        p.sendMessage("§f물 양동이 이외 모든 아이템은 자동으로 사라집니다.");
+        p.sendMessage("§f수압 추진을 배워 물 속에서 이동 속도가 빠릅니다.");
+        p.sendMessage("§f상시 재생 1 버프를 가지고 있습니다.");
+        p.sendMessage("§f일심동체: 본체와 슬라임의 체력이 공유됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초.");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 없음(물 양동이 지급).");
-        p.sendMessage("장비 제거 : 물 양동이 외 전부.");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음(물 양동이 지급)");
+        p.sendMessage("§f장비 제거 : 물 양동이 외 전부");
     }
 
     @Override

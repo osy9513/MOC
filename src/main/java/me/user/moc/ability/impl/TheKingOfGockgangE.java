@@ -43,7 +43,7 @@ public class TheKingOfGockgangE extends Ability {
 
     @Override
     public String getName() {
-        return "The King of Gockgang-E";
+        return "The King of Gockgang-E";// 일명 킹오브곡갱이
     }
 
     @Override
@@ -83,14 +83,14 @@ public class TheKingOfGockgangE extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e복합 ● The King of Gockgang-E(The King of Gockgang-E)");
-        p.sendMessage("성급한 V를 상시 활성화 합니다.");
-        p.sendMessage("모든 블럭을 그리고 기반암까지 크리에이트처럼 때려 부수는 `왕 쩌는 곡갱이`를 얻습니다.");
-        p.sendMessage("왕 쩌는 곡갱이로 블럭을 부수면 파편이 튀어서 파괴된 블럭의 위 아래 좌 우 대각선 모든 방향에 3데미지를 줍니다.");
+        p.sendMessage("§f성급한 V를 상시 활성화 합니다.");
+        p.sendMessage("§f모든 블럭을 그리고 기반암까지 크리에이트처럼 때려 부수는 `왕 쩌는 곡갱이`를 얻습니다.");
+        p.sendMessage("§f왕 쩌는 곡갱이로 블럭을 부수면 파편이 튀어서 파괴된 블럭의 위 아래 좌 우 대각선 모든 방향에 3데미지를 줍니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 왕 쩌는 곡갱이(네더라이트곡갱이-내구성10)");
-        p.sendMessage("장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 왕 쩌는 곡갱이(네더라이트곡갱이-내구성10)");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     /**
@@ -107,11 +107,13 @@ public class TheKingOfGockgangE extends Ability {
             return;
 
         // 2. AbilityManager를 통해 이 플레이어가 이 능력(019)을 가지고 있는지 확인
-        // (부모 클래스 메서드가 있으면 좋겠지만, 현재 구조상 매니저를 호출하거나 직접 확인해야 함)
-        // 여기서는 간단히 이름 검사만 하지 않고, AbilityManager와 연동하는 것이 정석이나,
-        // 편의상 아이템 이름과 플레이어 상태로직을 믿고 진행합니다.
-        // 더 안전하게 하려면 AbilityManager.getInstance(plugin).hasAbility(p, getCode()) 호출 필요.
-        // 하지만 성능을 위해 아이템 체크를 먼저 합니다.
+        // 킹오브곡갱이는 다른 사람이 먹어서 사용할 수 있게 구현 ㅋㅋ 그게 더 잼슴.
+        /*
+         * if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin)
+         * plugin).hasAbility(p, getCode())) {
+         * return;
+         * }
+         */
 
         ItemStack mainHand = p.getInventory().getItemInMainHand();
         if (mainHand.getType() != Material.NETHERITE_PICKAXE)

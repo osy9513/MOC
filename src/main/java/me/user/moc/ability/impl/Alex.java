@@ -40,9 +40,8 @@ public class Alex extends Ability {
     @Override
     public List<String> getDescription() {
         return List.of(
-                "유틸 ● 알렉스(이터널 리턴)",
-                "§f에메랄드 블럭을 20초간 해킹하면",
-                "§f전장의 기반암이 전부 사라집니다.");
+                "§e유틸 ● 알렉스(이터널 리턴)",
+                "§fJP에게 전달받은 해킹툴을 이용하여 우클릭으로 해킹을 진행할 수 있습니다.");
     }
 
     @Override
@@ -53,14 +52,14 @@ public class Alex extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e유틸 ● 알렉스(이터널 리턴)");
-        p.sendMessage("§f맨손으로 에메랄드 블록을 20초간 우클릭하여 해킹하면 전장의 기반암을 파괴합니다.");
-        p.sendMessage("§f해킹 성공 시 자신은 20초간 느린 낙하 효과를 얻어 추락사하지 않습니다.");
-        p.sendMessage("§f전장의 판도를 바꾸는 데 특화된 유틸리티 능력입니다.");
+        p.sendMessage("§f맨손으로 에메랄드 블록을 20초간 우클릭하여");
+        p.sendMessage("§f해킹에 성공하면 전장의 기반암을 파괴합니다.");
+        p.sendMessage("§f해킹 성공 시 자신은 20초간 느린 낙하 효과를 얻습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

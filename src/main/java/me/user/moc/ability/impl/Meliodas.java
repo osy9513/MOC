@@ -67,10 +67,10 @@ public class Meliodas extends Ability {
         p.sendMessage("§f3초 후 또는 해제 시 주변 5블록 적에게 §c누적 피해의 200%§f를 입힙니다.");
         p.sendMessage("§f발동 후 3초간 움직일 수 없습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 30초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

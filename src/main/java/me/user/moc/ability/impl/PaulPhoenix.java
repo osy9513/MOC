@@ -48,16 +48,16 @@ public class PaulPhoenix extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ㆍ 폴 피닉스(철권)");
+        p.sendMessage("§c전투 ● 폴 피닉스(철권)");
         p.sendMessage("§f맨손 상태에서 웅크리기(Shift) + 좌클릭 시");
         p.sendMessage("§f전방으로 거대한 에너지를 방출하여 공간을 타격합니다.");
         p.sendMessage("§f적중 시 대상은 1초간 그로기 상태가 되며");
         p.sendMessage("§f주변의 적들은 충격파에 밀려나게 됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 8초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 8초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

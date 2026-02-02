@@ -1,6 +1,8 @@
 package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -69,14 +71,14 @@ public class Jjanggu extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 짱구(짱구는 못말려)");
-        p.sendMessage("배고픔을 20칸 채워주는 초코비 2개를 얻습니다.");
-        p.sendMessage("쉬프트를 눌리면 0.2초간 이동 속도가 엄청 빨라집니다.");
-        p.sendMessage("이동 속도가 높아진 상태에서 생명체에게 부딪치면 체력 2칸의 고정 피해를 줍니다.");
+        p.sendMessage("§f배고픔을 가득 채워주는 초코비 2개를 얻습니다.");
+        p.sendMessage("§f쉬프트를 눌리면 0.2초간 이동 속도가 엄청 빨라집니다.");
+        p.sendMessage("§f이동 속도가 높아진 상태에서 생명체에게 부딪치면 2.5칸의 고정 피해를 줍니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 초코비(쿠키) 2개.");
-        p.sendMessage("장비 제거 : 구운 소고기.");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 초코비(쿠키) 2개");
+        p.sendMessage("§f장비 제거 : 구운 소고기");
     }
 
     /**
@@ -149,7 +151,7 @@ public class Jjanggu extends Ability {
                         livingTarget.setVelocity(dir);
 
                         // [밸런스 패치] 실제로 맞췄을 때만 메시지 출력 (도배 방지)
-                        p.getServer().broadcastMessage("§c짱구 : §e부리부리~");
+                        Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
                         // 타격음
                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
                         // }

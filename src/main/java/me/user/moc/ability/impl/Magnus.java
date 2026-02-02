@@ -59,10 +59,10 @@ public class Magnus extends Ability {
         p.sendMessage("§f충돌 시 또는 하차 후 1초 뒤 폭발하여 강력한 광역 피해를 줍니다.");
         p.sendMessage("§f본인은 폭발 대미지를 입지 않습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 20초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 오토바이(광산 수레)");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 20초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 오토바이");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @EventHandler

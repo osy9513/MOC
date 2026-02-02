@@ -53,7 +53,7 @@ public class KimDokja extends Ability {
         sword.setItemMeta(meta);
         p.getInventory().addItem(sword);
 
-        // 아직 설화 획득 전이므로 대미지 낮춤 (철검급으로)
+        // 아직 설화 획득 전이므로 대미지 낮춤 (철검급으로) <- 안 낮추는 걸로 처리.
         // 속성 수정은 복잡하므로, EntityDamageByEntityEvent에서 처리
     }
 
@@ -102,16 +102,19 @@ public class KimDokja extends Ability {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent e) {
-        // 1. 김독자의 공격 대미지 조정
-        if (e.getDamager() instanceof Player attacker
-                && AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode())) {
-            if (!hasStory.contains(attacker.getUniqueId())) {
-                // 설화 획득 전: 네더라이트(8) -> 철검(6) 수준으로 너프
-                // 대충 -2 정도 깎음
-                e.setDamage(e.getDamage() - 2.0);
-            }
-            return;
-        }
+        /*
+         * // 1. 김독자의 공격 대미지 조정 <- 그냥 없는 걸로 함. 기본딜이 네더검이라 강하도록
+         * if (e.getDamager() instanceof Player attacker
+         * && AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker,
+         * getCode())) {
+         * if (!hasStory.contains(attacker.getUniqueId())) {
+         * // 설화 획득 전: 네더라이트(8) -> 철검(6) 수준으로 너프
+         * // 대충 -2 정도 깎음
+         * e.setDamage(e.getDamage() - 2.0);
+         * }
+         * return;
+         * }
+         */
 
         // 2. 김독자가 피격될 때 방어 로직
         if (e.getEntity() instanceof Player defender
@@ -155,10 +158,16 @@ public class KimDokja extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e유틸 ● §f김독자 (전지적 독자 시점)");
+        p.sendMessage("§e유틸 ● 김독자(전지적 독자 시점)");
         p.sendMessage("§f절대왕좌를 파괴하여 설화를 완성하세요.");
-        p.sendMessage("§f사인참사검(철검)으로 맵의 에메랄드 블럭 파괴 시 설화 획득");
-        p.sendMessage("§f 설화 획득 시 사인참사검 강화(날카로움2 네더라이트)");
-        p.sendMessage("§f 플레이어 외의 공격 및 유틸형 능력이 아닌 플레이어의 공격을 1로 고정");
+        p.sendMessage("§f사인참사검으로 맵의 에메랄드 블럭 파괴 시 설화를 획득합니다.");
+        p.sendMessage("§f[설화 획득 효과]");
+        p.sendMessage("§f1. 사인참사검 강화(날카로움 2, 네더라이트)");
+        p.sendMessage("§f2. 타 플레이어의 공격 대미지를 1로 고정(단, 유틸형 능력자의 공격은 제외)");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 사인참사검");
+        p.sendMessage("§f장비 제거 : 철검");
     }
 }

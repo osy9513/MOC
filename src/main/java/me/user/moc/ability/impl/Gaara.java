@@ -1,14 +1,27 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.MocPlugin;
-import me.user.moc.ability.Ability;
-import me.user.moc.ability.AbilityManager;
-import me.user.moc.game.GameManager;
-import org.bukkit.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.DecoratedPot;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.*;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -21,10 +34,11 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
-import org.joml.AxisAngle4f;
-import org.joml.Vector3f;
 
-import java.util.*;
+import me.user.moc.MocPlugin;
+import me.user.moc.ability.Ability;
+import me.user.moc.ability.AbilityManager;
+import me.user.moc.game.GameManager;
 
 public class Gaara extends Ability {
 
@@ -52,12 +66,7 @@ public class Gaara extends Ability {
         return Arrays.asList(
                 "§e전투 ● §f가아라 (나루토)",
                 "§f모래 표주박에서 모래를 꺼내 자동으로 공격합니다.",
-                "§7[패시브] §f라운드 시작 시 머리 위에 모래를 띄웁니다.",
-                "§f4초마다 13칸 내 생명체에게 모래를 발사하여 9의 대미지를 주고 모래 블럭을 설치합니다.",
-                "§7[우클릭] §f모래 표주박 우클릭 시 모래 10개를 소모하여",
-                "§f20칸 내 바라보고 있는 생명체에게 사박궤를 시전합니다.",
-                "§f3초 뒤 §c§l사폭장송§f을 발동하며 대상은 폭발합니다. (고정 피해 15)",
-                "§8쿨타임: 14초");
+                "§f모래가 모이면 모래 표주박으로 사박궤/사폭장송을 발동합니다.");
     }
 
     @Override
@@ -394,11 +403,16 @@ public class Gaara extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● §f가아라 (나루토)");
-        p.sendMessage("§7[패시브] §f매 라운드 4초마다 13칸 내 적에게 모래 발사 (9 대미지 + 모래 설치)");
-        p.sendMessage("§7[액티브] §f모래 표주박 우클릭 (모래 10개 소모)");
-        p.sendMessage("§f- 20칸 내 적을 사암으로 가둠 (2초 지속)");
-        p.sendMessage("§f- 붉은 사암 변환 후 폭발 (15 고정 대미지)");
-        p.sendMessage("§8쿨타임: 14초");
+        p.sendMessage("§e전투 ● 가아라(나루토)");
+        p.sendMessage("§f모래 표주박에서 모래를 꺼내 자동으로 공격합니다.");
+        p.sendMessage("§f[패시브] 4초마다 13칸 내 적에게 모래를 발사하여 9 대미지를 주고 모래를 설치합니다.");
+        p.sendMessage("§f        4초마다 인벤토리에 모리가 쌓입니다.");
+        p.sendMessage("§f[액티브] §6모래 표주박 §f우클릭 시 모래 10개를 소모하여 사박궤를 시전합니다.");
+        p.sendMessage("§f대상을 사암으로 가두며, 3초 뒤 사폭장송을 발동하여 15의 폭발 피해를 입힙니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 14초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : §6모래 표주박");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 }

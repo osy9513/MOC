@@ -1,9 +1,10 @@
 // 파일 경로: src/main/java/me/user/moc/ability/impl/Ueki.java
 package me.user.moc.ability.impl;
 
-import me.user.moc.ability.Ability;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import java.util.List;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -15,16 +16,12 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.Location;
-import org.bukkit.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import me.user.moc.ability.Ability;
 
 public class Ueki extends Ability {
 
-    private final int COOLDOWN_TIME = 7; // 쿨타임 7초
+    private final int COOLDOWN_TIME = 8; // 쿨타임 8초
 
     public Ueki(JavaPlugin plugin) {
         super(plugin);
@@ -55,10 +52,10 @@ public class Ueki extends Ability {
         p.sendMessage("§f묘목을 우클릭하면 주변 20블록 이내의 모든 생명체와 아이템을 나무로 바꿉니다.");
         p.sendMessage("§f나무로 변한 대상(몹/아이템)은 즉시 소멸하며, 플레이어는 나무 속에 갇힙니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 7초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 참나무 묘목 64개");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 8초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 참나무 묘목 64개");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override
