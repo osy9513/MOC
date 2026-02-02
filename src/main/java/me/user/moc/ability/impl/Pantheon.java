@@ -61,18 +61,17 @@ public class Pantheon extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ㆍ 빵테온(롤)");
-        p.sendMessage("빵 우클릭 시 활처럼 당겨서 발사함.");
-        p.sendMessage("빵 발사 시 배고픔 3칸 참.");
-        p.sendMessage("빵에 맞으면 체력 3칸 깎임.");
-        p.sendMessage("빵에 맞으면 배고픔 3칸 참.");
-        p.sendMessage("빵으로 때리면 철 칼이랑 같은 데미지를 줌.");
-        p.sendMessage("빵 발사하는 만큼 빵 소모.");
+        p.sendMessage("§c전투 ● 판테온(리그 오브 레전드)");
+        p.sendMessage("§f우클릭 시 빵을 활처럼 당겨서 발사합니다.");
+        p.sendMessage("§f빵 발사 시 배고픔 3칸이 찹니다.");
+        p.sendMessage("§f빵에 맞으면 체력이 3칸 감소하며 배고픔이 3칸 찹니다.");
+        p.sendMessage("§f빵으로 때리면 철 칼과 같은 대미지를 줍니다.");
+        p.sendMessage("§f빵을 발사하는 만큼 빵이 소모됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 빵 64 * 3개 지급.");
-        p.sendMessage("장비 제거 : 철 칼, 구운 소고기.");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 빵 64 * 3개");
+        p.sendMessage("§f장비 제거 : 철 칼, 구운 소고기");
     }
 
     @EventHandler

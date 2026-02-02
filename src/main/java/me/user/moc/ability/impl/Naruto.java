@@ -60,10 +60,10 @@ public class Naruto extends Ability {
         p.sendMessage("§f플레이어와 동일한 모습의 분신 12명을 즉시 소환하여 전장을 장악합니다.");
         p.sendMessage("§f분신은 적을 추격하여 공격하며, 파괴되기 전까지 계속해서 적을 압박합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 30초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : §6금술 두루마리");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : §6금술 두루마리");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

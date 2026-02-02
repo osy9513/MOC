@@ -270,7 +270,6 @@ public class MisakaMikoto extends Ability {
     }
     // [▲▲▲ 여기까지 추가됨 ▲▲▲]
 
-
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
         if (e.getEntity() instanceof Player p
@@ -283,11 +282,15 @@ public class MisakaMikoto extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● §f미사카 미코토 (어떤 과학의 초전자포)");
+        p.sendMessage("§e전투 ● 미사카 미코토(어떤 과학의 초전자포)");
         p.sendMessage("§f레일건을 쏩니다.");
-        p.sendMessage("§f코인 우클릭 시 1개를 소모하여 전면 직선으로 레일건 발사 (사거리 15, 대미지 8)");
-        p.sendMessage("§f코인을 모두 소모하면 15초 후 전력 사용 가능");
-        p.sendMessage("§f전력 우클릭 시 3초 차징 후 발사 (사거리 50, 대미지 28)");
-        p.sendMessage("§8쿨타임: 3초 (코인), 15초 (전력)");
+        p.sendMessage("§f코인 우클릭 시 1개를 소모하여 전면 직선으로 레일건을 발사합니다(사거리 15, 대미지 8).");
+        p.sendMessage("§f코인을 모두 소모하면 15초 후 전력을 사용할 수 있습니다.");
+        p.sendMessage("§f전력 우클릭 시 3초 차징 후 발리하여 강력한 대미지를 줍니다(사거리 50, 대미지 28).");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 3초 / 15초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 코인 10개, 전력(조건부)");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 }

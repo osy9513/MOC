@@ -291,10 +291,15 @@ public class KiraYoshikage extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● §f키라 요시카게 (죠죠의 기묘한 모험)");
-        p.sendMessage("§f시어하트 어택(무적)을 소환하여 적을 자동 추격합니다.");
-        p.sendMessage("§f- 4초마다 10 대미지 및 블록 파괴 폭발");
-        p.sendMessage("§f- 절대 사라지지 않으며, 마지막 위치/주인 위치에서 재소환됩니다.");
+        p.sendMessage("§e전투 ● 키라 요시카게(죠죠의 기묘한 모험)");
+        p.sendMessage("§f시어하트 어택을 사출하여 적을 자동 추격합니다.");
+        p.sendMessage("§f시어하트 어택은 4초마다 10의 폭발 대미지를 입히며 주변 블럭을 폭발 시킵니다.");
+        p.sendMessage("§f시어하트 어택은 절대 사라지지 않으며, 파괴될 경우 재소환됩니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     // === [이벤트 리스너] ===

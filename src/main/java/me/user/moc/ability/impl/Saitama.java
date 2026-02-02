@@ -65,10 +65,10 @@ public class Saitama extends Ability {
         p.sendMessage("§f운동을 모두 완료하면 라운드 종료까지 강력한 버프를 얻습니다.");
         p.sendMessage("§f버프 : 힘V, 이속V, 저항IV, 성급함V");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 철 갑옷, 철 흉갑");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 철 갑옷, 철 흉갑");
     }
 
     @Override

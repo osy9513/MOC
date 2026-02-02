@@ -46,10 +46,10 @@ public class Rammus extends Ability {
         p.sendMessage("§f가시박힌 껍질에는 강력한 가시 인챈트가 부여되어 있습니다.");
         p.sendMessage("§f모자를 벗으면 구속 효과가 즉시 해제됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 가시박힌 껍질");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 가시박힌 껍질");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

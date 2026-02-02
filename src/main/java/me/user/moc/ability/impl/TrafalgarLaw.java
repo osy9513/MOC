@@ -71,10 +71,10 @@ public class TrafalgarLaw extends Ability {
         p.sendMessage("§f교환된 대상에게는 10의 피해를 입힙니다.");
         p.sendMessage("§f룸 지속시간 동안 횟수 제한 없이 사용 가능합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 30초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @Override

@@ -1,6 +1,8 @@
 package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
+import me.user.moc.ability.AbilityManager;
+import me.user.moc.MocPlugin;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -68,15 +70,18 @@ public class Ulquiorra extends Ability {
         p.sendMessage("§f적중한 적을 30블록까지 끌고 가며 체력 1줄(20)의 방어 무시 피해를 줍니다.");
         p.sendMessage("§f준비 중에는 구속 5 효과가 부여됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 20초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 란사 델 렐람파고");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 20초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 란사 델 렐람파고");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+            return;
+
         ItemStack item = e.getItem();
 
         // 1. 아이템 체크 (삼지창이고 이름이 포함되어야 함)

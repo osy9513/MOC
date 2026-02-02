@@ -81,21 +81,21 @@ public class Naofumi extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 이와타니 나오후미(방패 용사 성공담)");
-        p.sendMessage("분노의 방패를 얻습니다.");
-        p.sendMessage("방패을 들고 있을 경우 힘1과 허기1 디버프가 상시 적용됩니다.");
-        p.sendMessage("방패로 공격을 10번 막으면 아이언 메이든가 활성화 됩니다.");
+        p.sendMessage("§f분노의 방패를 얻습니다.");
+        p.sendMessage("§f방패을 들고 있을 경우 힘1과 허기1 디버프가 상시 적용됩니다.");
+        p.sendMessage("§f방패로 공격을 10번 막으면 아이언 메이든가 활성화 됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("아이언 메이든가 활성화된 상태에서 방패를 들고");
-        p.sendMessage("10칸 이내의 상대를 조준점으로 조준하고 있는 상태에서");
-        p.sendMessage("우클릭 시 아이언 메이든이 발동됩니다.");
+        p.sendMessage("§f아이언 메이든가 활성화된 상태에서 방패를 들고");
+        p.sendMessage("§f10칸 이내의 상대를 조준점으로 조준하고 있는 상태에서");
+        p.sendMessage("§f우클릭 시 아이언 메이든이 발동됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("발동 후 다시 발동하기 위해선 다시 10번의 공격을 막아야합니다.");
-        p.sendMessage("아이언 메이든의 지속시간은 20초 입니다.");
+        p.sendMessage("§f발동 후 다시 발동하기 위해선 다시 10번의 공격을 막아야합니다.");
+        p.sendMessage("§f아이언 메이든의 지속시간은 20초 입니다.");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 분노의 방패.");
-        p.sendMessage("장비 제거 : 철칼.");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 분노의 방패");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 
     @Override

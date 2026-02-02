@@ -58,11 +58,12 @@ public class Zenitsu extends Ability {
         p.sendMessage("§f검을 우클릭하면 '벽력일섬'을 시전하여 전방으로 8칸 순간이동합니다.");
         p.sendMessage("§f경로상의 적에게 8의 고정 피해를 입힙니다.");
         p.sendMessage("§f시전 직후 짧은 시간 동안 신속 버프를 얻습니다.");
+        p.sendMessage("§4※주의※ 바닥도 뚫고 갑니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 8초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 없음");
-        p.sendMessage("§7장비 제거 : 없음");
+        p.sendMessage("§f쿨타임 : 8초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 
     @EventHandler

@@ -64,10 +64,10 @@ public class Inuyasha extends Ability {
         p.sendMessage("§f검기는 3초간 유지되며, 무적 시간을 무시하고 데미지를 줍니다.");
         p.sendMessage("§f벽을 뚫을 수 없고, 하나의 검기에 최대 20의 데미지를 줍니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 15초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 철쇄아(철 검)");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 15초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 철쇄아(철 검)");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @EventHandler

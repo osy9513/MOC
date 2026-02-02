@@ -50,12 +50,7 @@ public class AizenSosuke extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f아이젠 소스케 (블리치)",
-                "§f맵의 에메랄드 블럭 위에서 흑관 영창을 진행합니다.",
-                "§7[영창] §f에메랄드 블럭 위에 올라가면 1.5초마다 영창을 외웁니다.",
-                "§f영창 완료(10구절) 시 자신을 제외한 모든 적에게 번개를 10번 떨어트립니다.",
-                "§f중도에 내려오면 영창한 횟수만큼만 번개를 떨어트립니다.",
-                "§f번개는 무적을 무시하고 9의 대미지를 줍니다.",
-                "§8쿨타임: 19초");
+                "§f전장 중앙 에메랄드 블럭 위에서 흑관 영창을 진행합니다.");
     }
 
     @Override
@@ -121,7 +116,7 @@ public class AizenSosuke extends Ability {
                 step++;
             }
         };
-        task.runTaskTimer(plugin, 0L, 30L); // 1.5초 (30틱)
+        task.runTaskTimer(plugin, 0L, 38L); // 1.9초 (38틱)
         chantTasks.put(p.getUniqueId(), task);
     }
 
@@ -147,7 +142,7 @@ public class AizenSosuke extends Ability {
                     // 로직상 마지막 대사 출력 후 여기서 또 출력?
                     // 영창 루프에서 10번째 대사 출력 -> step++ -> 다음 틱에 완료 감지 -> stopChanting(true)
                     // 따라서 마지막 대사는 이미 나왔음.
-                    // 유저 요청: "마지막 대사가 전송되면... 1.5초 후 '파도 90 흑관' 메시지와 함께..."
+                    // 유저 요청: "마지막 대사가 전송되면... 1.9초 후 '파도 90 흑관' 메시지와 함께..."
 
                     Bukkit.broadcastMessage("§5아이젠 소스케 : §d파도 90 흑관!");
                     castLightning(p, 10);
@@ -156,7 +151,7 @@ public class AizenSosuke extends Ability {
                     castLightning(p, count);
                 }
             }
-        }.runTaskLater(plugin, 30L); // 1.5초 후 발동
+        }.runTaskLater(plugin, 38L); // 1.9초 후 발동
     }
 
     private void castLightning(Player caster, int count) {
@@ -210,11 +205,15 @@ public class AizenSosuke extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● §f아이젠 소스케 (블리치)");
-        p.sendMessage("§f맵의 에메랄드 블럭 위에서 흑관 영창을 진행합니다.");
-        p.sendMessage("§7[영창] §f에메랄드 블럭 위에서 1.5초마다 영창 (총 10구절)");
-        p.sendMessage("§f- 완료 시 자신 제외 모든 적에게 번개 10회 (회당 9 대미지, 무적 무시)");
-        p.sendMessage("§f- 중도 하차 시 영창 횟수만큼만 번개 시전");
-        p.sendMessage("§8쿨타임: 19초");
+        p.sendMessage("§e전투 ● 아이젠 소스케(블리치)");
+        p.sendMessage("§f전장 중앙 에메랄드 블럭 위에서 흑관 영창을 진행합니다.");
+        p.sendMessage("§f에메랄드 블럭 위에서 1.9초마다 영창을 외우며, 총 10구절을 완성해야 합니다.");
+        p.sendMessage("§f영창 완료 시 자신을 제외한 모든 생명체에게 번개를 10회 떨어트립니다(회당 9 대미지, 무적 무시).");
+        p.sendMessage("§f중도에 내려오면 영창한 횟수만큼만 번개를 시전합니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 19초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 없음");
+        p.sendMessage("§f장비 제거 : 없음");
     }
 }

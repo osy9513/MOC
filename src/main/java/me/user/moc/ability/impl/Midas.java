@@ -51,11 +51,12 @@ public class Midas extends Ability {
         p.sendMessage("§f손으로 블럭을 때리면 그 블럭은 §e금 블럭§f이 됩니다.");
         p.sendMessage("§f손으로 상대를 때리면 상대가 입고 있던 방어구는 §e금 방어구§f가 됩니다.");
         p.sendMessage("§f플레이어가 아닌 대상을 손으로 좌클릭 시 §e황금 블럭§f으로 교체시킵니다.");
-        p.sendMessage("§e금괴§f를 먹을 수 있습니다. (배고픔 2칸 회복)");
-        p.sendMessage("§7쿨타임 : 0초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비: 금 갑옷, 금 칼, 발광포션, 황금 사과 64개, 금괴 1280개");
-        p.sendMessage("§7장비 제거: 철 갑옷, 철 칼, 체력재생포션, 고기 64개");
+        p.sendMessage("§f금괴를 먹을 수 있습니다. (배고픔 2칸 회복)");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 금 갑옷, 금 칼, 발광포션, 황금 사과 64개, 금괴 1280개");
+        p.sendMessage("§f장비 제거 : 철 갑옷, 철 칼, 체력재생포션, 고기 64개");
     }
 
     @Override

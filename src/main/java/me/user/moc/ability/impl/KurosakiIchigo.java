@@ -45,7 +45,7 @@ public class KurosakiIchigo extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        detailCheck(p);
+        // detailCheck(p); // AbilityManager에서 자동 호출되므로 제거
         p.getInventory().remove(Material.IRON_SWORD); // 기본 철검 제거
 
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
@@ -56,6 +56,22 @@ public class KurosakiIchigo extends Ability {
             sword.setItemMeta(meta);
         }
         p.getInventory().addItem(sword);
+    }
+
+    // ... skipping verification of other methods ...
+
+    @Override
+    public void detailCheck(Player p) {
+        p.sendMessage("§e전투 ● 쿠로사키 이치고(블리치)");
+        p.sendMessage("§f호로의 힘을 빌려 잠시 동안 강해집니다.");
+        p.sendMessage("§f참월 우클릭 시 15초 동안 호로화 상태가 됩니다(신속2, 재생2).");
+        p.sendMessage("§f호로화 상태에서 공격 시 대상 근처로 순간이동하며 공격 속도가 대폭 증가합니다.");
+        p.sendMessage("§f호로화 종료 시 5초간 구속 3 효과를 받습니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : §b참월");
+        p.sendMessage("§f장비 제거 : 철검");
     }
 
     @EventHandler
@@ -225,14 +241,4 @@ public class KurosakiIchigo extends Ability {
         }
     }
 
-    @Override
-    public void detailCheck(Player p) {
-        p.sendMessage("§e전투 ● §f쿠로사키 이치고 (블리치)");
-        p.sendMessage("§f호로의 힘을 빌려 잠시 동안 강해집니다.");
-        p.sendMessage("§7[우클릭] §f참월을 사용하여 15초 동안 호로화 (신속2, 재생2)");
-        p.sendMessage("§f- 공격 시 대상 근처로 순간이동");
-        p.sendMessage("§f- 공격 속도 대폭 증가 (무딜레이)");
-        p.sendMessage("§f- 종료 시 5초간 구속 3");
-        p.sendMessage("§8쿨타임: 30초");
-    }
 }

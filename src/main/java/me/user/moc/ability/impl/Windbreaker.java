@@ -100,10 +100,10 @@ public class Windbreaker extends Ability {
         p.sendMessage("§f활을 들고 쉬프트를 빠르게 두 번 누르면 '천공의 노래'가 발동됩니다.");
         p.sendMessage("§f5초 동안 전방으로 화살을 50발 발사하며, 신속 I 효과를 상시 받습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§7쿨타임 : 15초");
-        p.sendMessage("---");
-        p.sendMessage("§7추가 장비 : 메이플 보우, 화살 1개");
-        p.sendMessage("§7장비 제거 : 철 검");
+        p.sendMessage("§f쿨타임 : 15초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 메이플 보우, 화살 1개");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @EventHandler

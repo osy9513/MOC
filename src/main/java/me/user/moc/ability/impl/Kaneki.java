@@ -70,11 +70,11 @@ public class Kaneki extends Ability {
         // 2. 썩은 고기 100개 지급 (64 + 36)
         p.getInventory().addItem(new ItemStack(Material.ROTTEN_FLESH, 36));
 
-        // 3. 기본 버프 (재생 5, 허기 1)
+        // 3. 기본 버프 (재생 5, 허기 11)
         // 재생 5 (Amplifier 4)
         p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
-        // 허기 11 (Amplifier 0) - 시각 효과용
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 999999, 10, false, false));
+        // 허기 20 (Amplifier 0) - 시각 효과용
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 999999, 19, false, false));
 
         // 4. 메시지
         Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
@@ -83,16 +83,16 @@ public class Kaneki extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 카네키 켄(도쿄 구울)");
-        p.sendMessage("상시 체력 재생(7레벨) 및 상시 허기가 걸려있습니다.");
-        p.sendMessage("썩은 고기로만 배고픔을 채울 수 있습니다.");
-        p.sendMessage("배고픔이 5칸(10) 이하면 폭주하여 힘 3, 신속 3 버프를 얻습니다.");
-        p.sendMessage("배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
-        p.sendMessage("폭주 시 카구네가 활성화 되며, 좌클릭 시 카구네로 상대를 끌고 옵니다 (사거리 11m).");
+        p.sendMessage("§f상시 체력 재생 및 상시 허기가 걸려있습니다.");
+        p.sendMessage("§f썩은 고기로만 배고픔을 채울 수 있습니다.");
+        p.sendMessage("§f배고픔이 5칸(10) 이하면 폭주하여 힘 3, 신속 3 버프를 얻습니다.");
+        p.sendMessage("§f배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
+        p.sendMessage("§f폭주 시 카구네가 활성화 되며, 좌클릭 시 카구네로 상대를 끌고 옵니다 (사거리 11블럭).");
         p.sendMessage(" ");
-        p.sendMessage("쿨타임 : 3초 (카구네)");
-        p.sendMessage("---");
-        p.sendMessage("추가 장비 : 썩은 고기 100개.");
-        p.sendMessage("장비 제거 : 철 칼, 철 갑옷, 구운 소고기, 체력 재생 포션.");
+        p.sendMessage("§f쿨타임 : 3초 (카구네)");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 썩은 고기 100개");
+        p.sendMessage("§f장비 제거 : 철 칼, 철 갑옷, 구운 소고기, 체력 재생 포션");
     }
 
     @Override
@@ -115,9 +115,9 @@ public class Kaneki extends Ability {
     @EventHandler
     public void onConsume(PlayerItemConsumeEvent e) {
         Player p = e.getPlayer();
-        // 재생 5 & 허기 효과로 능력자 식별 (또는 AbilityManager 사용)
-        boolean isKaneki = p.getPotionEffect(PotionEffectType.REGENERATION) != null &&
-                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() == 4;
+        // AbilityManager를 사용하여 확실하게 능력 확인
+        boolean isKaneki = me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p,
+                getCode());
 
         if (!isKaneki)
             return;
@@ -142,8 +142,8 @@ public class Kaneki extends Ability {
         if (p.getFoodLevel() > 10)
             return;
 
-        if (p.getPotionEffect(PotionEffectType.REGENERATION) == null ||
-                p.getPotionEffect(PotionEffectType.REGENERATION).getAmplifier() != 4)
+        // AbilityManager를 사용하여 확실하게 능력 확인
+        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
         if (!checkCooldown(p))
@@ -197,27 +197,21 @@ public class Kaneki extends Ability {
                 boolean drainHunger = (tickCount % 100 == 0);
 
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    // 능력자 확인
-                    PotionEffect regen = p.getPotionEffect(PotionEffectType.REGENERATION);
-                    boolean hasRegenAbility = (regen != null && regen.getAmplifier() == 4);
-
-                    // 만약 공허라면 재생 제거 (다시 적용되지 않게 확인)
-                    if (hasRegenAbility && p.getLocation().getY() < -64) {
-                        p.removePotionEffect(PotionEffectType.REGENERATION);
-                        hasRegenAbility = false;
+                    // AbilityManager를 사용하여 확실하게 능력 확인
+                    if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p,
+                            getCode())) {
+                        continue;
                     }
 
-                    if (!hasRegenAbility) {
-                        // 만약 공허가 아닌데 재생이 없고, 카네키 능력자라면 재생 부여
-                        if (p.getLocation().getY() >= -64 && me.user.moc.ability.AbilityManager
-                                .getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
-                            if (p.getPotionEffect(PotionEffectType.REGENERATION) == null) {
-                                p.addPotionEffect(
-                                        new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
-                            }
-                        } else {
-                            continue;
+                    // 카네키 켄이라면 재생 버프 유지 (없을 경우 다시 부여)
+                    if (p.getLocation().getY() >= -64) {
+                        PotionEffect regen = p.getPotionEffect(PotionEffectType.REGENERATION);
+                        if (regen == null || regen.getAmplifier() != 4) {
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
                         }
+                    } else {
+                        // 공허에서는 버프 제거
+                        p.removePotionEffect(PotionEffectType.REGENERATION);
                     }
 
                     int food = p.getFoodLevel();
