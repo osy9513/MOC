@@ -873,6 +873,19 @@ public class GameManager implements Listener {
         }
     }
 
+    /**
+     * [추가됨] 관리자 명령(/moc set) 등에 의해 강제로 준비 완료 상태로 변경합니다.
+     */
+    public void playerReadyTarget(String name) {
+        Player p = Bukkit.getPlayer(name);
+        if (p != null && isRunning) {
+            if (!readyPlayers.contains(p.getUniqueId())) {
+                readyPlayers.add(p.getUniqueId());
+                p.sendMessage("§e[MOC] §f관리자에 의해 능력이 확정되어 준비 완료 상태로 변경되었습니다.");
+            }
+        }
+    }
+
     // 능력 리롤.
     public void playerReroll(Player p) {
         if (!isRunning)

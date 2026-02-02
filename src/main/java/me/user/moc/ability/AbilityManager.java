@@ -72,7 +72,6 @@ public class AbilityManager {
         addAbility(new Jjanggu(plugin)); // 짱구 등록
         addAbility(new Naofumi(plugin)); // 이와타니 나오후미 등록
         addAbility(new Yugi(plugin)); // 유희 등록
-        // [신규 능력 등록]
         addAbility(new Gaara(plugin)); // 036 가아라
         addAbility(new MisakaMikoto(plugin)); // 034 미사카 미코토
         addAbility(new NanayaShiki(plugin)); // 035 나나야 시키
@@ -80,6 +79,7 @@ public class AbilityManager {
         addAbility(new KurosakiIchigo(plugin)); // 038 쿠로사키 이치고
         addAbility(new KiraYoshikage(plugin)); // 039 키라 요시카게
         addAbility(new KimDokja(plugin)); // 040 김독자
+        addAbility(new ErenYeager(plugin)); // 041 에렌 예거
     }
 
     private void addAbility(Ability ability) {

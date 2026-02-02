@@ -91,6 +91,7 @@ public class Naofumi extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f발동 후 다시 발동하기 위해선 다시 10번의 공격을 막아야합니다.");
         p.sendMessage("§f아이언 메이든의 지속시간은 20초 입니다.");
+        p.sendMessage("§f[제한] 대상이 플레이어일 경우, 체력이 3칸(6.0) 남으면 능력이 강제 종료됩니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
@@ -299,6 +300,14 @@ public class Naofumi extends Ability {
 
                     // 대미지 (3틱마다 3)
                     if ((tick - MOVE_DURATION) % 3 == 0) {
+                        // [너프] 대상이 플레이어이고 체력이 3칸(6.0) 이하라면 즉시 종료
+                        if (target instanceof Player && target.getHealth() <= 6.0) {
+                            bottom.remove();
+                            top.remove();
+                            this.cancel();
+                            return;
+                        }
+
                         target.damage(3.0, p);
                         target.setNoDamageTicks(0);
                         p.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);

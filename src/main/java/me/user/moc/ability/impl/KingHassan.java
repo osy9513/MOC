@@ -1,12 +1,10 @@
 package me.user.moc.ability.impl;
 
-import me.user.moc.MocPlugin;
-import me.user.moc.ability.Ability;
-import me.user.moc.ability.AbilityManager;
+import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
@@ -14,8 +12,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
@@ -23,11 +23,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Collections;
-import java.util.List;
+import me.user.moc.MocPlugin;
+import me.user.moc.ability.Ability;
+import me.user.moc.ability.AbilityManager;
 
 public class KingHassan extends Ability {
 
@@ -114,9 +113,10 @@ public class KingHassan extends Ability {
             p.removePotionEffect(PotionEffectType.INVISIBILITY);
             p.removePotionEffect(PotionEffectType.SLOWNESS);
             p.removePotionEffect(PotionEffectType.REGENERATION);
-            if (p.getAttribute(Attribute.MAX_HEALTH) != null) {
-                p.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);
-            }
+            // 최대 체력 원상 복구는 AbilityManager에서 처리하므로 여기서는 제거
+            // if (p.getAttribute(Attribute.MAX_HEALTH) != null) {
+            // p.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);
+            // }
         }
     }
 
@@ -184,6 +184,30 @@ public class KingHassan extends Ability {
     public void onSwap(PlayerSwapHandItemsEvent e) {
         if (AbilityManager.getInstance((MocPlugin) plugin).hasAbility(e.getPlayer(), getCode())) {
             e.setCancelled(true);
+        }
+    }
+
+    /**
+     * 사망 시 버프 및 상태 해제
+     */
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        Player p = e.getEntity();
+        if (AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
+            cleanup(p);
+        }
+    }
+
+    /**
+     * 관전 모드 전환 시 버프 및 상태 해제
+     */
+    @EventHandler
+    public void onGameModeChange(PlayerGameModeChangeEvent e) {
+        Player p = e.getPlayer();
+        if (e.getNewGameMode() == GameMode.SPECTATOR) {
+            if (AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
+                cleanup(p);
+            }
         }
     }
 }
