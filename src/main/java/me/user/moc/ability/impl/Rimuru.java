@@ -70,13 +70,14 @@ public class Rimuru extends Ability {
         p.getInventory().clear();
         p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
 
-        p.setMaxHealth(100.0);
-        p.setHealth(100.0);
+        p.setMaxHealth(70.0); // 3.5줄 (70칸)
+        p.setHealth(70.0);
 
         p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 99999 * 20, 2, false, false));
         p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 99999 * 20, 0, false, false));
         p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, 99999 * 20, 0, false, false));
         p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 99999 * 20, 0, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999 * 20, 0, false, false)); // 상시 화염 저항
         p.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
 
         damageStacks.put(p.getUniqueId(), 0);
@@ -91,12 +92,12 @@ public class Rimuru extends Ability {
         p.sendMessage("§b전투 ● 리무루 템페스트(전생했더니 슬라임이었던 건에 대하여)");
         p.sendMessage("§f슬라임으로 변신합니다.");
         p.sendMessage("§f상대와 부딪치거나 겹치면 상대에게 8 데미지를 줍니다.");
-        p.sendMessage("§f기본 체력이 5줄(100칸)이며 배고픔이 달지 않습니다.");
+        p.sendMessage("§f기본 체력이 3.5줄(70칸)이며 배고픔이 달지 않습니다.");
         p.sendMessage("§f넉백 저항 100%가 있으며 점프 시 블럭 3칸을 올라갑니다.");
         p.sendMessage("§f물 양동이를 제외한 땅에 떨어진 아이템을 먹을 때마다 크기가 커집니다(무한).");
         p.sendMessage("§f아이템 섭취 시 체력이 10칸(20) 회복되며, 부딪히는 데미지가 영구적으로 5 증가합니다.");
         p.sendMessage("§f물 양동이 이외 모든 아이템은 자동으로 사라집니다.");
-        p.sendMessage("§f수압 추진을 배워 물 속에서 이동 속도가 빠릅니다.");
+        p.sendMessage("§f수압 추진을 배우고 상시 화염 저항이 있어 물과 불에 강합니다.");
         p.sendMessage("§f상시 재생 1 버프를 가지고 있습니다.");
         p.sendMessage("§f일심동체: 본체와 슬라임의 체력이 공유됩니다.");
         p.sendMessage(" ");
@@ -117,6 +118,7 @@ public class Rimuru extends Ability {
         p.removePotionEffect(PotionEffectType.DOLPHINS_GRACE);
         p.removePotionEffect(PotionEffectType.STRENGTH);
         p.removePotionEffect(PotionEffectType.REGENERATION);
+        p.removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
         p.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(0.0);
 
         Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -175,7 +177,18 @@ public class Rimuru extends Ability {
             } else {
                 owner.damage(e.getFinalDamage());
             }
-            slime.playEffect(org.bukkit.EntityEffect.HURT);
+
+            // 피격 가시성 강화
+            slime.playEffect(org.bukkit.EntityEffect.HURT); // 슬라임 움찔
+            owner.playHurtAnimation(0); // 본체 플레이어 움찔 (가시성 증가)
+
+            // 피격 파티클 (슬라임 위치에 붉은 입자)
+            slime.getWorld().spawnParticle(Particle.BLOCK, slime.getLocation().add(0, 0.5, 0), 10, 0.3, 0.3, 0.3,
+                    Bukkit.createBlockData(Material.REDSTONE_BLOCK));
+
+            // 피격 사운드 (슬라임 소리 + 본체 타격음)
+            owner.playSound(owner.getLocation(), Sound.ENTITY_SLIME_HURT, 1f, 1f);
+            owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.5f, 1f);
         }
     }
 
