@@ -120,6 +120,9 @@ public class MocCommand implements CommandExecutor {
                 // 다른 폴더에 있는 능력 배정 도구(AbilityAssigner)를 불러와서 일을 시킵니다.
                 String result = me.user.moc.ability.test.AbilityAssigner.assignAbility(args[1], args[2]);
                 p.sendMessage(result);
+
+                // [추가됨] 능력 부여 후 즉시 준비 완료 상태로 변경
+                gm.playerReadyTarget(args[1]);
                 return true;
             }
 

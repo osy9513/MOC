@@ -95,7 +95,7 @@ public class Rimuru extends Ability {
         p.sendMessage("§f기본 체력이 3.5줄(70칸)이며 배고픔이 달지 않습니다.");
         p.sendMessage("§f넉백 저항 100%가 있으며 점프 시 블럭 3칸을 올라갑니다.");
         p.sendMessage("§f물 양동이를 제외한 땅에 떨어진 아이템을 먹을 때마다 크기가 커집니다(무한).");
-        p.sendMessage("§f아이템 섭취 시 체력이 10칸(20) 회복되며, 부딪히는 데미지가 영구적으로 5 증가합니다.");
+        p.sendMessage("§f아이템 섭취 시 체력이 1칸(2) 회복되며, 부딪히는 데미지가 영구적으로 2 증가합니다.");
         p.sendMessage("§f물 양동이 이외 모든 아이템은 자동으로 사라집니다.");
         p.sendMessage("§f수압 추진을 배우고 상시 화염 저항이 있어 물과 불에 강합니다.");
         p.sendMessage("§f상시 재생 1 버프를 가지고 있습니다.");
@@ -193,20 +193,23 @@ public class Rimuru extends Ability {
     }
 
     private void grow(Player p) {
+        damageStacks.put(p.getUniqueId(), damageStacks.getOrDefault(p.getUniqueId(), 0) + 1);
+        int stack = damageStacks.get(p.getUniqueId());
+
         List<Slime> slimes = getVisualSlimes(p);
         for (Slime s : slimes) {
             if (s != null) {
-                s.setSize(s.getSize() + 1);
-                // [수정] 이펙트를 슬라임 위치에서 재생
+                // [너프] 성장률 70% 적용 (기본 2 + 스택 * 0.7)
+                int newSize = 2 + (int) (stack * 0.7);
+                s.setSize(newSize);
+
                 p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, s.getLocation().add(0, s.getSize() * 0.5, 0), 10,
                         s.getSize() * 0.3, s.getSize() * 0.3, s.getSize() * 0.3);
             }
         }
 
-        double healAmount = 10.0;
+        double healAmount = 2.0; // 10.0 -> 2.0 (하트 1칸)
         p.setHealth(Math.min(p.getMaxHealth(), p.getHealth() + healAmount));
-
-        damageStacks.put(p.getUniqueId(), damageStacks.getOrDefault(p.getUniqueId(), 0) + 1);
 
         // p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, p.getLocation().add(0, 1,
         // 0), 10, 0.5, 0.5, 0.5);
@@ -329,9 +332,9 @@ public class Rimuru extends Ability {
                         // 재소환
                         createVisualSlime(p);
 
-                        // 크기 복구 (기본 2 + 스택)
-                        int stack = damageStacks.getOrDefault(p.getUniqueId(), 0);
-                        int newSize = 2 + stack;
+                        // 크기 복구 (기본 2 + 스택 * 0.7)
+                        int stackCount = damageStacks.getOrDefault(uuid, 0);
+                        int newSize = 2 + (int) (stackCount * 0.7);
 
                         slimes = getVisualSlimes(p); // 리스트 갱신
                         for (Slime s : slimes) {
@@ -375,8 +378,8 @@ public class Rimuru extends Ability {
                     org.bukkit.util.BoundingBox slimeBox = mainSlime.getBoundingBox();
                     double searchRadius = mainSlime.getSize() * 0.8 + 2.0;
 
-                    int stack = damageStacks.getOrDefault(p.getUniqueId(), 0);
-                    double damage = 8.0 + (stack * 5.0);
+                    int stackCount = damageStacks.getOrDefault(p.getUniqueId(), 0);
+                    double damage = 8.0 + (stackCount * 2.0); // 5.0 -> 2.0 (하향)
 
                     // Lambda에서 사용하기 위해 final 변수로 참조
                     final List<Slime> finalSlimes = slimes;
