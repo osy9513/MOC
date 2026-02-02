@@ -174,10 +174,29 @@ public class NanayaShiki extends Ability {
         p.sendMessage("§f극사 나나야를 사용합니다.");
         p.sendMessage("§f나나츠요루 우클릭 시 칼을 던집니다(사거리 15).");
         p.sendMessage("§f적중 시 대상 위로 순간이동하며 45의 치명적인 대미지를 입힙니다.");
+        p.sendMessage("§f[패시브] 나나야 체술: 공격 시 25% 확률로 5의 추가 고정 피해를 입힙니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 18초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 나나츠요루");
         p.sendMessage("§f장비 제거 : 철 칼");
+    }
+
+    @EventHandler
+    public void onAttack(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player attacker))
+            return;
+        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
+            return;
+        if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+
+        // 25% 확률로 나나야 체술 발동
+        if (Math.random() < 0.25) {
+            e.setDamage(e.getDamage() + 5.0); // 5 데미지 추가
+            attacker.playSound(attacker.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 1.5f);
+            target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 15, 0.2, 0.2, 0.2, 0.1);
+            attacker.sendActionBar(net.kyori.adventure.text.Component.text("§c[나나야 체술] §f치명적인 일격!"));
+        }
     }
 }

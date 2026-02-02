@@ -31,6 +31,7 @@ import java.util.Random;
 public class TheKingOfGockgangE extends Ability {
 
     private final Random random = new Random();
+    private final java.util.Map<java.util.UUID, Integer> breakCounts = new java.util.HashMap<>();
 
     public TheKingOfGockgangE(JavaPlugin plugin) {
         super(plugin);
@@ -85,9 +86,10 @@ public class TheKingOfGockgangE extends Ability {
         p.sendMessage("§e복합 ● The King of Gockgang-E(The King of Gockgang-E)");
         p.sendMessage("§f성급한 V를 상시 활성화 합니다.");
         p.sendMessage("§f모든 블럭을 그리고 기반암까지 크리에이트처럼 때려 부수는 `왕 쩌는 곡갱이`를 얻습니다.");
-        p.sendMessage("§f왕 쩌는 곡갱이로 블럭을 부수면 파편이 튀어서 파괴된 블럭의 위 아래 좌 우 대각선 모든 방향에 3데미지를 줍니다.");
+        p.sendMessage("§f왕 쩌는 곡갱이로 블럭을 부수면 주변에 3의 범위 피해를 줍니다.");
+        p.sendMessage("§f[제한] 블록을 30개 파괴하면 15초의 재충전 시간이 필요합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f쿨타임 : 15초(30개 파괴 시)");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 왕 쩌는 곡갱이(네더라이트곡갱이-내구성10)");
         p.sendMessage("§f장비 제거 : 철 검");
@@ -103,10 +105,12 @@ public class TheKingOfGockgangE extends Ability {
         Player p = e.getPlayer();
 
         // 1. 쿨타임 및 능력 보유 확인
-        if (!checkCooldown(p))
+        if (!checkCooldown(p)) {
+            // 쿨타임 중이면 남은 시간 가이드 (이미 Ability에서 처리하겠지만 게이지를 위해 리턴만 함)
             return;
+        }
 
-        // 2. AbilityManager를 통해 이 플레이어가 이 능력(019)을 가지고 있는지 확인
+        // 2. 능력 보유 확인 (코드 기반)
         // 킹오브곡갱이는 다른 사람이 먹어서 사용할 수 있게 구현 ㅋㅋ 그게 더 잼슴.
         /*
          * if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin)
@@ -143,11 +147,42 @@ public class TheKingOfGockgangE extends Ability {
             }
         }
 
-        // 이벤트 취소? 이미 수동으로 부셨으므로 더 이상의 처리를 막기 위해 취소할 수도 있지만,
-        // setType(AIR)를 했으므로 자연스럽게 끝납니다.
-        // 다만 Instabreak 효과를 확실히 하기 위해 캔슬하지 않고 둘 수도 있습니다.
-        // 하지만 블록이 이미 AIR가 되었으므로 추가 드랍이 없을 것입니다.
+        // 6. 카운트 증가 및 쿨타임 적용
+        int count = breakCounts.getOrDefault(p.getUniqueId(), 0) + 1;
+        if (count >= 30) {
+            breakCounts.put(p.getUniqueId(), 0);
+            setCooldown(p, 15);
+            p.sendMessage("§f왕 쩌는 곡갱이의 마력이 다했습니다! 15초간 재충전이 필요합니다.");
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c[게이지] ■■■■■ 30/30 (재충전 시작)"));
+        } else {
+            breakCounts.put(p.getUniqueId(), count);
+            // 게이지 표시 (5칸 기준)
+            StringBuilder gauge = new StringBuilder("§e[게이지] ");
+            int filled = (count * 5) / 30;
+            for (int i = 0; i < 5; i++) {
+                if (i < filled)
+                    gauge.append("■");
+                else
+                    gauge.append("□");
+            }
+            gauge.append(" ").append(count).append("/30");
+            p.sendActionBar(net.kyori.adventure.text.Component.text(gauge.toString()));
+        }
+
         e.setInstaBreak(true); // 혹시 모르니 즉시 파괴 플래그 설정
+    }
+
+    @EventHandler
+    public void onAttack(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p))
+            return;
+
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (hand.getType() == Material.NETHERITE_PICKAXE && hand.hasItemMeta()) {
+            if ("§e왕 쩌는 곡갱이".equals(hand.getItemMeta().getDisplayName())) {
+                e.setDamage(6.0); // 철 검 수준으로 상향
+            }
+        }
     }
 
     /**

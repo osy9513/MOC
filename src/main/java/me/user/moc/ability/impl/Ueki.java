@@ -51,6 +51,7 @@ public class Ueki extends Ability {
         p.sendMessage("§a유틸 ● 우에키(우에키의 법칙)");
         p.sendMessage("§f묘목을 우클릭하면 주변 20블록 이내의 모든 생명체와 아이템을 나무로 바꿉니다.");
         p.sendMessage("§f나무로 변한 대상(몹/아이템)은 즉시 소멸하며, 플레이어는 나무 속에 갇힙니다.");
+        p.sendMessage("§f[제한] 소환된 나무의 개수만큼 인벤토리의 묘목을 소모합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 8초");
         p.sendMessage("§f---");
@@ -86,8 +87,9 @@ public class Ueki extends Ability {
 
     private void useAbility(Player p) {
         Bukkit.broadcastMessage("§a우에키 : 쓰레기를 나무로 바꾸는 힘!");
-
         p.playSound(p.getLocation(), Sound.BLOCK_CHERRY_SAPLING_PLACE, 1f, 1f);
+
+        int treeCount = 0;
 
         // 주변 20블럭 이내의 아이템과 생명체 탐색
         for (Entity entity : p.getNearbyEntities(20, 20, 20)) {
@@ -100,38 +102,41 @@ public class Ueki extends Ability {
                     continue;
                 }
 
-                // [▼▼▼ 여기서부터 변경됨: 블록 설치 대신 나무 생성 로직으로 변경 ▼▼▼]
                 Location loc = entity.getLocation();
 
                 // 1. 나무가 어떤 블럭 위에서도 잘 자라도록 발바닥 블럭을 흙으로 바꿉니다.
                 loc.getBlock().getRelative(0, -1, 0).setType(Material.GRASS_BLOCK);
 
                 // 2. 해당 위치에 진짜 나무(참나무) 한 그루를 생성합니다.
-                // generateTree는 공간이 부족하면 생성되지 않을 수 있으므로,
-                // 더 확실하게 생성되도록 일반 TREE 타입을 사용합니다.
                 boolean grown = loc.getWorld().generateTree(loc, org.bukkit.TreeType.TREE);
 
-                // 만약 공간 문제로 나무가 생성되지 않았다면, 최소한 로그 블록이라도 설치해서 가둡니다.
                 // 3. 만약 공간이 좁아 나무가 안 자랐다면? 우리가 직접 "강제로" 만듭니다!
                 if (!grown) {
-                    // 기둥 세우기 (3칸 높이)
                     for (int i = 0; i < 3; i++) {
                         loc.clone().add(0, i, 0).getBlock().setType(Material.OAK_LOG);
                     }
-                    // 잎사귀 씌우기 (기둥 꼭대기와 옆면에 십자 모양으로 설치)
-                    loc.clone().add(0, 3, 0).getBlock().setType(Material.OAK_LEAVES); // 맨 위
-                    loc.clone().add(1, 2, 0).getBlock().setType(Material.OAK_LEAVES); // 동
-                    loc.clone().add(-1, 2, 0).getBlock().setType(Material.OAK_LEAVES); // 서
-                    loc.clone().add(0, 2, 1).getBlock().setType(Material.OAK_LEAVES); // 남
-                    loc.clone().add(0, 2, -1).getBlock().setType(Material.OAK_LEAVES); // 북
+                    loc.clone().add(0, 3, 0).getBlock().setType(Material.OAK_LEAVES);
+                    loc.clone().add(1, 2, 0).getBlock().setType(Material.OAK_LEAVES);
+                    loc.clone().add(-1, 2, 0).getBlock().setType(Material.OAK_LEAVES);
+                    loc.clone().add(0, 2, 1).getBlock().setType(Material.OAK_LEAVES);
+                    loc.clone().add(0, 2, -1).getBlock().setType(Material.OAK_LEAVES);
                 }
 
-                // 3. 대상이 플레이어가 아니면(아이템이나 몹) 제거합니다.
+                // 나무가 생성된 것으로 간주
+                treeCount++;
+
+                // 4. 대상이 플레이어가 아니면(아이템이나 몹) 제거합니다.
                 if (!(entity instanceof Player)) {
                     entity.remove();
                 }
-                // [▲▲▲ 여기까지 변경됨 ▲▲▲]
             }
+        }
+
+        // 5. 사용된 나무 개수만큼 묘목 소모
+        if (treeCount > 0) {
+            ItemStack sapling = new ItemStack(Material.OAK_SAPLING, treeCount);
+            p.getInventory().removeItem(sapling);
+            p.sendMessage("§a[MOC] §f주변 쓰레기를 나무로 바꾸며 묘목 " + treeCount + "개를 소모했습니다.");
         }
     }
 }
