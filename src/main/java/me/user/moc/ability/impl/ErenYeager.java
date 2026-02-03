@@ -268,6 +268,18 @@ public class ErenYeager extends Ability {
         if (!isTitan.contains(p.getUniqueId()))
             return;
 
+        // [중요] 토가 히미코 등 타 능력이 변신했다가 본래 능력으로 돌아간 경우,
+        // 이 revert 로직이 실행되어 엉뚱하게 인벤토리를 덮어쓰거나 초기화하는 것을 방지합니다.
+        // 즉, '지금도 에렌 예거 능력자인가?'를 확인합니다.
+        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
+            // 이미 다른 능력(토가 본체)으로 돌아갔다면, 거인 관련 데이터만 조용히 지우고 종료
+            isTitan.remove(p.getUniqueId());
+            titanEndTimes.remove(p.getUniqueId());
+            inventoryBackup.remove(p.getUniqueId());
+            armorBackup.remove(p.getUniqueId());
+            return;
+        }
+
         isTitan.remove(p.getUniqueId());
         titanEndTimes.remove(p.getUniqueId());
 

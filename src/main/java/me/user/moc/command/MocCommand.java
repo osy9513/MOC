@@ -121,6 +121,12 @@ public class MocCommand implements CommandExecutor {
                 String result = me.user.moc.ability.test.AbilityAssigner.assignAbility(args[1], args[2]);
                 p.sendMessage(result);
 
+                // [추가] 능력이 부여된 플레이어에게 즉시 아이템 지급
+                Player target = org.bukkit.Bukkit.getPlayer(args[1]);
+                if (target != null) {
+                    am.giveAbilityItems(target);
+                }
+
                 // [추가됨] 능력 부여 후 즉시 준비 완료 상태로 변경
                 gm.playerReadyTarget(args[1]);
                 return true;
