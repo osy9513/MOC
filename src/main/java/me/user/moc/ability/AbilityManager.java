@@ -80,6 +80,7 @@ public class AbilityManager {
         addAbility(new KiraYoshikage(plugin)); // 039 키라 요시카게
         addAbility(new KimDokja(plugin)); // 040 김독자
         addAbility(new ErenYeager(plugin)); // 041 에렌 예거
+        addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
     }
 
     private void addAbility(Ability ability) {
@@ -151,6 +152,31 @@ public class AbilityManager {
     // GameManager에서 설정값(Config)에 따라 리롤 횟수를 부여할 때 사용합니다.
     public void setRerollCount(UUID uuid, int count) {
         rerollCounts.put(uuid, count);
+    }
+
+    /**
+     * [토가 히미코 전용] // <- 게임 중 능력 변경할 로직.
+     * 도망가거나 변신할 때 기존 능력을 안전하게 정리(cleanup)하고 새로운 능력 코드를 부여합니다.
+     * 
+     * @param p              대상 플레이어
+     * @param newAbilityCode 변경할 새로운 능력 코드
+     */
+    public void changeAbilityTemporary(Player p, String newAbilityCode) {
+        String oldCode = playerAbilities.get(p.getUniqueId());
+
+        // 1. 기존 능력이 있다면 정리(소환수 제거, 태스크 취소 등)
+        if (oldCode != null) {
+            Ability oldAbility = abilities.get(oldCode);
+            if (oldAbility != null) {
+                oldAbility.cleanup(p);
+            }
+        }
+
+        // 2. 능력 코드 교체
+        playerAbilities.put(p.getUniqueId(), newAbilityCode);
+
+        // 3. 안내 (선택사항, 생략 가능)
+        // p.sendMessage("§e[Ability] 능력이 변경되었습니다.");
     }
 
     /**
