@@ -73,6 +73,10 @@ public class Rammus extends Ability {
     // 2) 90% 반사 로직 (이벤트 핸들러)
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {
+        // [추가] 전투 시작 전 반사 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // 맞는 사람이 플레이어이고, 때린 사람이 생명체일 때
         if (e.getEntity() instanceof Player victim && e.getDamager() instanceof LivingEntity attacker) {
 

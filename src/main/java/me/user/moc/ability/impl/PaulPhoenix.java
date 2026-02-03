@@ -2,6 +2,7 @@ package me.user.moc.ability.impl;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -77,6 +78,10 @@ public class PaulPhoenix extends Ability {
             return;
         }
 
+        // [추가] 전투 시작 전 사용 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // 2. 발동 조건: 좌클릭 + 쉬프트 + 맨손 + 메인 핸드
         if (e.getAction() != Action.LEFT_CLICK_AIR && e.getAction() != Action.LEFT_CLICK_BLOCK)
             return;
@@ -99,6 +104,10 @@ public class PaulPhoenix extends Ability {
     @EventHandler
     public void onHit(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p))
+            return;
+
+        // [추가] 전투 시작 전 사용 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
             return;
 
         // [Loop Guard] 스킬로 인한 데미지면 이벤트 처리 건너뛰기
@@ -137,7 +146,7 @@ public class PaulPhoenix extends Ability {
 
         // A. 기합 소리
         w.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0f, 0.6f);
-        p.sendMessage("§c폴 피닉스 : 뚜~아-!");
+        Bukkit.broadcastMessage("§c폴 피닉스 : 뚜~아-!");
 
         // B. 화면 반동 (Recoil) 제거 요청으로 삭제됨.
         // p.setVelocity(...) 삭제
@@ -216,7 +225,7 @@ public class PaulPhoenix extends Ability {
                     knockback = new Vector(0, 0.4, 0); // 겹쳐있을 경우 위로
 
                 nearby.setVelocity(knockback);
-                nearby.sendMessage("§c강렬한 충격파에 밀려났습니다!");
+                // nearby.sendMessage("§c강렬한 충격파에 밀려났습니다!");
             }
         }
     }

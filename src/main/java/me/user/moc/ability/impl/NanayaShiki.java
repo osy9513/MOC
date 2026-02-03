@@ -82,9 +82,8 @@ public class NanayaShiki extends Ability {
 
         // [수정됨] 전투 시작 여부 체크 (GameManager가 존재할 때만 체크, 테스트 시 무시)
         if (MocPlugin.getInstance().getGameManager() != null
-                && MocPlugin.getInstance().getGameManager().isRunning()) { // isRunning으로 수정
-            // 게임 중이 아니라면(대기 중 등) 스킬 발동 막음 (필요 시 주석 해제)
-            // if (!MocPlugin.getInstance().getGameManager().isBattleStarted()) return;
+                && !MocPlugin.getInstance().getGameManager().isBattleStarted()) {
+            return;
         }
 
         // 4. 쿨타임 체크 및 발동
@@ -188,6 +187,11 @@ public class NanayaShiki extends Ability {
             return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
             return;
+
+        // [추가] 전투 시작 전 발동 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (!(e.getEntity() instanceof LivingEntity target))
             return;
 

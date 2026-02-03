@@ -131,6 +131,10 @@ public class KingHassan extends Ability {
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
             return;
 
+        // [추가] 전투 시작 전에는 스킬 발동 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getEntity() instanceof LivingEntity victim) {
             double trueDamage = 32.0;
 
@@ -139,7 +143,7 @@ public class KingHassan extends Ability {
             double newHealth = Math.max(0, victim.getHealth() - trueDamage);
             victim.setHealth(newHealth);
 
-            victim.playEffect(org.bukkit.EntityEffect.HURT);
+            victim.playHurtAnimation(0);
         }
     }
 

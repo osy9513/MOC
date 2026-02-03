@@ -80,6 +80,10 @@ public class KurosakiIchigo extends Ability {
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
+        // [추가] 전투 시작 전 사용 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getAction().name().contains("RIGHT")) {
             ItemStack item = e.getItem();
             if (item != null && item.getType() == Material.IRON_SWORD && item.getItemMeta() != null
@@ -166,6 +170,10 @@ public class KurosakiIchigo extends Ability {
 
     @EventHandler
     public void onAttack(EntityDamageByEntityEvent e) {
+        // [추가] 전투 시작 전 공격 효과 방지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getDamager() instanceof Player p && isHollow.contains(p.getUniqueId())) {
             // 호로화 상태 공격 시
             if (e.getEntity() instanceof LivingEntity target) {

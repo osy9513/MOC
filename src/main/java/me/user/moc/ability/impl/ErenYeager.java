@@ -38,6 +38,8 @@ public class ErenYeager extends Ability {
     private final Map<UUID, ItemStack[]> armorBackup = new HashMap<>();
     // 거인화 종료 시간 저장 (밀리초)
     private final Map<UUID, Long> titanEndTimes = new HashMap<>();
+    // 원래 최대 체력 저장 (복구용)
+    private final Map<UUID, Double> originalMaxHealth = new HashMap<>();
 
     public ErenYeager(JavaPlugin plugin) {
         super(plugin);
@@ -98,6 +100,7 @@ public class ErenYeager extends Ability {
         inventoryBackup.clear();
         armorBackup.clear();
         titanEndTimes.clear();
+        originalMaxHealth.clear();
     }
 
     @EventHandler
@@ -174,14 +177,20 @@ public class ErenYeager extends Ability {
         // 6줄 체력 (120)
         AttributeInstance hpAttr = p.getAttribute(Attribute.MAX_HEALTH);
         if (hpAttr != null) {
+            // [Fix] 기존 최대 체력 저장
+            originalMaxHealth.put(p.getUniqueId(), hpAttr.getValue());
             hpAttr.setBaseValue(120.0);
             p.setHealth(120.0);
         }
 
-        // 버프: 힘 3, 포만감 (무한), 재생 5 (3초)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 1000000, 2, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, 1000000, 0, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 60, 4, false, false, true));
+        // 버프 부여
+        // [너프] 힘 5 -> 힘 2 (Amplifier 1 = Level 2)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 1, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 999999, 1, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 999999, 1, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 2, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 999999, 0, false, false, true));
 
         // [3. 크기 확대 (약 15블록 높이) 및 사거리 증가]
         // 기본 Scale 1.0 -> 8.0 ~ 10.0 정도면 매우 커집니다.
@@ -283,6 +292,11 @@ public class ErenYeager extends Ability {
         isTitan.remove(p.getUniqueId());
         titanEndTimes.remove(p.getUniqueId());
 
+        // 원래 최대 체력 가져오기 (기본값 20.0)
+        double originMaxHp = originalMaxHealth.remove(p.getUniqueId());
+        if (originMaxHp <= 0)
+            originMaxHp = 20.0;
+
         // [1. 크기 및 사거리 원상복구]
         AttributeInstance scaleAttr = p.getAttribute(Attribute.SCALE);
         if (scaleAttr != null) {
@@ -298,9 +312,9 @@ public class ErenYeager extends Ability {
         } // [2. 체력 복구 (정상 수치 20.0)] - 플러그인 설정에 따라 다를 수 있으나 보통 20
         AttributeInstance hpAttr = p.getAttribute(Attribute.MAX_HEALTH);
         if (hpAttr != null) {
-            hpAttr.setBaseValue(20.0);
-            if (p.getHealth() > 20.0)
-                p.setHealth(20.0);
+            hpAttr.setBaseValue(originMaxHp);
+            if (p.getHealth() > originMaxHp)
+                p.setHealth(originMaxHp);
         }
 
         // [3. 버프 제거]

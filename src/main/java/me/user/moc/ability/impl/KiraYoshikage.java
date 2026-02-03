@@ -86,10 +86,10 @@ public class KiraYoshikage extends Ability {
         sha.setRemoveWhenFarAway(false);
         sha.setInvulnerable(true); // 무적
 
-        // [수정] 이동 속도 설정 (0.26)
+        // [수정] 이동 속도 설정 (0.26 -> 0.312, 약 20% 증가)
         // GENERIC_MOVEMENT_SPEED -> MOVEMENT_SPEED (프로젝트 API 버전 호환)
         if (sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null) {
-            sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.26);
+            sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.312);
         }
 
         // 좀벌레 이름표는 숨김
@@ -186,27 +186,37 @@ public class KiraYoshikage extends Ability {
 
                     // AI 동작
                     if (shaEntity instanceof org.bukkit.entity.Mob mob) {
-                        LivingEntity target = mob.getTarget();
+                        LivingEntity currentTarget = mob.getTarget();
 
-                        // 주인 타겟 해제
-                        if (target != null && target.getUniqueId().equals(ownerUUID)) {
-                            mob.setTarget(null);
-                            target = null;
+                        // 1. 타겟 유효성 검사
+                        if (currentTarget != null) {
+                            if (!currentTarget.isValid() || currentTarget.isDead()) {
+                                currentTarget = null;
+                                mob.setTarget(null);
+                            } else if (currentTarget instanceof Player p && p.getGameMode() == GameMode.SPECTATOR) {
+                                currentTarget = null;
+                                mob.setTarget(null);
+                            }
                         }
 
-                        // 타겟 탐색
-                        if (target == null || !target.isValid() || target.isDead()) {
-                            target = findNearestEnemy(shaEntity, owner);
-                            if (target != null)
-                                mob.setTarget(target);
+                        // 2. 타겟이 없거나, 타겟이 주인인 경우 (1초마다 다른 적 탐색)
+                        if (currentTarget == null || (currentTarget.equals(owner) && tick % 20 == 0)) {
+                            // 우선 순위 : 플레이어 > 몹 > 주인
+                            LivingEntity newTarget = findTargetWithPriority(shaEntity, owner);
+                            if (newTarget != null) {
+                                mob.setTarget(newTarget);
+                            }
                         }
+                        // 3. 타겟이 주인 외의 존재라면 죽을 때까지 유지 (락온)
+                    }
 
-                        // 수영 로직
-                        if (target != null && shaEntity.isInWater()) {
-                            Vector dir = target.getLocation().toVector().subtract(shaEntity.getLocation().toVector())
-                                    .normalize();
-                            shaEntity.setVelocity(dir.multiply(0.15).setY(0.1));
-                        }
+                    // 수영 로직
+                    if (shaEntity instanceof org.bukkit.entity.Mob mob && mob.getTarget() != null
+                            && shaEntity.isInWater()) {
+                        Vector dir = mob.getTarget().getLocation().toVector()
+                                .subtract(shaEntity.getLocation().toVector())
+                                .normalize();
+                        shaEntity.setVelocity(dir.multiply(0.15).setY(0.1));
                     }
 
                     // 폭발 (4초)
@@ -232,25 +242,50 @@ public class KiraYoshikage extends Ability {
         sheetHeartAttacks.remove(ownerUUID);
     }
 
-    private LivingEntity findNearestEnemy(Entity center, Player owner) {
-        LivingEntity target = null;
-        double minDist = Double.MAX_VALUE;
-        // x y z 좌표 100으로 설정
-        for (Entity e : center.getNearbyEntities(100, 100, 100)) {
-            if (e instanceof LivingEntity le && e != center && e != owner) {
-                if (le instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
-                    continue;
-                if (le.getUniqueId().equals(owner.getUniqueId()))
-                    continue;
+    /**
+     * 우선순위에 따른 타겟 탐색
+     * 1. 다른 플레이어
+     * 2. 다른 생명체 (몹)
+     * 3. 주인 (1, 2가 없을 때만)
+     */
+    private LivingEntity findTargetWithPriority(Entity center, Player owner) {
+        LivingEntity topPriority = null; // 플레이어
+        LivingEntity subPriority = null; // 몹
+        double minDistP = Double.MAX_VALUE;
+        double minDistM = Double.MAX_VALUE;
 
+        // 반경 50칸 탐색
+        for (Entity e : center.getNearbyEntities(50, 50, 50)) {
+            if (!(e instanceof LivingEntity le) || e == center)
+                continue;
+            if (le.getUniqueId().equals(owner.getUniqueId()))
+                continue; // 일단 주인 제외
+
+            if (le instanceof Player p) {
+                if (p.getGameMode() == GameMode.SPECTATOR)
+                    continue;
                 double d = center.getLocation().distanceSquared(le.getLocation());
-                if (d < minDist) {
-                    minDist = d;
-                    target = le;
+                if (d < minDistP) {
+                    minDistP = d;
+                    topPriority = le;
+                }
+            } else {
+                // 몹
+                double d = center.getLocation().distanceSquared(le.getLocation());
+                if (d < minDistM) {
+                    minDistM = d;
+                    subPriority = le;
                 }
             }
         }
-        return target;
+
+        if (topPriority != null)
+            return topPriority;
+        if (subPriority != null)
+            return subPriority;
+
+        // 1, 2번 없으면 주인 리턴
+        return owner;
     }
 
     private void createExplosion(LivingEntity sha, Player owner) {

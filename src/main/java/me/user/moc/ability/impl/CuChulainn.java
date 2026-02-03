@@ -102,12 +102,18 @@ public class CuChulainn extends Ability {
     }
 
     // [좌클릭] 저주 부여
+    // [좌클릭] 저주 부여
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p))
             return;
         if (!hasAbility(p))
             return;
+
+        // [추가] 전투 시작 전 저주 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (!(e.getEntity() instanceof LivingEntity target))
             return;
 
@@ -145,6 +151,10 @@ public class CuChulainn extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (!hasAbility(p))
+            return;
+
+        // [추가] 전투 시작 전 발사 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
             return;
 
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {

@@ -129,6 +129,11 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§f기본 체력: 3줄(60칸)");
         Bukkit.broadcastMessage("§f기본 지급: 철칼, 구운 소고기64개, 물 양동이, 유리10개, 재생포션, 철 흉갑");
 
+        // [추가] 통계 초기화
+        if (abilityManager != null) {
+            abilityManager.resetUsageCounts();
+        }
+
         // 참가 인원 목록 만들기 (AFK 제외)
         List<String> participants = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName)
@@ -678,8 +683,8 @@ public class GameManager implements Listener {
                 if (ab != null)
                     abName = ab.getName();
 
-                // 점수 (킬 수)
-                int scr = scores.getOrDefault(uid, 0);
+                // [수정] 점수 대신 '게임에 나온 횟수'를 출력합니다.
+                int scr = abilityManager.getUsageCount(code);
 
                 // 승자 여부 확인
                 boolean win = false;
@@ -707,7 +712,7 @@ public class GameManager implements Listener {
         // ---------------------------------------------------------
 
         // 1. 헤더 텍스트 정의
-        String headerCol1 = "이번 게임에 횟수";
+        String headerCol1 = "게임에 나온 횟수";
         String headerCol2 = "능력 이름";
         // String headerCol3 = "사용자";
 
