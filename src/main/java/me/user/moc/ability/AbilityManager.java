@@ -23,6 +23,9 @@ public class AbilityManager {
     // 플레이어별로 남은 리롤 횟수를 저장하는 지도
     private final Map<UUID, Integer> rerollCounts = new ConcurrentHashMap<>();
 
+    // [추가] 이번 게임 세션 동안 각 능력(코드)이 몇 번 등장했는지 카운트하는 지도 (통계용)
+    private final Map<String, Integer> gameUsageCounts = new ConcurrentHashMap<>();
+
     private static AbilityManager instance;
 
     public AbilityManager(MocPlugin plugin) {
@@ -116,9 +119,6 @@ public class AbilityManager {
     /**
      * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
      */
-    /**
-     * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
-     */
     public void resetAbilities() {
         // [수정] 1. 개별 플레이어에 대한 cleanup (기존 유지)
         for (Map.Entry<UUID, String> entry : playerAbilities.entrySet()) {
@@ -142,11 +142,30 @@ public class AbilityManager {
         rerollCounts.clear();
     }
 
+    /**
+     * [추가] 게임 통계 초기화 (GameManager.startGame에서 호출)
+     */
+    public void resetUsageCounts() {
+        gameUsageCounts.clear();
+    }
+
+    /**
+     * [추가] 특정 능력의 게임 내 등장 횟수 반환
+     */
+    public int getUsageCount(String code) {
+        return gameUsageCounts.getOrDefault(code, 0);
+    }
+
     // GameManager에서 플레이어에게 능력을 강제로 설정할 때 사용합니다.
     // ... resetAbilities, setPlayerAbility, setRerollCount 함수는 그대로 둬도 됩니다 ...
     // ... 단, setPlayerAbility의 두 번째 인자는 이제 "우에키"가 아니라 "001"이 들어와야 합니다 ...
     public void setPlayerAbility(UUID uuid, String abilityCode) {
         playerAbilities.put(uuid, abilityCode);
+
+        // [추가] 능력 등장 횟수 카운트 (통계용)
+        if (abilityCode != null) {
+            gameUsageCounts.put(abilityCode, gameUsageCounts.getOrDefault(abilityCode, 0) + 1);
+        }
     }
 
     // GameManager에서 설정값(Config)에 따라 리롤 횟수를 부여할 때 사용합니다.

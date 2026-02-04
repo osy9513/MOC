@@ -83,6 +83,10 @@ public class Pantheon extends Ability {
             return;
         }
 
+        // [추가] 전투 시작 전 빵 발사 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // 빵 우클릭 감지
         if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
                 && e.getItem() != null && e.getItem().getType() == Material.BREAD) {
@@ -114,6 +118,10 @@ public class Pantheon extends Ability {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent e) {
+        // [추가] 전투 시작 전 데미지 변경 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // 1. 근접 공격 (빵으로 때릴 때)
         if (e.getDamager() instanceof Player attacker && e.getDamager() == e.getDamager()) {
             // 능력자 확인

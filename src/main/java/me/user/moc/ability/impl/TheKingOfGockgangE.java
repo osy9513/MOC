@@ -130,24 +130,16 @@ public class TheKingOfGockgangE extends Ability {
         Block block = e.getBlock();
         World world = block.getWorld();
 
-        // 소리 재생 (블록 고유의 파괴음)
         world.playSound(block.getLocation(), block.getBlockData().getSoundGroup().getBreakSound(), 1.0f, 1.0f);
-
-        // 블록을 공기로 바꿉니다 (파괴)
         block.setType(Material.AIR);
-
-        // 4. 시각 효과 (철 조각 파편)
         spawnDebrisEffect(block);
 
-        // 5. 범위 피해 (3.0 대미지)
-        // 파괴된 블록 중심 1.5칸 반경 내의 엔티티
         for (Entity entity : world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1.5, 1.5, 1.5)) {
             if (entity instanceof LivingEntity && entity != p) {
                 ((LivingEntity) entity).damage(3.0, p);
             }
         }
 
-        // 6. 카운트 증가 및 쿨타임 적용
         int count = breakCounts.getOrDefault(p.getUniqueId(), 0) + 1;
         if (count >= 30) {
             breakCounts.put(p.getUniqueId(), 0);
@@ -156,7 +148,6 @@ public class TheKingOfGockgangE extends Ability {
             p.sendActionBar(net.kyori.adventure.text.Component.text("§c[게이지] ■■■■■ 30/30 (재충전 시작)"));
         } else {
             breakCounts.put(p.getUniqueId(), count);
-            // 게이지 표시 (5칸 기준)
             StringBuilder gauge = new StringBuilder("§e[게이지] ");
             int filled = (count * 5) / 30;
             for (int i = 0; i < 5; i++) {
@@ -169,7 +160,7 @@ public class TheKingOfGockgangE extends Ability {
             p.sendActionBar(net.kyori.adventure.text.Component.text(gauge.toString()));
         }
 
-        e.setInstaBreak(true); // 혹시 모르니 즉시 파괴 플래그 설정
+        e.setInstaBreak(true);
     }
 
     @EventHandler
@@ -177,10 +168,14 @@ public class TheKingOfGockgangE extends Ability {
         if (!(e.getDamager() instanceof Player p))
             return;
 
+        // [추가] 전투 시작 전 데미지 증가 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         ItemStack hand = p.getInventory().getItemInMainHand();
         if (hand.getType() == Material.NETHERITE_PICKAXE && hand.hasItemMeta()) {
             if ("§e왕 쩌는 곡갱이".equals(hand.getItemMeta().getDisplayName())) {
-                e.setDamage(6.0); // 철 검 수준으로 상향
+                e.setDamage(6.0);
             }
         }
     }

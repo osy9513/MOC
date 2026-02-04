@@ -91,6 +91,10 @@ public class TrafalgarLaw extends Ability {
         if (!isLaw(p))
             return;
 
+        // [추가] 전투 시작 전에는 스킬 발동 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // [버그 수정] 왼존/오른손 중복 실행 방지
         if (e.getHand() != EquipmentSlot.HAND)
             return;

@@ -136,6 +136,10 @@ public class Ranga extends Ability {
 
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {
+        // [추가] 전투 시작 전 번개 발동 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         // 1. 란가가 공격할 때
         if (e.getDamager() instanceof Wolf wolf && wolf.getOwner() instanceof Player owner) {
             List<Entity> list = activeEntities.get(owner.getUniqueId());

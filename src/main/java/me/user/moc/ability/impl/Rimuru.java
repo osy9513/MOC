@@ -42,6 +42,9 @@ public class Rimuru extends Ability {
     private final Set<UUID> waterState = new HashSet<>();
     private final Map<UUID, Integer> damageStacks = new HashMap<>();
 
+    // 몸통 박치기 데미지 판정 중인지 확인 (이벤트 캔슬 방지용)
+    private final Set<UUID> isSlamming = new HashSet<>();
+
     public Rimuru(JavaPlugin plugin) {
         super(plugin);
         startTickTask();
@@ -129,6 +132,7 @@ public class Rimuru extends Ability {
 
         waterState.remove(p.getUniqueId());
         damageStacks.remove(p.getUniqueId());
+        isSlamming.remove(p.getUniqueId()); // [Cleanup] 상태 제거
     }
 
     @EventHandler
@@ -167,28 +171,36 @@ public class Rimuru extends Ability {
         if (owner == null)
             return;
 
+        // [이벤트 캔슬] 슬라임 자체는 데미지를 입지 않고 본체로 전달
         e.setCancelled(true);
 
-        if (owner.isValid() && !owner.isDead() && owner.getNoDamageTicks() <= 0) {
+        // [설명] 기존에는 owner.getNoDamageTicks() <= 0 체크가 있어,
+        // 무적 시간(i-frame) 도중 더 높은 데미지가 들어와도 씹히는 문제가 있었습니다.
+        // 이를 제거하고 owner.damage()를 직접 호출하여 마인크래프트 기본 로직(높은 데미지 갱신 등)을 따르도록 합니다.
+        if (owner.isValid() && !owner.isDead()) {
+            // 본인이 본인 슬라임을 때리는 경우 방지
+            if (e instanceof EntityDamageByEntityEvent edbe && edbe.getDamager().equals(owner)) {
+                return;
+            }
+
+            // 데미지 전달
             if (e instanceof EntityDamageByEntityEvent edbe) {
-                if (edbe.getDamager().equals(owner))
-                    return;
                 owner.damage(e.getFinalDamage(), edbe.getDamager());
             } else {
                 owner.damage(e.getFinalDamage());
             }
 
-            // 피격 가시성 강화
-            slime.playEffect(org.bukkit.EntityEffect.HURT); // 슬라임 움찔
-            owner.playHurtAnimation(0); // 본체 플레이어 움찔 (가시성 증가)
+            // 피격 가시성 강화 (항상 재생)
+            slime.playHurtAnimation(0); // 슬라임 움찔
+            owner.playHurtAnimation(0); // 본체 플레이어 움찔
 
-            // 피격 파티클 (슬라임 위치에 붉은 입자)
+            // 피격 파티클
             slime.getWorld().spawnParticle(Particle.BLOCK, slime.getLocation().add(0, 0.5, 0), 10, 0.3, 0.3, 0.3,
                     Bukkit.createBlockData(Material.REDSTONE_BLOCK));
 
-            // 피격 사운드 (슬라임 소리 + 본체 타격음)
-            owner.playSound(owner.getLocation(), Sound.ENTITY_SLIME_HURT, 1f, 1f);
-            owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.5f, 1f);
+            // 피격 사운드 (모든 플레이어가 들을 수 있도록 World.playSound 사용)
+            owner.getWorld().playSound(owner.getLocation(), Sound.ENTITY_SLIME_HURT, 1f, 1f);
+            owner.getWorld().playSound(owner.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.5f, 1f);
         }
     }
 
@@ -203,20 +215,44 @@ public class Rimuru extends Ability {
                 int newSize = 2 + (int) (stack * 0.7);
                 s.setSize(newSize);
 
+                // [추가] Public Slime (타인용)은 30% 더 크게 설정 (히트박스 문제 해결 요청)
+                // Private Slime은 기본 크기(Scale 1.0) 유지
+                if (s.getScoreboardTags().contains("RIMURU_PUBLIC")) {
+                    if (s.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null) {
+                        s.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
+                    }
+                } else {
+                    if (s.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null) {
+                        s.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.0);
+                    }
+                }
+
                 p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, s.getLocation().add(0, s.getSize() * 0.5, 0), 10,
                         s.getSize() * 0.3, s.getSize() * 0.3, s.getSize() * 0.3);
             }
         }
 
-        double healAmount = 2.0; // 10.0 -> 2.0 (하트 1칸)
+        double healAmount = 2.0;
         p.setHealth(Math.min(p.getMaxHealth(), p.getHealth() + healAmount));
 
-        // p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, p.getLocation().add(0, 1,
-        // 0), 10, 0.5, 0.5, 0.5);
-        // -> 슬라임 위치로 이동됨
         p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
         Bukkit.broadcastMessage("§f리무루가 히포쿠테 초와 마광석을 섭취하여 성장했습니다! (횟수: "
                 + damageStacks.get(p.getUniqueId()) + ")");
+    }
+
+    @EventHandler
+    public void onPlayerAttack(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p))
+            return;
+        if (!activeEntities.containsKey(p.getUniqueId()))
+            return;
+
+        if (isSlamming.contains(p.getUniqueId())) {
+            return;
+        }
+
+        e.setCancelled(true);
+        p.sendMessage("§c슬라임 상태에서는 직접 공격할 수 없습니다! (몸통 박치기 활용)");
     }
 
     private void createVisualSlime(Player p) {
@@ -229,35 +265,49 @@ public class Rimuru extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
+        team.addEntry(p.getName());
 
-        // 1. Private Slimes (본인용, 3중 겹치기로 농도 강화)
+        // 1. Private Slime (본인용 - 나에게만 보여야 함)
+        // [복구] 3중 겹치기로 농도 강화 (유저 요청: "이전처럼 불투명하게")
         for (int i = 0; i < 3; i++) {
             Slime privateSlime = (Slime) p.getWorld().spawnEntity(p.getLocation(), EntityType.SLIME);
             privateSlime.setSize(2);
             privateSlime.setAI(false);
-            privateSlime.setInvulnerable(true);
+            privateSlime.setInvulnerable(true); // 본인용은 무적
             privateSlime.setCollidable(false);
             privateSlime.setSilent(true);
             privateSlime.setMaxHealth(100.0);
+            privateSlime.addScoreboardTag("RIMURU_PRIVATE");
+
+            // [복구] 투명화 적용 (팀원은 반투명하게 보임 - 3겹이라 진하게 보임)
             privateSlime.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 0, false, false));
 
-            team.addEntry(privateSlime.getUniqueId().toString());
+            // [핵심] 다른 플레이어들에게는 Private Slime을 숨김
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (!online.getUniqueId().equals(p.getUniqueId())) {
+                    online.hideEntity(plugin, privateSlime);
+                }
+            }
             entities.add(privateSlime);
         }
 
-        // 플레이어 팀 등록
-        team.addEntry(p.getName());
-
-        // 2. Public Slime (타인용, 초록색)
+        // 2. Public Slime (타인용 - 남들에게만 보여야 함)
         Slime publicSlime = (Slime) p.getWorld().spawnEntity(p.getLocation(), EntityType.SLIME);
         publicSlime.setSize(2);
         publicSlime.setAI(false);
-        publicSlime.setInvulnerable(false);
+        publicSlime.setInvulnerable(false); // 타인은 때릴 수 있어야 함
         publicSlime.setCollidable(false);
         publicSlime.setSilent(true);
         publicSlime.setMaxHealth(100.0);
         publicSlime.setHealth(100.0);
+        publicSlime.addScoreboardTag("RIMURU_PUBLIC");
 
+        // [요청] 피격 가능한 슬라임을 30% 크게 설정 (Attribute.SCALE 활용)
+        if (publicSlime.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null) {
+            publicSlime.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
+        }
+
+        // [핵심] 본인에게는 Public Slime을 숨김
         p.hideEntity(plugin, publicSlime);
         entities.add(publicSlime);
 
@@ -290,7 +340,6 @@ public class Rimuru extends Ability {
                     if (p == null || !p.isOnline())
                         continue;
 
-                    // [추가] 사망 또는 관전 모드 시 슬라임 제거
                     if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR || p.isDead()) {
                         if (activeEntities.containsKey(uuid)) {
                             List<Entity> old = activeEntities.remove(uuid);
@@ -306,7 +355,6 @@ public class Rimuru extends Ability {
 
                     List<Slime> slimes = getVisualSlimes(p);
 
-                    // 1. 슬라임 생존 확인 및 리스폰 로직 (자기장 밖 소멸 대응)
                     boolean needsRespawn = slimes.isEmpty();
                     if (!needsRespawn) {
                         for (Slime s : slimes) {
@@ -318,7 +366,6 @@ public class Rimuru extends Ability {
                     }
 
                     if (needsRespawn) {
-                        // 기존 엔티티 정리
                         if (activeEntities.containsKey(uuid)) {
                             List<Entity> old = activeEntities.remove(uuid);
                             if (old != null) {
@@ -329,32 +376,57 @@ public class Rimuru extends Ability {
                             }
                         }
 
-                        // 재소환
                         createVisualSlime(p);
 
-                        // 크기 복구 (기본 2 + 스택 * 0.7)
                         int stackCount = damageStacks.getOrDefault(uuid, 0);
                         int newSize = 2 + (int) (stackCount * 0.7);
 
-                        slimes = getVisualSlimes(p); // 리스트 갱신
+                        slimes = getVisualSlimes(p);
                         for (Slime s : slimes) {
                             s.setSize(newSize);
+                            // [추가] 리스폰 시에도 크기 비율 유지
+                            if (s.getScoreboardTags().contains("RIMURU_PUBLIC")) {
+                                if (s.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null)
+                                    loadingScale(s, 1.3);
+                            } else {
+                                if (s.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null)
+                                    loadingScale(s, 1.0);
+                            }
                         }
                     }
 
                     if (slimes.isEmpty())
                         continue;
 
+                    // [추가] Visibility 유지 (새로 들어온 플레이어 등에게 Private 숨김)
+                    // 매 틱마다는 부하가 클 수 있으니, 20틱(1초)마다 체크하거나, 그냥 둬도 됨.
+                    // 여기서는 확실하게 하기 위해 간단히 Private 슬라임에 대해 루프를 돕니다.
+
                     for (Slime slime : slimes) {
                         if (slime.isDead())
                             continue;
                         slime.teleport(p.getLocation());
+
+                        // 체력 동기화
                         double ownerHealth = Math.min(p.getHealth(), 100.0);
                         if (slime.getHealth() != ownerHealth) {
                             try {
                                 slime.setHealth(Math.max(0, ownerHealth));
                             } catch (Exception e) {
                             }
+                        }
+
+                        // [핵심] 시야 분리 유지 Check
+                        if (slime.getScoreboardTags().contains("RIMURU_PRIVATE")) {
+                            for (Player online : Bukkit.getOnlinePlayers()) {
+                                if (!online.getUniqueId().equals(p.getUniqueId())) {
+                                    // 다른 사람에게는 숨김
+                                    online.hideEntity(plugin, slime);
+                                }
+                            }
+                        } else if (slime.getScoreboardTags().contains("RIMURU_PUBLIC")) {
+                            // 본인에게는 숨김
+                            p.hideEntity(plugin, slime); // 항상 숨김 시도 (이미 숨겨져 있으면 무시됨)
                         }
                     }
 
@@ -370,18 +442,24 @@ public class Rimuru extends Ability {
                         waterState.remove(p.getUniqueId());
                     }
 
-                    // 히트박스 판정용 메인 슬라임 (아무거나)
-                    Slime mainSlime = slimes.get(0);
-                    if (mainSlime.isDead())
+                    Slime tempSlime = null;
+                    for (Slime s : slimes) {
+                        if (!s.isDead()) {
+                            tempSlime = s;
+                            break;
+                        }
+                    }
+                    if (tempSlime == null)
                         continue;
+
+                    final Slime mainSlime = tempSlime;
 
                     org.bukkit.util.BoundingBox slimeBox = mainSlime.getBoundingBox();
                     double searchRadius = mainSlime.getSize() * 0.8 + 2.0;
 
                     int stackCount = damageStacks.getOrDefault(p.getUniqueId(), 0);
-                    double damage = 8.0 + (stackCount * 2.0); // 5.0 -> 2.0 (하향)
+                    double damage = 8.0 + (stackCount * 2.0);
 
-                    // Lambda에서 사용하기 위해 final 변수로 참조
                     final List<Slime> finalSlimes = slimes;
 
                     p.getWorld().getNearbyEntities(p.getLocation(), searchRadius, searchRadius, searchRadius)
@@ -390,7 +468,13 @@ public class Rimuru extends Ability {
                                         && target instanceof LivingEntity livingTarget) {
                                     if (slimeBox.overlaps(target.getBoundingBox())) {
                                         if (livingTarget.getNoDamageTicks() <= 0) {
-                                            livingTarget.damage(damage, p);
+                                            isSlamming.add(p.getUniqueId());
+                                            try {
+                                                livingTarget.damage(damage, p);
+                                            } finally {
+                                                isSlamming.remove(p.getUniqueId());
+                                            }
+
                                             Vector dir = target.getLocation().toVector()
                                                     .subtract(p.getLocation().toVector())
                                                     .normalize();
@@ -400,6 +484,13 @@ public class Rimuru extends Ability {
                                     }
                                 }
                             });
+                }
+            }
+
+            private void loadingScale(Slime s, double val) {
+                try {
+                    s.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(val);
+                } catch (Exception e) {
                 }
             }
         }.runTaskTimer(plugin, 0L, 2L);

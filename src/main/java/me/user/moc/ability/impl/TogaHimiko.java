@@ -308,6 +308,10 @@ public class TogaHimiko extends Ability {
         if (!isTransformed.contains(p.getUniqueId()))
             return;
 
+        // [Fix] StackOverflowError 방지
+        // 먼저 변신 상태 목록에서 제거하여 재귀 호출 고리를 끊습니다.
+        isTransformed.remove(p.getUniqueId());
+
         OriginalState original = savedStates.get(p.getUniqueId());
         AbilityManager am = AbilityManager.getInstance((MocPlugin) plugin);
 
@@ -316,7 +320,8 @@ public class TogaHimiko extends Ability {
             String currentAbCode = am.getPlayerAbilities().get(p.getUniqueId());
             Ability currentAb = am.getAbility(currentAbCode);
             if (currentAb != null) {
-                // [핵심] 30초 후 변신 해제 시 소환된 늑대나 폭탄 등 제거
+                // cleanup() 내부에서 revertToOriginal()이 다시 호출될 수 있으나,
+                // 위에서 이미 isTransformed.remove()를 했으므로 안전합니다.
                 currentAb.cleanup(p);
             }
 
@@ -352,7 +357,6 @@ public class TogaHimiko extends Ability {
             }
 
             // 3. 원래 능력 코드로 복귀
-            // 여기서도 changeAbilityTemporary 사용 (cleanup은 위에서 했음)
             am.changeAbilityTemporary(p, original.abilityCode);
 
             p.sendMessage("§d변신이 해제되어 원래 모습으로 돌아왔습니다.");
@@ -361,7 +365,7 @@ public class TogaHimiko extends Ability {
 
         // 데이터 정리
         savedStates.remove(p.getUniqueId());
-        isTransformed.remove(p.getUniqueId());
+        // isTransformed.remove(p.getUniqueId()); // 위에서 이미 제거함
 
         // 내 태스크(타이머) 목록 비우기
         if (activeTasks.containsKey(p.getUniqueId())) {

@@ -85,6 +85,10 @@ public class Naruto extends Ability {
         if (!hasAbility(p))
             return;
 
+        // [추가] 전투 시작 전 분신 금지
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             ItemStack hand = e.getItem();
             if (hand != null && hand.getType() == Material.ORANGE_BANNER) {
