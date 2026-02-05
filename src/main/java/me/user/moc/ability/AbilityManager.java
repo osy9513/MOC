@@ -42,6 +42,10 @@ public class AbilityManager {
         return instance;
     }
 
+    public static AbilityManager getInstance() {
+        return instance;
+    }
+
     /**
      * 사용할 능력들을 시스템에 등록하는 메서드입니다.
      */
@@ -75,6 +79,7 @@ public class AbilityManager {
         addAbility(new Jjanggu(plugin)); // 짱구 등록
         addAbility(new Naofumi(plugin)); // 이와타니 나오후미 등록
         addAbility(new Yugi(plugin)); // 유희 등록
+        addAbility(new Spiderman(plugin)); // 030 스파이더맨
         addAbility(new Gaara(plugin)); // 036 가아라
         addAbility(new MisakaMikoto(plugin)); // 034 미사카 미코토
         addAbility(new NanayaShiki(plugin)); // 035 나나야 시키
@@ -84,6 +89,7 @@ public class AbilityManager {
         addAbility(new KimDokja(plugin)); // 040 김독자
         addAbility(new ErenYeager(plugin)); // 041 에렌 예거
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
+        addAbility(new Yesung(plugin)); // H02 예성이
     }
 
     private void addAbility(Ability ability) {
