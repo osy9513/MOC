@@ -90,8 +90,8 @@ public abstract class Ability implements Listener {
     }
 
     // === [쿨타임 관련 헬퍼 메서드] ===
-    protected void setCooldown(Player p, long seconds) {
-        cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + (seconds * 1000));
+    protected void setCooldown(Player p, double seconds) {
+        cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + (long) (seconds * 1000));
 
         // [추가] 기존 알림 취소
         if (cooldownNotifyTasks.containsKey(p.getUniqueId())) {
@@ -108,7 +108,7 @@ public abstract class Ability implements Listener {
                 }
                 cooldownNotifyTasks.remove(p.getUniqueId());
             }
-        }.runTaskLater(plugin, seconds * 20L);
+        }.runTaskLater(plugin, (long) (seconds * 20));
 
         cooldownNotifyTasks.put(p.getUniqueId(), task);
     }
