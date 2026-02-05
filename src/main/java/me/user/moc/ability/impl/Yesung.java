@@ -58,19 +58,16 @@ public class Yesung extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d히든 ● 예성이(바집소)");
-        p.sendMessage("§f메이플 용사가 되.");
-        p.sendMessage("§f(게임 메이플스토리 소드마스터 5차 스킬 모티브)");
+        p.sendMessage("§f메이플 용사가 되어 소드마스터 5차 스킬를 사용합니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f검을 들고 우클릭 시 공중으로 도약하여 거대한 달을 가릅니다.");
+        p.sendMessage("§f달이 갈라지면 월드 전체 적에게 13의 데미지를 줍니다.");
+        p.sendMessage("§f(시전 중 낙하 데미지 무시)");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 40초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
-        p.sendMessage(" ");
-        p.sendMessage("§f[능력 상세]");
-        p.sendMessage("§f검을 들고 우클릭 시 공중으로 도약하여 거대한 달을 가릅니다.");
-        p.sendMessage("§f달이 갈라지면 월드 전체 적에게 13의 데미지를 줍니다.");
-        p.sendMessage("§f(시전 중 낙하 데미지 무시)");
-        giveItem(p);
     }
 
     @EventHandler
@@ -116,6 +113,9 @@ public class Yesung extends Ability {
 
                 // 머리 위 20칸 (더 높게)
                 Location center = p.getLocation().add(0, 20, 0);
+                // [Fix] 시선에 따라 기울어지지 않도록 회전값 초기화 (항상 수평 유지)
+                center.setYaw(0);
+                center.setPitch(0);
                 World w = p.getWorld();
 
                 // 중력 제어
@@ -303,7 +303,7 @@ public class Yesung extends Ability {
             count++;
         }
 
-        attacker.sendMessage("§c[System] §f달을 갈라 " + count + "명의 적에게 피해를 입혔습니다!");
+        attacker.sendMessage("§f소울 이클립스/솔루나 디바이드로 " + count + "명의 적에게 피해를 입혔습니다!");
     }
 
     @EventHandler

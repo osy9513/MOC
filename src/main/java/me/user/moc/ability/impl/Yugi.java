@@ -199,12 +199,14 @@ public class Yugi extends Ability {
 
         p.playSound(p.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1f, 1f); // 종이 넘기는 소리
 
+        boolean success = true;
+
         switch (rawName) {
             case "빛의 봉인 검":
                 useSwords(p);
                 break;
             case "번개":
-                useLightning(p);
+                success = useLightning(p);
                 break;
             case "빅 실드 가드너":
                 useGardna(p);
@@ -223,8 +225,10 @@ public class Yugi extends Ability {
                 break;
         }
 
-        // 카드 소모
-        item.setAmount(item.getAmount() - 1);
+        // 카드 소모 (성공했을 때만)
+        if (success) {
+            item.setAmount(item.getAmount() - 1);
+        }
     }
 
     // --- 카드 구현 ---
@@ -249,20 +253,42 @@ public class Yugi extends Ability {
         arrow.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 2), true);
     }
 
-    private void useLightning(Player p) {
+    private boolean useLightning(Player p) {
         Block target = p.getTargetBlockExact(50);
-        if (target != null) {
+        if (target != null && target.getType() != Material.AIR) {
             p.getWorld().strikeLightning(target.getLocation());
             p.sendMessage("§e번개!");
+            return true;
         } else {
-            p.sendMessage("§c타겟이 너무 멉니다.");
+            p.sendMessage("§c50블록 이내의 블록을 바라보세요.");
+            return false;
         }
+    }
+
+    private Location getSafeSummonLocation(Player p) {
+        Location loc = p.getLocation();
+        Vector dir = loc.getDirection();
+        dir.setY(0);
+
+        if (dir.lengthSquared() > 0) {
+            dir.normalize();
+        } else {
+            // 수직으로 보고 있어서 X,Z가 0인 경우 시선 방향(Pitch포함) 사용
+            dir = loc.getDirection().setY(0); // 여전히 0이면?
+            if (dir.lengthSquared() == 0)
+                dir = new Vector(1, 0, 0); // fallback
+        }
+
+        // 전방 1.5칸 + 위로 0.5칸
+        return loc.add(dir.multiply(1.5)).add(0, 0.5, 0);
     }
 
     private void useGardna(Player p) {
         // 철골렘 소환
-        IronGolem golem = (IronGolem) p.getWorld().spawnEntity(p.getLocation().add(p.getLocation().getDirection()),
-                EntityType.IRON_GOLEM);
+        // [Fix] 땅 파묻힘 방지: 시선 방향 수평으로 1.5칸 앞 + 0.5칸 위
+        Location spawnLoc = getSafeSummonLocation(p);
+
+        IronGolem golem = (IronGolem) p.getWorld().spawnEntity(spawnLoc, EntityType.IRON_GOLEM);
         golem.setCustomName("§b빅 실드 가드너");
         golem.setCustomNameVisible(true);
         golem.setPlayerCreated(true);
@@ -274,8 +300,10 @@ public class Yugi extends Ability {
 
     private void useKuriboh(Player p) {
         // 거대 갈색 양
-        Sheep sheep = (Sheep) p.getWorld().spawnEntity(p.getLocation().add(p.getLocation().getDirection()),
-                EntityType.SHEEP);
+        // [Fix] 땅 파묻힘 방지
+        Location spawnLoc = getSafeSummonLocation(p);
+
+        Sheep sheep = (Sheep) p.getWorld().spawnEntity(spawnLoc, EntityType.SHEEP);
         sheep.setCustomName("§6크리보");
         sheep.setCustomNameVisible(true);
         sheep.setColor(DyeColor.BROWN);

@@ -258,32 +258,32 @@ public class TogaHimiko extends Ability {
         PlayerProfile targetProfile = target.getPlayerProfile();
         p.setPlayerProfile(targetProfile);
 
+        // [버그 수정] 스킨 및 닉네임 변경 사항이 클라이언트에 즉시 반영되도록 리프레시
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            online.hidePlayer(plugin, p);
+            online.showPlayer(plugin, p);
+        }
+
         // 2. 능력 복사 및 교체
         String targetAbCode = am.getPlayerAbilities().get(target.getUniqueId());
         // 만약 타겟이 능력이 없거나 오류 상태면 기본값 혹은 유지? 현재는 복사 시도
         if (targetAbCode != null) {
             am.changeAbilityTemporary(p, targetAbCode);
 
-            // 3. 인벤토리 복사 (아이템 중복 방지는 giveItem에서 처리하거나 여기서 싹 밀고 줌)
-            // 토가는 '상대의 모든 것'을 베끼므로 인벤토리도 복사하는 것이 맞음 (기획상)
-            // 단, "아이템이 중복되지 않게"라는 요청은, giveItem을 또 호출해서 곡괭이가 2개 되지 않게 하라는 의미.
-            // -> 타겟의 인벤토리를 그대로 복붙하면 이미 타겟이 곡괭이를 갖고 있을 테니 giveItem 호출 필요 없음.
-            // -> 하지만 타겟이 템을 버렸을 수도 있으니, 깔끔하게 '기본템 + giveItem' 하는 게 안전할 수도?
-            // -> 기획서: "상대의 능력을 사용할 수 있고... 스킨, 능력, 인벤토리... 모두 저장하고 동일하게 얻는다."
-            // -> 즉 인벤토리 통채로 복사가 맞습니다.
-
+            // 3. 인벤토리 복사
             p.getInventory().setContents(target.getInventory().getContents());
             p.getInventory().setArmorContents(target.getInventory().getArmorContents());
 
-            // [중요] 타겟의 능력 아이템을 확실히 주기 위해
-            // 만약 타겟 인벤토리에 '능력 아이템'이 없는 상태라면(버렸거나 해서) giveItem을 호출해야 함.
-            // 하지만 뭐가 능력 아이템인지 식별이 어려우므로,
-            // 사용자 요청(중복제거)을 고려하여 "giveItem을 호출하되, 이미 있으면 무시" 로직이 각 능력에 있어야 함.
-            // 현실적으로는 타겟 인벤토리를 복사했으면 그 안에 있겠거니 하고 giveItem은 생략하는 것이 꼬이지 않는 길입니다.
-            // (만약 giveItem을 강제로 하면 타겟이 곡 2개 들고 있었으면 3개가 됨)
-
             // **결정**: 인벤토리를 그대로 복사했으므로 `giveItem`은 호출하지 않습니다.
-            // 타겟이 곡괭이를 들고 있으면 복사될 것이고, 없으면 없는 대로 복사됩니다.
+
+            // [고도화 1] 변경된 능력 상세 설명 출력
+            Ability newAbility = am.getAbility(targetAbCode);
+            if (newAbility != null) {
+                p.sendMessage(" ");
+                p.sendMessage("§a당신이 변신한 §e" + target.getName() + "§a 의 능력은 아래와 같습니다.");
+                p.sendMessage(" ");
+                newAbility.detailCheck(p);
+            }
         }
 
         // 4. 타이머 설정 (30초 후 복구)
@@ -327,6 +327,13 @@ public class TogaHimiko extends Ability {
 
             // 2. 원래 정보 복구
             p.setPlayerProfile(original.profile);
+
+            // [버그 수정] 복구 시에도 스킨 리프레시
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                online.hidePlayer(plugin, p);
+                online.showPlayer(plugin, p);
+            }
+
             p.getInventory().setContents(original.inventory);
             p.getInventory().setArmorContents(original.armor);
 

@@ -72,13 +72,13 @@ public class ErenYeager extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§a유틸 ● 에렌 예거(진격의 거인)");
-        p.sendMessage("§f맨손으로 바닥을 보며 우클릭 시 거인으로 변신합니다.");
-        p.sendMessage("§f거인은 체력이 6줄(120)이 되며 상시 힘 3, 포만감을 얻습니다.");
+        p.sendMessage("§f맨손으로 쉬프트를 누른 채 좌클릭 시 거인으로 변신합니다.");
+        p.sendMessage("§f거인은 체력이 6줄(120)이 되며 상시 힘 2을 얻습니다.");
         p.sendMessage("§f거인 변신 직후에는 3초 동안 재생 5를 얻습니다.");
-        p.sendMessage("§f거인은 체력이 잃은 상태여야 변신이 가능합니다.");
+        p.sendMessage("§f거인은 체력을 잃은 상태여야 변신이 가능합니다.");
         p.sendMessage("§f변신 전 잃은 체력 반 칸(1)당 3초 동안 지속됩니다.");
         p.sendMessage("§f거인 상태에서는 인벤토리가 비워지며 맨손으로만 싸웁니다.");
-        p.sendMessage("§f거인 상태에서 바닥을 보며 우클릭 시 남은 지속시간을 알 수 있습니다.");
+        p.sendMessage("§f거인 상태에서 쉬프트 + 좌클릭 시 남은 지속시간을 알 수 있습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 30초");
         p.sendMessage("§f---");
@@ -115,17 +115,23 @@ public class ErenYeager extends Ability {
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
-        // 2. 발동 조건: 우클릭 + 맨손 + 메인 핸드
-        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)
+        // 2. 발동 조건: Shift + 좌클릭 + 맨손 + 메인 핸드
+
+        // 쉬프트 중인가?
+        if (!p.isSneaking())
             return;
-        if (e.getHand() != EquipmentSlot.HAND)
+
+        // 좌클릭인가? (허공 or 블럭)
+        if (e.getAction() != Action.LEFT_CLICK_AIR && e.getAction() != Action.LEFT_CLICK_BLOCK)
             return;
+
+        // 맨손인가?
         if (!p.getInventory().getItemInMainHand().getType().isAir())
             return;
 
-        // 2. 이미 거인 상태라면 시간 조회 처리
+        // 이미 거인 상태라면 시간 조회 처리
         if (isTitan.contains(p.getUniqueId())) {
-            // [복구] 우클릭 시에만 조회 가능하도록 변경
+            // [복구] 시전 방법과 동일하게 변경 (Shift+좌클릭 시 조회)
             long endTime = titanEndTimes.getOrDefault(p.getUniqueId(), 0L);
             long remaining = endTime - System.currentTimeMillis();
             if (remaining > 0) {
@@ -185,12 +191,8 @@ public class ErenYeager extends Ability {
 
         // 버프 부여
         // [너프] 힘 5 -> 힘 2 (Amplifier 1 = Level 2)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 1, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 999999, 1, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 999999, 1, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 999999, 1, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 2, false, false, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 999999, 0, false, false, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 1, false, true, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 3, 4, true, true, true));
 
         // [3. 크기 확대 (약 15블록 높이) 및 사거리 증가]
         // 기본 Scale 1.0 -> 8.0 ~ 10.0 정도면 매우 커집니다.
@@ -319,7 +321,6 @@ public class ErenYeager extends Ability {
 
         // [3. 버프 제거]
         p.removePotionEffect(PotionEffectType.STRENGTH);
-        p.removePotionEffect(PotionEffectType.SATURATION);
         p.removePotionEffect(PotionEffectType.REGENERATION);
 
         // [4. 인벤토리 복구]
