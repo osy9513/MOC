@@ -359,6 +359,9 @@ public class EmiyaShirou extends Ability {
                 if (ticks % 5 == 0) {
                     stand.getWorld().spawnParticle(Particle.BLOCK, stand.getLocation(), 3, 0.2, 0.1, 0.2,
                             Material.BEDROCK.createBlockData());
+                    // [추가] 칼이 솟아오를 때 파란색 파티클 효과 추가
+                    stand.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, stand.getLocation().add(0, 0.5, 0), 5, 0.1,
+                            0.1, 0.1, 0.02);
                 }
 
                 ticks++;
@@ -443,17 +446,22 @@ public class EmiyaShirou extends Ability {
 
         stand.getWorld().spawnParticle(Particle.CRIT, startLoc, 5);
 
-        // 디스폰 체크용 태스크 (화살 박히면 제거)
+        // 디스폰 체크용 태스크 (화살 박히면 제거, 10초 제한 추가)
         new BukkitRunnable() {
+            int timer = 0; // [추가] 10초 자동 제거를 위한 타이머
+
             @Override
             public void run() {
-                if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround()) {
+                if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround() || timer >= 200) {
                     stand.remove();
                     flyingSwords.remove(stand); // 확실하게 제거
                     arrow.remove(); // [추가] 화살도 즉시 제거 (전장에 남지 않게)
                     this.cancel();
                     return;
                 }
+
+                // [추가] 10초 뒤 자동 제거를 위한 타이머 증가
+                timer++;
 
                 // [추가] 비행 중 파티클 (연한 푸른색)
                 Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(150, 255, 255), 0.5f);
