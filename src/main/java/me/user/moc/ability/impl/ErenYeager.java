@@ -191,7 +191,8 @@ public class ErenYeager extends Ability {
 
         // 버프 부여
         // [너프] 힘 5 -> 힘 2 (Amplifier 1 = Level 2)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 999999, 1, false, true, true));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 1, false, true, true));
         p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 3, 4, true, true, true));
 
         // [3. 크기 확대 (약 15블록 높이) 및 사거리 증가]
