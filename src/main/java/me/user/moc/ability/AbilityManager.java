@@ -58,6 +58,7 @@ public class AbilityManager {
         addAbility(new Rammus(plugin)); // 람머스 등록
         addAbility(new Saitama(plugin)); // 사이타마 등록
         addAbility(new Ranga(plugin)); // 란가 등록
+        addAbility(new AsuiTsuyu(plugin)); // 아스이 츠유 등록
         addAbility(new Byakuya(plugin)); // 뱌쿠야 등록
         addAbility(new GoldSilverAxe(plugin)); // 금도끼 은도끼 등록
         addAbility(new Alex(plugin)); // 알렉스 등록
@@ -93,6 +94,7 @@ public class AbilityManager {
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
         addAbility(new Yesung(plugin)); // H02 예성이
         addAbility(new TungTungTungSahur(plugin)); // 016 퉁퉁퉁 사후르
+        addAbility(new DIO(plugin)); // 045 DIO
     }
 
     private void addAbility(Ability ability) {

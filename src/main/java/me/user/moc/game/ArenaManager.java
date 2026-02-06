@@ -193,6 +193,44 @@ public class ArenaManager implements Listener {
     }
 
     /**
+     * [추가] 전장 바닥 전체 재질 변경 (룰렛 연출용)
+     */
+    public void setArenaFloor(Material mat) {
+        if (this.gameCenter == null || mat == null)
+            return;
+        World world = gameCenter.getWorld();
+        if (world == null)
+            return;
+
+        int targetY = gameCenter.getBlockY() - 1;
+        int halfSize = config.map_size / 2;
+        int cx = gameCenter.getBlockX();
+        int cz = gameCenter.getBlockZ();
+
+        // 룰렛은 0.3초마다 바뀌므로, 즉시 변경해야 연출이 자연스럽습니다.
+        // 다만 범위가 크면(75x75) 렉이 걸릴 수 있으니 주의해야 합니다.
+        // 여기서는 루프를 사용하여 최대한 빠르게 처리합니다.
+        for (int x = cx - halfSize; x <= cx + halfSize; x++) {
+            for (int z = cz - halfSize; z <= cz + halfSize; z++) {
+                // 기존 바닥이 공기가 아닐 때만 변경 (이미 바닥이 있는 곳만)
+                Block b = world.getBlockAt(x, targetY, z);
+                if (b.getType() != Material.AIR) {
+                    b.setType(mat, false); // false = 물리 업데이트 안 함 (렉 감소)
+                }
+            }
+        }
+    }
+
+    /**
+     * [추가] 중앙 블록 복구 (에메랄드)
+     */
+    public void resetCenterBlock() {
+        if (this.gameCenter == null)
+            return;
+        this.gameCenter.getBlock().setType(Material.EMERALD_BLOCK);
+    }
+
+    /**
      * 자기장 좁아지기 및 최종 결전 시스템 (메시지 -> 7초 텔포 -> 1분 결투 -> 종료)
      */
     public void startBorderShrink() {

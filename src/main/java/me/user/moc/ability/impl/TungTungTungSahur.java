@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location; // [Fix] Missing import
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -22,6 +23,15 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.util.Transformation;
+import org.joml.Vector3f;
+import org.joml.AxisAngle4f;
 
 import me.user.moc.ability.Ability;
 import net.kyori.adventure.text.Component;
@@ -56,29 +66,44 @@ public class TungTungTungSahur extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§a유틸 ● 퉁퉁퉁사후르(Italian Brainrot)",
-                "§f라운드 시작 시 참나무로 변신합니다.",
-                "§f8초마다 무작위 플레이어를 호명하며, 대상이 4초 내에 '넵!'하지 않으면",
-                "§f강력한 버프를 얻습니다. (최대 9중첩)");
+                "§f퉁퉁퉁사후르로 변신합니다.");
     }
 
     @Override
     public void giveItem(Player p) {
-        // 1. 기존 아이템(철 검) 제거하고 퉁퉁퉁 방망이(나무 검) 지급
+        // 1. 기존 아이템(철 검) 제거하고 퉁퉁퉁 방망이(막대기) 지급
         p.getInventory().remove(Material.IRON_SWORD);
 
-        ItemStack bat = new ItemStack(Material.WOODEN_SWORD);
+        ItemStack bat = new ItemStack(Material.STICK);
         ItemMeta meta = bat.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§a퉁퉁퉁 방망이");
+
+            // [수정] 나무 검 스펙 강제 적용 (데미지 4, 공속 1.6)
+            // 기본 막대기: 데미지 1, 공속 4.0 (빠름)
+            // 목표: 데미지 4 (+3), 공속 1.6 (-2.4)
+            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE,
+                    new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 3.0,
+                            AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
+            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED,
+                    new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", -2.4,
+                            AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
+
             bat.setItemMeta(meta);
         }
         p.getInventory().addItem(bat);
+
+        // [추가] 철 흉갑 제거 (맨몸 시작)
+        p.getInventory().setChestplate(null);
+
+        // [추가] 나무 변신 시작
+        startDisguise(p);
 
         // 2. 초기 상태 설정
         buffStacks.put(p.getUniqueId(), 0);
 
         // 3. 채팅창에 변신 대사 출력
-        p.getServer().broadcast(Component.text("퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.사후르").color(TextColor.color(0x55FF55)));
+        p.getServer().broadcast(Component.text("퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.사후르").color(TextColor.color(0xc16c15)));
 
         // 4. 8초마다 반복되는 루프 시작
         startLoop(p);
@@ -91,8 +116,12 @@ public class TungTungTungSahur extends Ability {
         p.sendMessage("§f지목된 대상이 4초 이내에 채팅으로 '넵!' 이라고 대답하지 않으면,");
         p.sendMessage("§f당신에게 힘 1, 신속 1 버프가 부여됩니다. (최대 9중첩)");
         p.sendMessage("§f9중첩이 되면 더 이상 이름을 부르지 않습니다.");
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
-        p.sendMessage("§f지급 장비 : 퉁퉁퉁 방망이 (나무 검)");
+        p.sendMessage("§f추가 장비 : 퉁퉁퉁 방망이");
+        p.sendMessage("§f장비 제거 : 없음");
+
     }
 
     @Override
@@ -108,8 +137,97 @@ public class TungTungTungSahur extends Ability {
             timeoutTasks.remove(uuid);
         }
 
-        // 부모 클래스의 cleanup 호출 (activeTasks 등 정리)
+        // 변신 해제
+        p.removePotionEffect(PotionEffectType.INVISIBILITY);
+
+        // 부모 클래스의 cleanup 호출 (activeTasks, activeEntities 등 정리)
         super.cleanup(p);
+    }
+
+    // [추가] 나무 변신 로직
+    private void startDisguise(Player p) {
+        // 1. 투명화 적용 (갑옷은 보일 수 있음 -> 기획상 허용? 보통 벗게 하거나 함. 여기선 일단 투명화만)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false,
+                false, false));
+
+        // 2. BlockDisplay 소환 (참나무 원목)
+        BlockDisplay display = (BlockDisplay) p.getWorld().spawnEntity(p.getLocation(),
+                org.bukkit.entity.EntityType.BLOCK_DISPLAY);
+        display.setBlock(Material.OAK_LOG.createBlockData());
+
+        // 크기 및 위치 조정
+        // 플레이어 키가 약 1.8m, 폭 0.6m. 통나무는 1x1x1.
+        // 살짝 줄이거나 늘려서 맞춤. (폭 0.7, 높이 1.9 정도?)
+        Transformation transform = display.getTransformation();
+        transform.getScale().set(0.7f, 1.9f, 0.7f);
+        // 중심점 조정 (발 밑이 기준이므로)
+        transform.getTranslation().set(-0.35f, 0f, -0.35f); // 블록 중심 맞추기 (0,0에서 시작하므로 -0.5해야 중앙인데, 스케일 고려)
+        // 스케일 되면 원점 기준으로 커짐?? -> BlockDisplay 원점은 모서리(0,0,0).
+        // scale 0.7이면 0~0.7 차지.
+        // 플레이어 중심은 (0.5, 0, 0.5) 느낌.
+        // -0.35 하면: PlayerLoc(중심) + (-0.35) -> Player보다 약간 옆?
+        // BlockDisplay default location is center of bottom face? No, corner.
+        // 0.7 scale -> center is 0.35. We want center at Player center (0).
+        // So translation should be -0.35.
+
+        display.setTransformation(transform);
+
+        // 등록 (Cleanup을 위해)
+        registerSummon(p, display);
+
+        // 3. 따라다니기 태스크
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!p.isOnline() || p.isDead() || !display.isValid()) {
+                    this.cancel();
+                    if (display.isValid())
+                        display.remove();
+                    return;
+                }
+
+                // 위치 동기화 (회전 포함?)
+                // 통나무가 회전하면 이상할 수도 있지만, 시선 따라가는게 자연스러움.
+                // 다만 BlockDisplay 회전은 Transformation으로 해야 함? 아니면 Entity Rotation?
+                // Entity Rotation은 Teleport로 가능.
+
+                Location loc = p.getLocation();
+                // BlockDisplay는 모서리 기준이므로, 플레이어 위치 그대로 가면 발 밑 코너에 생김.
+                // 아까 Translation으로 조정했으니, 플레이어 위치 그대로 가면 됨.
+                // 하지만 회전이 문제.
+
+                // 단순하게: 플레이어 위치 + Yaw만 적용
+                // loc.setPitch(0); // 통나무가 기울면 이상하니 Pitch는 0
+
+                // Transformation을 쓰지 않고 setRotation을 쓰거나 teleport.
+                display.teleport(loc);
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+
+        registerTask(p, task);
+    }
+
+    // [추가] 피격 시 나무 타격 효과
+    @EventHandler
+    public void onPlayerDamage(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player p))
+            return;
+
+        // 이 능력을 가진 사람인지 확인 (그리고 변신 중인지?)
+        // 변신 중 여부는 activeEntities에 BlockDisplay가 있는지 등으로 확인 가능하지만,
+        // cleanup 전까진 계속 유지되므로 Ability 보유 여부로 체크.
+        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
+            return;
+        }
+
+        // 데미지 0이거나 캔슬된거면 무시? (그래도 맞았으면 소리는 나야지)
+
+        // 나무 타격음 및 파티클
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_WOOD_BREAK, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);
+
+        p.getWorld().spawnParticle(Particle.BLOCK, p.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3,
+                Material.OAK_LOG.createBlockData());
     }
 
     private void startLoop(Player p) {
@@ -162,9 +280,9 @@ public class TungTungTungSahur extends Ability {
 
         // 루프 돌면서 후보군 선정
         for (Player p : Bukkit.getOnlinePlayers()) {
-            // [테스트용] 본인도 후보에 포함하려면 아래 조건을 주석 처리하세요.
-            // if (p.getUniqueId().equals(me.getUniqueId())) continue; // <--- [테스트 시 주석 처리]
-            // if (p.getUniqueId().equals(me.getUniqueId())) continue; // [테스트용] 본인 포함
+            // 자신은 지목 대상에서 제외
+            if (p.getUniqueId().equals(me.getUniqueId()))
+                continue;
 
             // AFK 등이 아닌, 정상 플레이 중인 사람만?
             // "afk 유저 제외" 조건이 있으므로 체크 필요.

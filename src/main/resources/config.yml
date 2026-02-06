@@ -1,0 +1,32 @@
+# 기본 설정 파일
+# MOC 플러그인 설정 (Config)
+
+# 게임 시작 시 스폰 장소로 이동 여부 (true/false)
+spawn_tf: true
+
+# 스폰 좌표 (게임 내에서 /spawn 명령어로 설정 추천)
+spawn_point: null
+
+# 전투 시작 전 평화 시간 (초)
+peace_time: 3
+
+# 능력 리롤(다시 뽑기) 기회 횟수
+re_point: 1
+
+# 능력 추첨 시간 (초)
+start_time: 30
+
+# 자기장(Final Fight) 활성화 여부
+final_fight: true
+
+# 게임 시작 후 자기장 생성 시간 (초)
+final_time: 120
+
+# 전장(경기장) 크기 (반경 블록 수)
+map_size: 75
+
+# 우승 승점 (목표 점수)
+win_value: 40
+
+# 히든 캐릭터 등장 여부
+hidden: false

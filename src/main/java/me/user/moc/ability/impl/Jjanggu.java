@@ -151,7 +151,13 @@ public class Jjanggu extends Ability {
                         livingTarget.setVelocity(dir);
 
                         // [밸런스 패치] 실제로 맞췄을 때만 메시지 출력 (도배 방지)
-                        Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
+                        // [추가] 무적 상태이거나 대미지를 입지 않았을 때 채팅 도배 방지
+                        boolean isInvulnerable = livingTarget.isInvulnerable() || livingTarget.getNoDamageTicks() > 10;
+                        boolean isGameInvincible = me.user.moc.MocPlugin.getInstance().getGameManager().isInvincible();
+
+                        if (!isInvulnerable && !isGameInvincible) {
+                            Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
+                        }
                         // 타격음
                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
                         // }
