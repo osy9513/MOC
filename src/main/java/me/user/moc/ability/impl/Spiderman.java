@@ -94,8 +94,6 @@ public class Spiderman extends Ability {
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 스파이더맨 슈트, 웹 슈터, 피자 64개");
         p.sendMessage("§f장비 제거 : 철 칼, 철 흉갑, 소고기 64개");
-
-        giveItem(p);
     }
 
     @Override
@@ -152,17 +150,19 @@ public class Spiderman extends Ability {
 
     // --- 이벤트 리스너 ---
 
-    // 낙하 데미지 무시
-    @EventHandler
-    public void onEntityDamage(EntityDamageEvent e) {
-        if (e.getEntity() instanceof Player p) {
-            if (AbilityManager.getInstance().hasAbility(p, getCode())) {
-                if (e.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    e.setCancelled(true);
-                }
-            }
-        }
-    }
+    // 낙하 데미지 무시 <- 낙뎀 받도록 수정 ㅋㅋ 물 낙법 잘해야함.
+    /*
+     * @EventHandler
+     * public void onEntityDamage(EntityDamageEvent e) {
+     * if (e.getEntity() instanceof Player p) {
+     * if (AbilityManager.getInstance().hasAbility(p, getCode())) {
+     * if (e.getCause() == EntityDamageEvent.DamageCause.FALL) {
+     * e.setCancelled(true);
+     * }
+     * }
+     * }
+     * }
+     */
 
     // 거미줄 감속 무시 로직 & 벽 타기 로직
     @EventHandler
@@ -454,7 +454,7 @@ public class Spiderman extends Ability {
         removeWeb(p);
 
         p.setVelocity(new Vector(0, 0, 0));
-        p.sendMessage("§7이동 중단.");
+        p.sendMessage("§7웹스윙 중단!");
     }
 
     @Override

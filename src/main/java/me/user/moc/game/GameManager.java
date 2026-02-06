@@ -75,6 +75,10 @@ public class GameManager implements Listener {
         return isRunning;
     }
 
+    public boolean isInvincible() {
+        return isInvincible;
+    }
+
     /**
      * 전투가 실제로 시작되었는지 확인합니다.
      * (게임이 실행 중이고, 무적/대기 시간이 끝난 상태)
@@ -272,8 +276,8 @@ public class GameManager implements Listener {
                         p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 1f);
                     }
 
-                    // [효과] 바닥을 옵시디언으로 변경
-                    changeFloor(Material.OBSIDIAN);
+                    // [효과] 바닥 전체를 옵시디언으로 변경 (글로벌 룰렛)
+                    arenaManager.setArenaFloor(Material.OBSIDIAN);
 
                     // [효과] 마지막으로 옵시디언 파티클 펑!
                     spawnBlockParticles(Material.OBSIDIAN);
@@ -289,7 +293,8 @@ public class GameManager implements Listener {
 
                 // 1. 바닥 변경 (0.3초마다)
                 if (ticks % 6 == 0) {
-                    changeFloor(currentMat);
+                    // [변경] 전장 바닥 전체 변경 (글로벌 룰렛)
+                    arenaManager.setArenaFloor(currentMat);
 
                     // [효과] 회전음 (띵 띵)
                     for (Player p : Bukkit.getOnlinePlayers()) {
@@ -304,19 +309,6 @@ public class GameManager implements Listener {
                 ticks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);
-    }
-
-    /**
-     * [추가] 모든 플레이어의 발 밑 블럭을 특정 재질로 바꿉니다.
-     */
-    private void changeFloor(Material mat) {
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (isAfk(p.getName()))
-                continue;
-
-            Location loc = p.getLocation().clone().subtract(0, 1, 0);
-            loc.getBlock().setType(mat);
-        }
     }
 
     /**
@@ -464,6 +456,26 @@ public class GameManager implements Listener {
 
         // [수정] 평화 시간(카운트다운)이 끝났으므로 즉시 무적 해제!
         isInvincible = false;
+
+        // [추가] 전투 시작 시 월드의 모든 생명체(플레이어 제외) 제거 (드랍 x)
+        // 첫 번째 플레이어의 월드를 기준으로 잡습니다.
+        if (!Bukkit.getOnlinePlayers().isEmpty()) {
+            org.bukkit.World world = Bukkit.getOnlinePlayers().iterator().next().getWorld();
+            // 모든 살아있는 엔티티 제거 (플레이어 제외)
+            for (org.bukkit.entity.LivingEntity le : world.getLivingEntities()) {
+                if (!(le instanceof Player)) {
+                    le.remove(); // drops nothing
+                }
+            }
+            // [추가] 월드에 떨어진 모든 아이템 제거
+            for (org.bukkit.entity.Entity item : world.getEntitiesByClass(org.bukkit.entity.Item.class)) {
+                item.remove();
+            }
+        }
+
+        // [추가] 전투 시작 시 바닥을 기반암으로 초기화하고 중앙 에메랄드 복구
+        arenaManager.setArenaFloor(Material.BEDROCK);
+        arenaManager.resetCenterBlock();
 
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage(" ");

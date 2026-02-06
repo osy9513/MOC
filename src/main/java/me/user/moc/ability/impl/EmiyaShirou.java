@@ -21,9 +21,9 @@ import java.util.*;
 public class EmiyaShirou extends Ability {
 
     // 상태 관리
-    private boolean isChanting = false;
-    private boolean isActive = false;
-    private boolean hasTriggered = false; // 이번 라운드 자동 발동 여부
+    private final Map<UUID, Boolean> isChanting = new HashMap<>();
+    private final Map<UUID, Boolean> isActive = new HashMap<>();
+    private final Map<UUID, Boolean> hasTriggered = new HashMap<>(); // 이번 라운드 자동 발동 여부
 
     // 영창 대사
     private final String[] CHANT_LINES = {
@@ -48,8 +48,8 @@ public class EmiyaShirou extends Ability {
         }
     }
 
-    private final List<RisingSword> activeSwords = new ArrayList<>();
-    private final List<ArmorStand> flyingSwords = new ArrayList<>(); // 날아가는 중인 검 (제거용)
+    private final Map<UUID, List<RisingSword>> activeSwords = new HashMap<>();
+    private final Map<UUID, List<ArmorStand>> flyingSwords = new HashMap<>(); // 날아가는 중인 검 (제거용)
 
     // 키값
     private static final String KEY_UBW_HOMING = "MOC_UBW_HOMING";
@@ -118,20 +118,21 @@ public class EmiyaShirou extends Ability {
     }
 
     private void checkAndTrigger(Player p) {
-        if (hasTriggered)
+        UUID uuid = p.getUniqueId();
+        if (hasTriggered.getOrDefault(uuid, false))
             return;
-        if (isChanting || isActive)
+        if (isChanting.getOrDefault(uuid, false) || isActive.getOrDefault(uuid, false))
             return;
 
         // 전투 시작 여부 확인
         if (MocPlugin.getInstance().getGameManager().isBattleStarted()) {
             // [추가] 관전 모드이거나 죽은 상태면 발동 안함
             if (p.getGameMode() == GameMode.SPECTATOR || p.isDead()) {
-                hasTriggered = true; // 더 이상 체크하지 않도록 true로 설정
+                hasTriggered.put(uuid, true); // 더 이상 체크하지 않도록 true로 설정
                 return;
             }
 
-            hasTriggered = true; // 중복 실행 방지
+            hasTriggered.put(uuid, true); // 중복 실행 방지
             // 알림 필요 없음
             // p.sendMessage("§7[System] 15초 후 무한의 검제 영창을 시작합니다...");
 
@@ -165,10 +166,11 @@ public class EmiyaShirou extends Ability {
     }
 
     private void startChant(Player p) {
-        if (isChanting || isActive)
+        UUID uuid = p.getUniqueId();
+        if (isChanting.getOrDefault(uuid, false) || isActive.getOrDefault(uuid, false))
             return; // 이중 안전장치
 
-        isChanting = true;
+        isChanting.put(uuid, true);
         p.setPlayerTime(12500, false); // 노을
 
         // 영창 태스크
@@ -241,8 +243,8 @@ public class EmiyaShirou extends Ability {
     private void cancelChant(Player p) {
         if (p.isOnline())
             p.resetPlayerTime();
-        isChanting = false;
-        isActive = false;
+        isChanting.put(p.getUniqueId(), false);
+        isActive.put(p.getUniqueId(), false);
         p.sendMessage("§c영창이 취소되었습니다.");
     }
 
@@ -252,8 +254,9 @@ public class EmiyaShirou extends Ability {
             return;
         }
 
-        isChanting = false;
-        isActive = true;
+        UUID uuid = p.getUniqueId();
+        isChanting.put(uuid, false);
+        isActive.put(uuid, true);
 
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 2.0f, 1.0f);
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 0.5f);
@@ -262,7 +265,7 @@ public class EmiyaShirou extends Ability {
         BukkitTask spawnTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!p.isOnline() || p.isDead() || !isActive) { // 사망 시 능력 중단
+                if (!p.isOnline() || p.isDead() || !isActive.getOrDefault(uuid, false)) { // 사망 시 능력 중단
                     cleanup(p);
                     this.cancel();
                     return;
@@ -328,7 +331,7 @@ public class EmiyaShirou extends Ability {
         // 테스트 필요하지만, 일단 90도면 아래를 가리킬 것임.
 
         RisingSword rSword = new RisingSword(stand);
-        activeSwords.add(rSword);
+        activeSwords.computeIfAbsent(owner.getUniqueId(), k -> new ArrayList<>()).add(rSword);
 
         // 솟아오르는 애니메이션 (1초에 걸쳐 1칸 위로)
         new BukkitRunnable() {
@@ -338,7 +341,14 @@ public class EmiyaShirou extends Ability {
 
             @Override
             public void run() {
-                if (stand.isDead() || !activeSwords.contains(rSword)) {
+                // [수정] 리스트 포함 여부 체크 (UUID 맵 경유)
+                boolean stillActive = false;
+                List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
+                if (mySwords != null && mySwords.contains(rSword)) {
+                    stillActive = true;
+                }
+
+                if (stand.isDead() || !stillActive) {
                     this.cancel();
                     stand.remove();
                     return;
@@ -374,7 +384,14 @@ public class EmiyaShirou extends Ability {
         BukkitTask scanTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (rSword.stand.isDead() || rSword.fired || !activeSwords.contains(rSword)) {
+                // [수정] 리스트 포함 여부 체크 (UUID 맵 경유)
+                boolean stillActive = false;
+                List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
+                if (mySwords != null && mySwords.contains(rSword)) {
+                    stillActive = true;
+                }
+
+                if (rSword.stand.isDead() || rSword.fired || !stillActive) {
                     this.cancel();
                     return;
                 }
@@ -414,11 +431,15 @@ public class EmiyaShirou extends Ability {
     private void fireSword(Player owner, RisingSword rSword, LivingEntity target) {
         if (rSword.fired)
             return;
+
+        List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
+        if (mySwords != null)
+            mySwords.remove(rSword);
+
         rSword.fired = true;
-        activeSwords.remove(rSword); // 리스트에서 제거 (더이상 감시 안함)
 
         ArmorStand stand = rSword.stand;
-        flyingSwords.add(stand); // 날아가는 검 관리 리스트로 이동
+        flyingSwords.computeIfAbsent(owner.getUniqueId(), k -> new ArrayList<>()).add(stand);
 
         // 발사 로직
         // 1. 타겟 방향 벡터 계산
@@ -454,7 +475,10 @@ public class EmiyaShirou extends Ability {
             public void run() {
                 if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround() || timer >= 200) {
                     stand.remove();
-                    flyingSwords.remove(stand); // 확실하게 제거
+                    List<ArmorStand> myFlying = flyingSwords.get(owner.getUniqueId());
+                    if (myFlying != null)
+                        myFlying.remove(stand);
+
                     arrow.remove(); // [추가] 화살도 즉시 제거 (전장에 남지 않게)
                     this.cancel();
                     return;
@@ -510,43 +534,54 @@ public class EmiyaShirou extends Ability {
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
-        isChanting = false;
-        isActive = false;
-        hasTriggered = false;
+        UUID uuid = p.getUniqueId();
+        isChanting.remove(uuid);
+        isActive.remove(uuid);
+        hasTriggered.remove(uuid);
         p.resetPlayerTime();
 
         // 대기 중인 검 제거
-        for (RisingSword rs : new ArrayList<>(activeSwords)) {
-            if (rs.stand != null)
-                rs.stand.remove();
+        List<RisingSword> mySwords = activeSwords.remove(uuid);
+        if (mySwords != null) {
+            for (RisingSword rs : mySwords) {
+                if (rs.stand != null)
+                    rs.stand.remove();
+            }
+            mySwords.clear();
         }
-        activeSwords.clear();
 
         // 날아가는 검 제거
-        for (ArmorStand as : new ArrayList<>(flyingSwords)) {
-            if (as != null)
-                as.remove();
+        List<ArmorStand> myFlying = flyingSwords.remove(uuid);
+        if (myFlying != null) {
+            for (ArmorStand as : myFlying) {
+                if (as != null)
+                    as.remove();
+            }
+            myFlying.clear();
         }
-        flyingSwords.clear();
     }
 
     @Override
     public void reset() {
         super.reset();
-        // 전체 초기화 (게임 종료 시)
-        isChanting = false;
-        isActive = false;
-        hasTriggered = false;
+        // 전체 초기화 (게임 종료 시) - 모든 맵 클리어
+        isChanting.clear();
+        isActive.clear();
+        hasTriggered.clear();
 
-        for (RisingSword rs : activeSwords) {
-            if (rs.stand != null)
-                rs.stand.remove();
+        for (List<RisingSword> list : activeSwords.values()) {
+            for (RisingSword rs : list) {
+                if (rs.stand != null)
+                    rs.stand.remove();
+            }
         }
         activeSwords.clear();
 
-        for (ArmorStand as : flyingSwords) {
-            if (as != null)
-                as.remove();
+        for (List<ArmorStand> list : flyingSwords.values()) {
+            for (ArmorStand as : list) {
+                if (as != null)
+                    as.remove();
+            }
         }
         flyingSwords.clear();
     }
