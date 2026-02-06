@@ -99,10 +99,35 @@ public class AbilityManager {
         abilities.put(ability.getCode(), ability);
     }
 
+    /**
+     * [추가] 게임에서 실제로 추첨 가능한 능력 코드 목록을 가져옵니다.
+     * 콘피그의 hidden 설정이 꺼져(false)있다면 'H'로 시작하는 코드는 제외합니다.
+     */
+    public List<String> getPlayableAbilityCodes() {
+        // 1. 모든 코드를 가져옵니다.
+        List<String> allCodes = new ArrayList<>(abilities.keySet());
+
+        // 2. 히든 모드 설정 확인
+        // ConfigManager 인스턴스를 가져오는데, 안전하게 가져옵니다.
+        me.user.moc.config.ConfigManager config = (plugin.getConfigManager() != null) ? plugin.getConfigManager()
+                : me.user.moc.config.ConfigManager.getInstance();
+
+        boolean isHiddenEnabled = config.hidden;
+
+        // 3. 필터링 (히든 모드가 꺼져있다면 'H'로 시작하는 것 제거)
+        if (!isHiddenEnabled) {
+            // removeIf를 쓰면 조건에 맞는 녀석들을 리스트에서 싹 지워줍니다.
+            allCodes.removeIf(code -> code.toUpperCase().startsWith("H"));
+        }
+
+        return allCodes;
+    }
+
     // * GameManager가 "능력 뭐뭐 있어?" 하고 물어볼 때 사용합니다.
     public Set<String> getAbilityCodes() {
-        // 맵에 들어있는 모든 키(능력 코드들)를 복사해서 줍니다.
-        return abilities.keySet();
+        // [수정] 이제 그냥 다 보여주는 게 아니라, 히든 필터링을 거친 목록을 줍니다.
+        // 하지만 반환 타입이 Set이라서 변환해서 줍니다.
+        return new HashSet<>(getPlayableAbilityCodes());
     }
 
     // [추가] 김독자 능력 등에서 사용하기 위한 Getter
@@ -238,9 +263,12 @@ public class AbilityManager {
             default -> {
                 p.sendMessage("§f상세 설명 : §b/moc check");
                 p.sendMessage("§f능력 수락 : §a/moc yes");
-                // 남은 리롤 횟수를 가져와서 보여줍니다.
+
+                // [요청사항 반영] 리롤 포인트가 0보다 클 때만 리롤 안내 메시지를 보여줍니다.
                 int left = rerollCounts.getOrDefault(p.getUniqueId(), 0);
-                p.sendMessage("§f리롤(" + left + "회) : §c/moc re");
+                if (left > 0) {
+                    p.sendMessage("§f리롤(" + left + "회) : §c/moc re");
+                }
             }
         }
 
@@ -261,8 +289,9 @@ public class AbilityManager {
         }
 
         // 2. 현재 능력을 제외한 나머지 능력 중에서 하나를 랜덤으로 뽑습니다.
-        List<String> pool = new ArrayList<>(abilities.keySet());
-        pool.remove(playerAbilities.get(p.getUniqueId()));
+        // [수정] getRandomAbility 대신 getPlayableAbilityCodes()를 사용하여 필터링된 목록을 가져옵니다.
+        List<String> pool = new ArrayList<>(getPlayableAbilityCodes());
+
         // @@@ㅁㅁㅁ@@@ 여기서 능력 뽑을 때 다른 사람과 그리고 이전의 자신의 능력과 중복되지 않게 해야함.
         String currentAbility = playerAbilities.get(p.getUniqueId());
         pool.remove(currentAbility); // 자신의 이전 능력 제거
@@ -270,10 +299,14 @@ public class AbilityManager {
 
         // 만약 모든 능력이 이미 배정되어 뽑을 게 없다면, 최소한 자신의 직전 능력만이라도 뺍니다.
         if (pool.isEmpty()) {
-            pool = new ArrayList<>(abilities.keySet());
+            pool = new ArrayList<>(getPlayableAbilityCodes());
             pool.remove(currentAbility);
         }
 
+        if (pool.isEmpty())
+            return;
+
+        Collections.shuffle(pool); // 목록을 섞습니다.
         if (pool.isEmpty())
             return;
 

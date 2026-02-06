@@ -142,7 +142,56 @@ public class MocCommand implements CommandExecutor {
                 // return true;
                 // }
                 am.showAbilityList(p);
+
+                p.sendMessage(" ");
+                p.sendMessage("§cset 사용법: /moc set [플레이어이름] [능력]");
+                p.sendMessage(" ");
+
                 return true;
+            }
+
+            case "config" -> { // [신규] 설정 관리: /moc config [set]
+                if (!p.isOp()) {
+                    p.sendMessage("§c권한이 없습니다.");
+                    return true;
+                }
+
+                me.user.moc.config.ConfigManager cm = me.user.moc.config.ConfigManager.getInstance();
+
+                // 1. 그냥 /moc config 라고만 쳤을 때 -> 현재 설정 값들 보여주기
+                if (args.length == 1) {
+                    p.sendMessage(" ");
+                    p.sendMessage("§6[ MOC 설정 목록 ]");
+                    p.sendMessage("§e spawn_tf (시작 스폰 티피 활성화 - true/false): §f" + cm.spawn_tf);
+                    p.sendMessage("§e peace_time (평화 시간 - 초): §f" + cm.peace_time);
+                    p.sendMessage("§e re_point (능력 리롤 횟수 - 숫자): §f" + cm.re_point);
+                    p.sendMessage("§e start_time (능력 추첨 시간 - 초): §f" + cm.start_time);
+                    p.sendMessage("§e final_fight (최종 자기장 활성화 - true/false): §f" + cm.final_fight);
+                    p.sendMessage("§e final_time (최종 자기장 활성화 시간 - 초): §f" + cm.final_time);
+                    p.sendMessage("§e map_size (맵 크기 - 숫자): §f" + cm.map_size);
+                    p.sendMessage("§e win_value (승리 점수 - 숫자): §f" + cm.win_value);
+                    // p.sendMessage("§e teammod (팀전 모드): §f" + cm.teammod);
+                    p.sendMessage("§e hidden (히든 캐릭터 활성화): §f" + cm.hidden);
+                    p.sendMessage(" ");
+                    p.sendMessage("§7(변경법: /moc config set [이름] [값])");
+                    p.sendMessage(" ");
+                    return true;
+                }
+
+                // 2. /moc config set [이름] [값]
+                if (args[1].equalsIgnoreCase("set")) {
+                    if (args.length < 4) {
+                        p.sendMessage("§c사용법: /moc config set [설정변수명] [값]");
+                        return true;
+                    }
+                    String key = args[2];
+                    String value = args[3];
+
+                    // ConfigManager에게 일을 떠넘깁니다. "이거 바꿔줘!"
+                    String result = cm.setValue(key, value);
+                    p.sendMessage(result);
+                    return true;
+                }
             }
 
             default -> {
