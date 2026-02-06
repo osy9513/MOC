@@ -95,6 +95,13 @@ public class AbilityManager {
         addAbility(new Yesung(plugin)); // H02 예성이
         addAbility(new TungTungTungSahur(plugin)); // 016 퉁퉁퉁 사후르
         addAbility(new DIO(plugin)); // 045 DIO
+        addAbility(new Jigsaw(plugin)); // 049 직쏘
+        addAbility(new Singed(plugin)); // 033 신지드
+        addAbility(new PolarBearAbility(plugin)); // 028 북극곰
+        addAbility(new BartholomewKuma(plugin)); // 050 바솔로뮤 쿠마
+        addAbility(new Mothership(plugin)); // 032 모선
+        addAbility(new Deidara(plugin)); // 044 데이다라
+        addAbility(new Bajje(plugin)); // H01 베째
     }
 
     private void addAbility(Ability ability) {
