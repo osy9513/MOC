@@ -39,7 +39,7 @@ public class Naofumi extends Ability {
 
     @Override
     public String getCode() {
-        return "028";
+        return "025";
     }
 
     @Override
