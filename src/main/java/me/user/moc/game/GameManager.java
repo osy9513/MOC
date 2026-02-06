@@ -201,9 +201,7 @@ public class GameManager implements Listener {
         // 여기서 날씨, 시간, 기반암, 에메랄드, 자기장, 월드 바닥의 아이템, 몬스터 초기화가 다 일어납니다.
         arenaManager.prepareArena(center);
 
-        // 플레이어 초기화 및 능력 배정
-        // 변경: AbilityManager에 등록된 모든 코드를 자동으로 긁어옵니다.
-        // 이제 능력을 새로 만들고 AbilityManager에 등록만 하면, 여긴 건들지 않아도 됩니다.
+        // 플레이어 초기화 및 능력 배정 전 덱 생성
         List<String> deck = new ArrayList<>();
         if (abilityManager != null) {
             deck.addAll(abilityManager.getAbilityCodes());
@@ -215,53 +213,143 @@ public class GameManager implements Listener {
 
         // 덱 섞기
         Collections.shuffle(deck);
-        int deckIndex = 0;
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-
-            // 1. [핵심] AFK 명단에 있는 사람은 관전 모드로 보내고, 능력 지급 과정에서 제외(continue)합니다.
             if (isAfk(p.getName())) {
                 p.setGameMode(GameMode.SPECTATOR); // 관전 모드 변경
                 p.sendMessage("§7[MOC] 게임 열외(AFK) 상태이므로 관전 모드로 전환됩니다.");
                 p.sendMessage("§7게임에 참여하고 싶으시면 다음 판에 '/moc afk 본인닉네임'을 입력해 해제하세요.");
-
-                // 아래의 능력 지급 코드를 실행하지 않고 다음 사람으로 넘어갑니다.
                 continue;
             }
 
-            // if (afkPlayers.contains(p.getName()))
-            // continue;
-
-            // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
-            // 관전 모드였던 사람도 다시 참여시켜야 하므로 모드 변경 필수!
-            p.setGameMode(GameMode.SURVIVAL); // <--- [여기 변경됨!!!] 관전 -> 서바이벌
-
-            // 텔레포트 (이미 소스에 있지만 확실히 체크)
+            p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
             if (configManager.spawn_point != null) {
-                p.teleport(configManager.spawn_point); // <--- [여기 변경됨!!!] 스폰 지점으로 이동
+                p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
             }
 
             p.getInventory().clear();
             p.setHealth(20); // 기본 체력으로 일단 리셋 (전투 시작 시 60으로 늘어남)
             p.setFoodLevel(20);
-            // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 
             for (PotionEffect effect : p.getActivePotionEffects())
                 p.removePotionEffect(effect.getType());
+        }
+
+        // [수정] 바로 능력을 주지 않고, 3초간 룰렛 연출을 시작합니다.
+        startRouletteAnimation(deck);
+    }
+
+    /**
+     * [추가] 능력 추첨 전 3초간의 룰렛 애니메이션을 재생합니다.
+     */
+    private void startRouletteAnimation(List<String> deck) {
+        // 순환할 블럭 리스트: 에메랄드 -> 다이아 -> 금 -> 철
+        final Material[] cycleBlocks = {
+                Material.EMERALD_BLOCK,
+                Material.DIAMOND_BLOCK,
+                Material.GOLD_BLOCK,
+                Material.IRON_BLOCK
+        };
+
+        new BukkitRunnable() {
+            int ticks = 0;
+            final int DURATION = 60; // 3초 (20 ticks * 3)
+
+            @Override
+            public void run() {
+                if (!isRunning) {
+                    this.cancel();
+                    return;
+                }
+
+                // 3초가 지나면 종료하고 능력을 배정합니다.
+                if (ticks >= DURATION) {
+                    this.cancel();
+
+                    // [효과] 종료음: 빰! (레벨업 + 다이아)
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+                        p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 1f);
+                    }
+
+                    // [효과] 바닥을 옵시디언으로 변경
+                    changeFloor(Material.OBSIDIAN);
+
+                    // [효과] 마지막으로 옵시디언 파티클 펑!
+                    spawnBlockParticles(Material.OBSIDIAN);
+
+                    // 진짜 능력 배정 시작
+                    assignAbilities(deck);
+                    return;
+                }
+
+                // 0.3초 (6 ticks) 마다 블럭 종류 변경
+                int cycleIndex = (ticks / 6) % cycleBlocks.length;
+                Material currentMat = cycleBlocks[cycleIndex];
+
+                // 1. 바닥 변경 (0.3초마다)
+                if (ticks % 6 == 0) {
+                    changeFloor(currentMat);
+
+                    // [효과] 회전음 (띵 띵)
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f); // 2f = 높은 음
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 2f);
+                    }
+                }
+
+                // 2. 파티클 효과 (매 틱마다, 현재 블럭 재질로)
+                spawnBlockParticles(currentMat);
+
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    /**
+     * [추가] 모든 플레이어의 발 밑 블럭을 특정 재질로 바꿉니다.
+     */
+    private void changeFloor(Material mat) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (isAfk(p.getName()))
+                continue;
+
+            Location loc = p.getLocation().clone().subtract(0, 1, 0);
+            loc.getBlock().setType(mat);
+        }
+    }
+
+    /**
+     * [추가] 모든 플레이어 주변에 해당 블럭의 파편 파티클을 튀깁니다.
+     */
+    private void spawnBlockParticles(Material mat) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (isAfk(p.getName()))
+                continue;
+
+            p.spawnParticle(Particle.BLOCK, p.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, mat.createBlockData());
+        }
+    }
+
+    /**
+     * [분리] 실제 능력을 배정하고 안내 메시지를 띄우는 로직
+     */
+    private void assignAbilities(List<String> deck) {
+        int deckIndex = 0;
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (isAfk(p.getName()))
+                continue;
 
             // 능력 배정 (AbilityManager 연동)
             String abilityCode = deck.get(deckIndex % deck.size());
             if (abilityManager != null) {
-                // AbilityManager에 '이 유저는 이 능력이다'라고 설정하는 메소드가 있다고 가정하거나
-                // AbilityManager가 public map을 가지고 있다면 직접 put
-                // 여기서는 AbilityManager에 setPlayerAbility 메소드를 추가했다고 가정합니다.
-                // 만약 없다면 AbilityManager.java에 추가가 필요합니다!
                 abilityManager.setPlayerAbility(p.getUniqueId(), abilityCode);
 
                 // 리롤 횟수 설정 (콘피그 값)
                 abilityManager.setRerollCount(p.getUniqueId(), configManager.re_point);
 
-                // 설명 메세지 출력 (AbilityManager가 담당)
+                // 능력 정보 출력
                 abilityManager.showAbilityInfo(p, abilityCode, 0);
             }
             deckIndex++;
@@ -276,14 +364,11 @@ public class GameManager implements Listener {
             @Override
             public void run() {
                 // 모든 참가자가 준비 완료(yes)했으면 즉시 시작
-                // [▼▼▼ 여기서부터 변경됨: AFK 인원 제외하고 남은 사람 수 계산 ▼▼▼]
-                // 전체 인원에서 AFK 인원 수를 뺀 값이 실제 참여 인원입니다.
+                // AFK 제외 참가자 수 계산
                 long activePlayerCount = Bukkit.getOnlinePlayers().size() - afkPlayers.size();
 
-                // 만약 모든 플레이어가 AFK라면(참여자가 0명), 게임 진행이 안 되므로 예외 처리
                 if (activePlayerCount <= 0)
                     activePlayerCount = 1;
-                // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 
                 if ((readyPlayers.size() >= activePlayerCount && activePlayerCount > 0) || timeLeft <= 0) {
                     this.cancel();
@@ -334,8 +419,16 @@ public class GameManager implements Listener {
             p.teleport(tpLoc);
         }
 
+        // [수정] 평화 시간(무적)을 이 카운트다운 타이머에 적용합니다.
+        // configManager.peace_time이 10이면, 10초 카운트다운을 합니다.
+        // (최소 5초는 보장)
+        int waitSeconds = Math.max(configManager.peace_time, 5);
+
+        // 안내 메시지도 상황에 맞게 변경
+        Bukkit.broadcastMessage("§b[알림] §f전투 시작 전 " + waitSeconds + "초간 준비 시간(무적)을 갖습니다.");
+
         new BukkitRunnable() {
-            int count = 5;
+            int count = waitSeconds;
 
             @Override
             public void run() {
@@ -345,11 +438,18 @@ public class GameManager implements Listener {
                     return;
                 }
 
-                // 화면 중앙 타이틀 및 소리
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    p.sendTitle("§c" + count, "§7전투 시작 임박", 0, 20, 0);
-                    p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
+                // 5초 이하일 때만 타이틀 표시 (너무 길면 화면 가리니까)
+                // 또는 원하시면 전체 카운트다운 보여줘도 됩니다. 지금은 5초 이하만.
+                if (count <= 5) {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        p.sendTitle("§c" + count, "§7전투 시작 임박", 0, 20, 0);
+                        p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 1f);
+                    }
+                } else if (count % 10 == 0) {
+                    // 10초 단위로는 채팅으로 알려줌
+                    Bukkit.broadcastMessage("§7전투 시작까지 " + count + "초 남았습니다.");
                 }
+
                 count--;
             }
         }.runTaskTimer(plugin, 0, 20L);
@@ -361,7 +461,8 @@ public class GameManager implements Listener {
     private void startBattle() {
         if (!isRunning)
             return;
-        // 무적 해제.
+
+        // [수정] 평화 시간(카운트다운)이 끝났으므로 즉시 무적 해제!
         isInvincible = false;
 
         Bukkit.broadcastMessage(" ");
@@ -372,8 +473,11 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage(" ");
         // 웅장한 소리와 함께 시작 알림
         Bukkit.broadcastMessage("§c§l[전투 시작] §f모든 적을 처치하십시오!");
+        Bukkit.broadcastMessage("§c§l[경고] §f무적 시간이 종료되었습니다! 이제 공격이 가능합니다."); // 명확한 알림
+
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
+            p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1f); // 무적 해제 느낌 팍팍
 
             if (afkPlayers.contains(p.getName()))
                 continue;
@@ -388,7 +492,7 @@ public class GameManager implements Listener {
             p.setSaturation(10.0f); // 포화도를 높여서 허기가 금방 닳지 않게 서비스!
 
             // 체력 3줄(60) 설정
-            AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
+            AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH); // [수정] 1.21.11 표준 상수 사용
             if (maxHealth != null)
                 maxHealth.setBaseValue(60.0);
             p.setHealth(60.0);
@@ -417,11 +521,27 @@ public class GameManager implements Listener {
                     // 드디어 아레나 매니저의 그 함수를 여기서 부릅니다!
                     arenaManager.startBorderShrink();
                 }
-            }.runTaskLater(plugin, configManager.final_time * 20L); // 5분(300초) * 20
+            }.runTaskLater(plugin, configManager.final_time * 20L); // ex) 5분 하고 싶으면 300 입력하면 됨.
         }
 
         // 자기장 대미지 체크 태스크 시작 (ArenaManager 기능 활용 권장)
         arenaManager.startBorderDamage();
+    }
+
+    // [추가] 무적 상태일 때 대미지 막기
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent e) {
+        // 게임 중이 아니면 관여 안 함
+        if (!isRunning)
+            return;
+
+        // 무적 상태(능력 추첨 중 or 평화 시간)라면 대미지 무효화
+        // 단, 낙사나 공허는 죽을 수도 있으니 놔둘까요? -> 보통 평화 시간에는 완전 무적을 원함.
+        if (isInvincible) {
+            if (e.getEntity() instanceof Player) {
+                e.setCancelled(true);
+            }
+        }
     }
 
     // 아이템 지급 로직 (요청하신 순서 준수)
