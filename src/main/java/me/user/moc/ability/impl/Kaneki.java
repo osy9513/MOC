@@ -72,9 +72,10 @@ public class Kaneki extends Ability {
 
         // 3. 기본 버프 (재생 5, 허기 11)
         // 재생 5 (Amplifier 4)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 4, false, false));
         // 허기 20 (Amplifier 0) - 시각 효과용
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 999999, 19, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 19, false, false));
 
         // 4. 메시지
         Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
@@ -207,7 +208,8 @@ public class Kaneki extends Ability {
                     if (p.getLocation().getY() >= -64) {
                         PotionEffect regen = p.getPotionEffect(PotionEffectType.REGENERATION);
                         if (regen == null || regen.getAmplifier() != 4) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 4, false, false));
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                                    PotionEffect.INFINITE_DURATION, 4, false, false));
                         }
                     } else {
                         // 공허에서는 버프 제거

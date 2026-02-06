@@ -92,6 +92,7 @@ public class AbilityManager {
         addAbility(new Gintoki(plugin)); // 043 긴토키
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
         addAbility(new Yesung(plugin)); // H02 예성이
+        addAbility(new TungTungTungSahur(plugin)); // 016 퉁퉁퉁 사후르
     }
 
     private void addAbility(Ability ability) {

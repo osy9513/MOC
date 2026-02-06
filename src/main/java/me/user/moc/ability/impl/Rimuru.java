@@ -76,11 +76,18 @@ public class Rimuru extends Ability {
         p.setMaxHealth(70.0); // 3.5줄 (70칸)
         p.setHealth(70.0);
 
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 99999 * 20, 2, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 99999 * 20, 0, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, 99999 * 20, 0, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 99999 * 20, 0, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 99999 * 20, 0, false, false)); // 상시 화염 저항
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 2, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false)); // 상시
+                                                                                                                      // 화염
+                                                                                                                      // 저항
         p.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
 
         damageStacks.put(p.getUniqueId(), 0);
@@ -280,7 +287,8 @@ public class Rimuru extends Ability {
             privateSlime.addScoreboardTag("RIMURU_PRIVATE");
 
             // [복구] 투명화 적용 (팀원은 반투명하게 보임 - 3겹이라 진하게 보임)
-            privateSlime.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 999999, 0, false, false));
+            privateSlime.addPotionEffect(
+                    new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
 
             // [핵심] 다른 플레이어들에게는 Private Slime을 숨김
             for (Player online : Bukkit.getOnlinePlayers()) {
