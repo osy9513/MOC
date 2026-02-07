@@ -18,11 +18,13 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
@@ -31,9 +33,6 @@ import me.user.moc.ability.AbilityManager;
 
 public class Mothership extends Ability {
 
-    // 모선 본체를 구성하는 디스플레이 엔티티들
-    // Key: Owner UUID
-    private final java.util.Map<UUID, List<BlockDisplay>> motherships = new java.util.HashMap<>();
     // 현재 모선의 중앙 위치 (이동 로직용)
     private final java.util.Map<UUID, Location> shipLocations = new java.util.HashMap<>();
 
@@ -70,7 +69,7 @@ public class Mothership extends Ability {
             meta.setDisplayName("§b모선 호출기");
             meta.setLore(Arrays.asList(
                     "§7우클릭 시 모선을 소환합니다.",
-                    "§f지속시간: 35초",
+                    "§f지속시간: 12초",
                     "§c쿨타임은 모선 소멸 후 적용됩니다."));
             item.setItemMeta(meta);
         }
@@ -81,11 +80,11 @@ public class Mothership extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 모선(스타크래프트2)");
         p.sendMessage("§f모선 호출기를 우클릭하면 5초 뒤 전장 중앙 상공에 모선이 소환됩니다.");
-        p.sendMessage("§f소환된 모선은 가장 가까운 적을 §c초속 10칸§f 속도로 추적합니다.");
+        p.sendMessage("§f소환된 모선은 가장 가까운 적을 추적합니다.");
         p.sendMessage("§f모선 아래 3x3 범위에 있는 적에게 §c초당 10(5하트)§f의 피해를 입힙니다.");
         p.sendMessage("§f호출기를 가진 플레이어는 공격받지 않습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 35초");
+        p.sendMessage("§f쿨타임 : 20초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 모선 호출기");
         p.sendMessage("§f장비 제거 : 없음");
@@ -108,10 +107,14 @@ public class Mothership extends Ability {
 
         e.setCancelled(true); // 설치 방지
 
+        // [추가] 리액션 결과도 DENY로 설정하여 확실히 방지
+        e.setUseItemInHand(org.bukkit.event.Event.Result.DENY);
+        e.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+
         // 쿨타임 체크 (모선이 이미 소환 중이면 사용 불가 + 시스템 쿨타임 체크)
         if (checkCooldown(p)) {
-            // 이미 소환 중인지 체크
-            if (activeTasks.containsKey(p.getUniqueId()) || motherships.containsKey(p.getUniqueId())) {
+            // [Fix] 이미 소환 중인지 체크 (태스크가 존재하면 진행 중임)
+            if (activeTasks.containsKey(p.getUniqueId())) {
                 p.sendMessage("§c[!] 이미 모선이 활동 중이거나 소환 준비 중입니다.");
                 return;
             }
@@ -119,8 +122,11 @@ public class Mothership extends Ability {
             p.sendMessage("§e[!] §b5초 뒤 전장 가운데 모선이 나타납니다.");
             Bukkit.broadcastMessage("§c모선 : 심판의 시간이 다가왔다.");
 
-            // 5초 카운트다운
-            new BukkitRunnable() {
+            // 5초 카운트다운 (registerTask를 먼저 해서 중복 방지)
+            java.util.UUID uuid = p.getUniqueId();
+            activeTasks.computeIfAbsent(uuid, k -> new java.util.ArrayList<>());
+
+            BukkitTask countdown = new BukkitRunnable() {
                 int count = 5;
 
                 @Override
@@ -128,6 +134,7 @@ public class Mothership extends Ability {
                     // 플레이어 유효성 체크
                     if (!p.isOnline() || !AbilityManager.getInstance().hasAbility(p, getCode())) {
                         this.cancel();
+                        activeTasks.remove(uuid);
                         return;
                     }
 
@@ -142,6 +149,20 @@ public class Mothership extends Ability {
                     }
                 }
             }.runTaskTimer(plugin, 0L, 20L);
+
+            registerTask(p, countdown);
+        }
+    }
+
+    // [추가] 신호기 설치를 원천 봉쇄합니다.
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent e) {
+        Player p = e.getPlayer();
+        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+            return;
+
+        if (e.getBlockPlaced().getType() == Material.BEACON) {
+            e.setCancelled(true);
         }
     }
 
@@ -152,7 +173,7 @@ public class Mothership extends Ability {
         // 보통 MocPlugin -> getInstance -> getArenaManager 하면 되는데 구조상...
         // ArenaManager에 public static Location getGameCenter() 같은게 있으면 좋겠지만 인스턴스 변수임.
         // MocPlugin.getInstance().getGameManager()... (GameManager가 없으면?)
-        // 일단 편의상 0, 100, 0 이나 플레이어 근처가 아닌 '전장 중앙'이라고 명시됨.
+        // 일단 편의상 0, 100, 0 이나 플레이어 근처가 아닌 '전장 중앙'임.
         // 임시로 플레이어 위치의 Y+30 혹은, 월드 스폰 포인트 활용.
         // 여기서는 안전하게 플레이어의 월드의 0,0 을 기준으로 잡거나,
         // 만약 아레나 매니저가 전역적으로 접근 힘들다면,
@@ -160,7 +181,6 @@ public class Mothership extends Ability {
         // -> GameManger나 ArenaManager를 통해 가져오는게 맞음.
         // 일단 MocPlugin 메인을 통해 접근 시도.
 
-        Location centerLoc = p.getWorld().getSpawnLocation(); // 기본값
         // 실제로는 ArenaManager의 gameCenter를 가져와야 함.
         // MocPlugin에 getArenaManager()가 있다고 가정/확인됨? NO.
         // ArenaManager는 로컬 변수로 쓰이는 경우가 많음.
@@ -168,9 +188,33 @@ public class Mothership extends Ability {
         // -> p.getWorld().getWorldBorder().getCenter() 를 쓰면 정확함! (ArenaManager가 월드보더
         // 센터를 설정하니까)
 
+        // [Fix] 전장 중앙 상공 64칸
+        // ArenaManager의 중앙 = WorldBorder의 중앙
+        // ArenaManager의 중앙 = WorldBorder의 중앙
         Location targetCenter = p.getWorld().getWorldBorder().getCenter();
-        targetCenter.setY(targetCenter.getWorld().getHighestBlockYAt(targetCenter) + 64); // 땅바닥 + 64
-        // 만약 Y가 너무 높으면 319로 고정
+        World w = targetCenter.getWorld();
+
+        // [Fix] 전장 중앙 에메랄드 블록 찾기 (위에서 아래로 스캔)
+        int emeraldY = -999;
+        for (int y = w.getMaxHeight(); y > w.getMinHeight(); y--) {
+            if (w.getBlockAt(targetCenter.getBlockX(), y, targetCenter.getBlockZ())
+                    .getType() == Material.EMERALD_BLOCK) {
+                emeraldY = y;
+                break;
+            }
+        }
+
+        // 에메랄드 못 찾으면 차선책 (지표면)
+        if (emeraldY != -999) {
+            targetCenter.setY(emeraldY + 32);
+        } else {
+            double highestY = w.getHighestBlockYAt(targetCenter);
+            if (highestY < 64)
+                highestY = 64;
+            targetCenter.setY(highestY + 32);
+        }
+
+        // Y좌표 안전장치 (310 초과 시 고정)
         if (targetCenter.getY() > 310)
             targetCenter.setY(310);
 
@@ -208,13 +252,17 @@ public class Mothership extends Ability {
         shipParts.add(spawnBlockDisplay(world, targetCenter, Material.DIAMOND_BLOCK, 1, 0, -1));
         shipParts.add(spawnBlockDisplay(world, targetCenter, Material.DIAMOND_BLOCK, -1, 0, -1));
 
-        motherships.put(p.getUniqueId(), shipParts);
+        // [수정] registerSummon을 사용하여 관리
+        for (BlockDisplay bd : shipParts) {
+            registerSummon(p, bd);
+        }
+
         shipLocations.put(p.getUniqueId(), targetCenter.clone());
 
         p.sendMessage("§b모선이 소환되었습니다!");
 
         // AI 시작
-        startMothershipAI(p, 35); // 35초 지속
+        startMothershipAI(p, 12); // 12초 지속
     }
 
     private BlockDisplay spawnBlockDisplay(World world, Location center, Material mat, int dx, int dy, int dz) {
@@ -223,9 +271,9 @@ public class Mothership extends Ability {
         bd.setBlock(mat.createBlockData());
         bd.setBillboard(Billboard.FIXED); // 회전 안함
 
-        // 크기 및 변형 설정 (기본 1x1x1)
+        // 크기 및 변형 설정 (3배 확대)
         Transformation transform = bd.getTransformation();
-        transform.getScale().set(1.0f); // 1배 크기
+        transform.getScale().set(3.0f); // 3배 크기
         bd.setTransformation(transform);
 
         // 타인에게만 보이게 하거나 그런 설정 없음 (모두에게 보임)
@@ -250,7 +298,7 @@ public class Mothership extends Ability {
                 if (!p.isOnline() || currentShipLoc == null || ticks >= maxTicks) {
                     removeMothership(p);
                     // 쿨타임 시작 (모선 사라진 후)
-                    setCooldown(p, 35);
+                    setCooldown(p, 20);
                     this.cancel();
                     return;
                 }
@@ -268,7 +316,7 @@ public class Mothership extends Ability {
                     double dist = dir.length();
 
                     if (dist > 0.5) {
-                        dir.normalize().multiply(0.5); // 틱당 0.5칸 = 초당 10칸
+                        dir.normalize().multiply(0.35); // 틱당 0.35칸 (0.5 -> 0.35 감속, 약 30% 너프)
                         currentShipLoc.add(dir);
                     }
                 }
@@ -297,14 +345,7 @@ public class Mothership extends Ability {
 
     @Override
     public void reset() {
-        super.reset();
-        for (List<BlockDisplay> list : motherships.values()) {
-            for (BlockDisplay bd : list) {
-                if (bd.isValid())
-                    bd.remove();
-            }
-        }
-        motherships.clear();
+        super.reset(); // activeEntities, activeTasks 정리됨
         shipLocations.clear();
     }
 
@@ -342,31 +383,52 @@ public class Mothership extends Ability {
     }
 
     private void updateShipVisuals(UUID pid, Location center) {
-        List<BlockDisplay> parts = motherships.get(pid);
+        java.util.List<org.bukkit.entity.Entity> parts = activeEntities.get(pid);
         if (parts == null)
             return;
 
         // 각 파츠별 상대 좌표를 유지하며 이동
-        // spawnBlockDisplay 순서:
-        // 0: Center (0,0,0)
-        // 1: Gold (1,0,0)
-        // 2: Gold (-1,0,0)
-        // 3: Gold (0,0,1)
-        // 4: Gold (0,0,-1)
-        // 5~8: Diamond (대각선)
+        int index = 0;
+        for (org.bukkit.entity.Entity e : parts) {
+            if (!(e instanceof BlockDisplay))
+                continue;
+            BlockDisplay bd = (BlockDisplay) e;
 
-        // 오프셋 배열 (순서 맞춰야 함)
-        int[][] offsets = {
-                { 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 },
-                { 1, 0, 1 }, { -1, 0, 1 }, { 1, 0, -1 }, { -1, 0, -1 }
-        };
-
-        for (int i = 0; i < parts.size(); i++) {
-            if (i >= offsets.length)
-                break;
-            BlockDisplay bd = parts.get(i);
-            Location newLoc = center.clone().add(offsets[i][0], offsets[i][1], offsets[i][2]);
-            bd.teleport(newLoc);
+            Location target = center.clone();
+            // spawnBlockDisplay 순서 재구성:
+            // 0: Center, 1-4: Sides, 5-8: Corners
+            // Note: The scale is 3.0f, so the offsets should be multiplied by 3.
+            switch (index) {
+                case 0:
+                    target.add(0, 0, 0);
+                    break; // Center
+                case 1:
+                    target.add(3, 0, 0);
+                    break; // Gold
+                case 2:
+                    target.add(-3, 0, 0);
+                    break; // Gold
+                case 3:
+                    target.add(0, 0, 3);
+                    break; // Gold
+                case 4:
+                    target.add(0, 0, -3);
+                    break; // Gold
+                case 5:
+                    target.add(3, 0, 3);
+                    break; // Diamond
+                case 6:
+                    target.add(-3, 0, 3);
+                    break; // Diamond
+                case 7:
+                    target.add(3, 0, -3);
+                    break; // Diamond
+                case 8:
+                    target.add(-3, 0, -3);
+                    break; // Diamond
+            }
+            bd.teleport(target);
+            index++;
         }
     }
 
@@ -396,47 +458,71 @@ public class Mothership extends Ability {
                 // 높이는? 모선보다 아래에 있어야 함.
                 if (targetLoc.getY() < shipLoc.getY()) {
                     ((LivingEntity) e).damage(10.0, owner); // 10 데미지
+
+                    // [추가] 넉백 적용 (연속 피격 방지용)
+                    // 빔 중심(shipLoc)에서 피해자(targetLoc) 방향으로 밀어냄
+                    Location beamCenter = shipLoc.clone();
+                    beamCenter.setY(targetLoc.getY()); // 높이 보정 (수평 밀치기)
+
+                    Vector knockback = targetLoc.toVector().subtract(beamCenter.toVector());
+
+                    // 만약 정확히 중앙이라서 벡터가 0이면 임의 방향(X축)으로 설정
+                    if (knockback.lengthSquared() < 0.0001) {
+                        knockback = new Vector(1, 0, 0);
+                    }
+
+                    knockback.normalize().multiply(1.2).setY(0.3); // 수평 1.2강도, 위로 0.3 (살짝 뜸)
+                    e.setVelocity(knockback);
                 }
             }
         }
     }
 
     private void spawnBeamParticles(Location shipLoc) {
-        // 모선에서 바닥까지 빔
-        // Raytrace to find ground? or just go down 50 blocks
-        // 파티클: Electric Spark or Dust
+        // [변경] 모선에서 바닥까지 빔 (신호기 빔 느낌)
         World w = shipLoc.getWorld();
         Location start = shipLoc.clone();
 
-        // 빔 길이 (최대 50칸)
-        for (int i = 0; i < 50; i++) {
+        // 빔 길이 (최대 100칸으로 늘림 - 높이가 64+라 50은 짧을 수 있음)
+        for (int i = 0; i < 100; i++) {
             start.subtract(0, 1, 0);
-            if (start.getBlock().getType().isSolid())
-                break; // 땅 닿으면 멈춤
+            if (start.getBlock().getType().isSolid()) {
+                // 바닥 닿음 - 충격파 효과
+                w.spawnParticle(org.bukkit.Particle.EXPLOSION, start, 3, 1, 0.5, 1, 0.1);
+                break;
+            }
 
-            // 빔 줄기
+            // 빔 줄기 (신호기 느낌: END_ROD + DUST)
+            // 밀도를 높여서 하나의 기둥처럼 보이게
+            w.spawnParticle(org.bukkit.Particle.END_ROD, start, 1, 0, 0, 0, 0);
             w.spawnParticle(org.bukkit.Particle.DUST, start, 5, 0.2, 0.5, 0.2,
                     new org.bukkit.Particle.DustOptions(org.bukkit.Color.AQUA, 1.5f));
         }
-
-        // 바닥 충돌 지점 (대략적인)
-        // w.spawnParticle(org.bukkit.Particle.EXPLOSION_LARGE, start, 1);
     }
 
     private void removeMothership(Player p) {
         UUID pid = p.getUniqueId();
 
         // Display 제거
-        if (motherships.containsKey(pid)) {
-            for (BlockDisplay bd : motherships.get(pid)) {
-                if (bd.isValid())
-                    bd.remove();
+        if (activeEntities.containsKey(pid)) {
+            java.util.List<org.bukkit.entity.Entity> list = activeEntities.remove(pid);
+            if (list != null) {
+                for (org.bukkit.entity.Entity e : list) {
+                    if (e != null && e.isValid())
+                        e.remove();
+                }
             }
-            motherships.remove(pid);
         }
-        shipLocations.remove(pid);
-
-        // Task 취소는 Ability.cleanup 등에서 처리됨 (activeTasks에 넣었으므로)
+        // Task 취소 및 리스트 제거
+        if (activeTasks.containsKey(pid)) {
+            List<BukkitTask> tasks = activeTasks.remove(pid);
+            if (tasks != null) {
+                tasks.forEach(t -> {
+                    if (!t.isCancelled())
+                        t.cancel();
+                });
+            }
+        }
     }
 
     @Override

@@ -65,8 +65,7 @@ public class KurosakiIchigo extends Ability {
         p.sendMessage("§e전투 ● 쿠로사키 이치고(블리치)");
         p.sendMessage("§f호로의 힘을 빌려 잠시 동안 강해집니다.");
         p.sendMessage("§f참월 우클릭 시 15초 동안 호로화 상태가 됩니다(신속2, 재생2).");
-        p.sendMessage("§f호로화 상태에서 공격 시 대상 근처로 순간이동하며 공격 속도가 대폭 증가며,");
-        p.sendMessage("§f공격 시 5의 피해만 입힙니다.");
+        p.sendMessage("§f호로화 상태에서 공격 시 대상 근처로 순간이동하며 공격 속도가 대폭 증가하며,");
         p.sendMessage("§f호로화 종료 시 5초간 구속 3 효과를 받습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 30초");
@@ -187,8 +186,8 @@ public class KurosakiIchigo extends Ability {
                     e.setCancelled(false); // 캔슬 해제 (무적 틱 무시)
                 }
 
-                // [수정] 호로화 시 고정 데미지 5으로 설정 (요청사항 반영)
-                e.setDamage(5.0);
+                // [수정] 호로화 시 고정 데미지로 설정
+                e.setDamage(2.0);
 
                 // 2. 무적 시간 0으로 초기화 (연타 가능)
                 target.setNoDamageTicks(0);

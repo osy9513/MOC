@@ -28,6 +28,12 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.PlayerToggleSprintEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
@@ -248,8 +254,31 @@ public class DIO extends Ability {
                         le.setAI(false); // AI 정지
                         le.setGravity(false); // 중력 정지
                         le.setVelocity(new org.bukkit.util.Vector(0, 0, 0)); // 속도 0
+
+                        // [▼▼▼ 핵심 수정 부분 ▼▼▼]
+                        // 1. 해당 엔티티가 처음 감지되었다면, 현재 위치를 '고정 위치'로 저장
+                        if (!frozenEntities.containsKey(le.getUniqueId())) {
+                            frozenEntities.put(le.getUniqueId(), le.getLocation());
+                        }
+
+                        // 2. 저장된 고정 위치로 강제 이동 (텔레포트)
+                        // 플레이어의 경우 시야(Yaw, Pitch)는 자유롭게 돌릴 수 있어야 하므로,
+                        // 저장된 위치 좌표에 현재 쳐다보는 방향을 덮어씌워서 텔레포트합니다.
+                        Location fixedLoc = frozenEntities.get(le.getUniqueId());
+
+                        // 위치는 고정하되, 고개 돌리는 건 허용하려면 아래 로직 사용
+                        Location teleportLoc = fixedLoc.clone();
+                        teleportLoc.setYaw(le.getLocation().getYaw());
+                        teleportLoc.setPitch(le.getLocation().getPitch());
+
+                        le.teleport(teleportLoc);
+                        // [▲▲▲ 여기까지 수정됨 ▲▲▲]
+
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 128, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 128, false, false));
                     }
+
                 }
 
                 ticks++;
@@ -399,6 +428,63 @@ public class DIO extends Ability {
             if (type == Material.WATER || type == Material.LAVA) {
                 e.setCancelled(true);
             }
+        }
+    }
+
+    // === [입력 차단 로직] ===
+    // 타임 스톱 중일 때, DIO가 아닌 플레이어의 모든 조작을 차단합니다.
+
+    private boolean isFrozen(Player p) {
+        // 시간이 멈추지 않았다면 패스
+        if (timeStoppers.isEmpty())
+            return false;
+        // DIO 능력을 가진 플레이어는 면역
+        return !AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode());
+    }
+
+    @EventHandler
+    public void onSneak(PlayerToggleSneakEvent e) {
+        if (isFrozen(e.getPlayer()))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onSprint(PlayerToggleSprintEvent e) {
+        if (isFrozen(e.getPlayer()))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent e) {
+        if (isFrozen(e.getPlayer()))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onSwap(PlayerSwapHandItemsEvent e) {
+        if (isFrozen(e.getPlayer()))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onSlotChange(PlayerItemHeldEvent e) {
+        if (isFrozen(e.getPlayer()))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent e) {
+        if (e.getWhoClicked() instanceof Player p && isFrozen(p)) {
+            e.setCancelled(true);
+        }
+    }
+
+    // [중요] Interact는 기존 onInteract와 별개로 차단 로직 필요
+    // Priority를 낮게 설정하여 먼저 차단해버리거나, 별도 핸들러 사용
+    @EventHandler
+    public void onInteractBlock(PlayerInteractEvent e) {
+        if (isFrozen(e.getPlayer())) {
+            e.setCancelled(true);
         }
     }
 }

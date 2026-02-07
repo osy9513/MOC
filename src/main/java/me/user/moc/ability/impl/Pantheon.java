@@ -39,9 +39,9 @@ public class Pantheon extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f빵테온 (Pantheon of Bread)",
-                "§7빵을 우클릭하여 던질 수 있습니다.",
-                "§7빵을 적중시키면 피해를 입히고 배고픔을 채워줍니다.",
-                "§7빵으로 근접 공격 시 철 검과 동일한 피해를 줍니다.");
+                "§f빵을 우클릭하여 던질 수 있습니다.",
+                "§f빵을 적중시키면 피해를 입히고 배고픔을 채워줍니다.",
+                "§f빵으로 근접 공격 시 철 검과 동일한 피해를 줍니다.");
     }
 
     @Override

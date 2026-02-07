@@ -40,6 +40,41 @@ public abstract class Ability implements Listener {
      * 소환수 제거, 버프 해제 등의 로직을 구현합니다.
      */
     public void cleanup(Player p) {
+        if (p == null)
+            return;
+        java.util.UUID uuid = p.getUniqueId();
+
+        // 1. 소환수/엔티티 제거
+        if (activeEntities.containsKey(uuid)) {
+            java.util.List<org.bukkit.entity.Entity> list = activeEntities.remove(uuid);
+            if (list != null) {
+                for (org.bukkit.entity.Entity e : list) {
+                    if (e != null && e.isValid()) // isDead 대신 isValid 체크 (더 안전함)
+                        e.remove();
+                }
+            }
+        }
+
+        // 2. 태스크 취소
+        if (activeTasks.containsKey(uuid)) {
+            java.util.List<org.bukkit.scheduler.BukkitTask> list = activeTasks.remove(uuid);
+            if (list != null) {
+                for (org.bukkit.scheduler.BukkitTask t : list) {
+                    if (t != null && !t.isCancelled())
+                        t.cancel();
+                }
+            }
+        }
+
+        // 3. 쿨타임 알림 취소
+        if (cooldownNotifyTasks.containsKey(uuid)) {
+            org.bukkit.scheduler.BukkitTask t = cooldownNotifyTasks.remove(uuid);
+            if (t != null && !t.isCancelled())
+                t.cancel();
+        }
+
+        // 4. 쿨타임 정보 제거 (죽으면 쿨타임 초기화 -> 부활해도 쿨타임 없이 시작 가능)
+        cooldowns.remove(uuid);
     }
 
     // [중앙 집권형 상태 관리] 자식들이 개별 Map을 쓰지 않도록 부모가 통합 관리합니다.

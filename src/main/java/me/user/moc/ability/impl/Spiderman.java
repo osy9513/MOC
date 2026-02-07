@@ -143,7 +143,8 @@ public class Spiderman extends Ability {
     }
 
     private void applyPassive(Player p) {
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 1, false, false));
+        // [Balance] 힘 2 -> 힘 1 (Amplifier 0 = 레벨 1)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, false, false));
         p.addPotionEffect(
                 new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 1, false, false));
     }
@@ -407,7 +408,7 @@ public class Spiderman extends Ability {
         isZipping.add(uid);
 
         p.playSound(p.getLocation(), Sound.ENTITY_HORSE_JUMP, 1f, 1.5f);
-        p.sendMessage("§e슈욱!");
+        p.sendMessage("§e웹스윙!");
 
         BukkitTask task = new BukkitRunnable() {
             @Override

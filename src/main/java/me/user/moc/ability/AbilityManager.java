@@ -102,6 +102,7 @@ public class AbilityManager {
         addAbility(new Mothership(plugin)); // 032 모선
         addAbility(new Deidara(plugin)); // 044 데이다라
         addAbility(new Bajje(plugin)); // H01 베째
+        addAbility(new MuhammadAvdol(plugin)); // 046 무함마드 압둘
     }
 
     private void addAbility(Ability ability) {
@@ -239,6 +240,19 @@ public class AbilityManager {
 
         // 3. 안내 (선택사항, 생략 가능)
         // p.sendMessage("§e[Ability] 능력이 변경되었습니다.");
+    }
+
+    // [추가] 특정 플레이어의 능력 관련 요소를 정리합니다.
+    public void cleanup(Player p) {
+        String code = playerAbilities.get(p.getUniqueId());
+        if (code != null) {
+            Ability ability = abilities.get(code);
+            if (ability != null) {
+                ability.cleanup(p);
+            }
+            // 주의: playerAbilities에서 제거하지 않음 (게임 끝나고 통계 볼 수도 있으니)
+            // 다만 죽은 상태라 능력 발동은 안 됨.
+        }
     }
 
     /**

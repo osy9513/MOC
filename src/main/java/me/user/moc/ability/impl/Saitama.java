@@ -26,8 +26,8 @@ public class Saitama extends Ability {
     // private static final int GOAL_SNEAK = 500;
     // private static final int GOAL_JUMP = 500;
     // private static final int GOAL_DIST_CM = 50000; // 500 blocks = 50000 cm
-    private static final int GOAL_SNEAK = 100;
-    private static final int GOAL_JUMP = 200;
+    private static final int GOAL_JUMP = 100;
+    private static final int GOAL_SNEAK = 200;
     private static final int GOAL_DIST_CM = 300; // 300 blocks
     private final Map<UUID, SaitamaProgress> progressMap = new HashMap<>();
 
@@ -61,7 +61,7 @@ public class Saitama extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 사이타마(원펀맨)");
-        p.sendMessage("§f사이타마 운동법(웅크리기 100회, 점프 200회, 이동 300블록)을 완료하세요.");
+        p.sendMessage("§f사이타마 운동법(점프 100회, 웅크리기 200회, 이동 300블록)을 완료하세요.");
         p.sendMessage("§f운동을 모두 완료하면 라운드 종료까지 강력한 버프를 얻습니다.");
         p.sendMessage("§f버프 : 힘V, 이속V, 저항IV, 성급함V");
         p.sendMessage(" ");
@@ -156,9 +156,9 @@ public class Saitama extends Ability {
         data.distCm += distCm;
 
         // 진행 상황 표시 (액션바)
-        p.sendActionBar(Component.text(String.format("§e[사이타마] 웅크리기 %d/%d | 점프 %d/%d | 이동 %d/%d",
-                Math.min(data.sneaks, GOAL_SNEAK), GOAL_SNEAK,
+        p.sendActionBar(Component.text(String.format("§e[사이타마] 점프 %d/%d | 웅크리기 %d/%d | 이동 %d/%d",
                 Math.min(data.jumps, GOAL_JUMP), GOAL_JUMP,
+                Math.min(data.sneaks, GOAL_SNEAK), GOAL_SNEAK,
                 Math.min(data.distCm / 100, GOAL_DIST_CM), GOAL_DIST_CM // cm -> block
         )));
 

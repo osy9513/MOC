@@ -224,7 +224,7 @@ public class Zenitsu extends Ability {
                     le.getWorld().spawnParticle(Particle.EXPLOSION, le.getLocation().add(0, 1, 0), 1);
                 }
             }
-            p.getWorld().spawnParticle(Particle.FLASH, p.getLocation().add(0, 1, 0), 5);
+            p.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, p.getLocation().add(0, 1, 0), 1);
         }, 60L);
     }
 

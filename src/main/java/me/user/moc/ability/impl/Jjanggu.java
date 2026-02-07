@@ -124,6 +124,8 @@ public class Jjanggu extends Ability {
         // 3. 충돌 감지 태스크 실행 (0.2초 동안)
         new BukkitRunnable() {
             int tick = 0;
+            // [Fix] 타격된 엔티티 추적 (중복 타격 방지 및 정확한 메시지 출력용)
+            java.util.Set<java.util.UUID> hitTargets = new java.util.HashSet<>();
 
             @Override
             public void run() {
@@ -136,11 +138,26 @@ public class Jjanggu extends Ability {
 
                 // 2칸 대미지 충돌 판정
                 // 플레이어 주변 2칸 내의 엔티티 검색 (속도가 빨라 범위 상향)
-                // [밸런스 패치] 범위 추가 축소 1.0 -> 0.6 (더욱 근접해야 함)
-                for (Entity target : p.getNearbyEntities(0.6, 0.6, 0.6)) {
+                // [밸런스 패치] 범위 추가 축소 1.0 -> 0.8 (적중률 상향)
+                for (Entity target : p.getNearbyEntities(0.8, 0.8, 0.8)) {
                     if (target instanceof LivingEntity livingTarget && target != p) {
                         if (livingTarget instanceof Player pl && pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)
                             continue;
+
+                        // [Fix] 이미 이번 대시로 맞은 적은 패스 (도배 방지 핵심)
+                        if (hitTargets.contains(target.getUniqueId()))
+                            continue;
+
+                        // [Fix] 무적 상태이거나 게임 무적일 때 스킵
+                        boolean isInvulnerable = livingTarget.isInvulnerable(); // noDamageTicks 체크 제거 (부정확함)
+                        boolean isGameInvincible = me.user.moc.MocPlugin.getInstance().getGameManager().isInvincible();
+
+                        if (isInvulnerable || isGameInvincible) {
+                            continue;
+                        }
+
+                        // [타격 성공]
+                        hitTargets.add(target.getUniqueId());
 
                         // [대미지 처리]
                         // 고정 피해 5 (하트 2.5칸)
@@ -150,17 +167,11 @@ public class Jjanggu extends Ability {
                         Vector dir = p.getLocation().getDirection().setY(0.5).normalize().multiply(1.5);
                         livingTarget.setVelocity(dir);
 
-                        // [밸런스 패치] 실제로 맞췄을 때만 메시지 출력 (도배 방지)
-                        // [추가] 무적 상태이거나 대미지를 입지 않았을 때 채팅 도배 방지
-                        boolean isInvulnerable = livingTarget.isInvulnerable() || livingTarget.getNoDamageTicks() > 10;
-                        boolean isGameInvincible = me.user.moc.MocPlugin.getInstance().getGameManager().isInvincible();
+                        // [Fix] 타격 시 무조건 메시지 출력 (hitTargets로 중복 방지됨)
+                        Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
 
-                        if (!isInvulnerable && !isGameInvincible) {
-                            Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
-                        }
                         // 타격음
                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
-                        // }
                     }
                 }
 

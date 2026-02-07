@@ -55,9 +55,18 @@ public class Jigsaw extends Ability {
         BukkitTask rotationTask; // 톱날 회전 및 시선 고정
         BukkitTask grindTask; // 처형(갈아버리기) 태스크
 
+        // 위치 고정용 (이동 방지)
+        Location jigsawLoc;
+        Location targetLoc;
+
+        // [Fix] 처형 상태 플래그 (즉시 데미지 허용용)
+        boolean isGrinding = false;
+
         public GameInfo(Player jigsaw, LivingEntity target) {
             this.jigsaw = jigsaw;
             this.target = target;
+            this.jigsawLoc = jigsaw.getLocation();
+            this.targetLoc = target.getLocation();
             this.isFinished = false;
         }
 
@@ -158,15 +167,21 @@ public class Jigsaw extends Ability {
         if (item.getType() != Material.STONECUTTER)
             return;
 
-        // 쿨타임 체크
-        if (!checkCooldown(p)) {
-            e.setCancelled(true); // 쿨타임이면 때리지도 못하게? (선택사항)
+        // [Fix] 이미 게임 중인지 먼저 체크 (Cooldown 체크보다 먼저)
+        // 처형 중(isFinished)일 때 발생하는 데미지 이벤트가 쿨타임 때문에 캔슬되지 않도록 함.
+        if (activeGames.containsKey(p.getUniqueId())) {
+            GameInfo info = activeGames.get(p.getUniqueId());
+            if (info != null && info.isFinished) {
+                return; // 처형 중에는 공격 허용 (쿨타임 무시)
+            }
+
+            p.sendMessage("§c이미 게임이 진행 중입니다.");
+            e.setCancelled(true);
             return;
         }
 
-        // 이미 게임 중인지 체크
-        if (activeGames.containsKey(p.getUniqueId())) {
-            p.sendMessage("§c이미 게임이 진행 중입니다.");
+        // 쿨타임 체크 (게임 중이 아닐 때만)
+        if (!checkCooldown(p)) {
             e.setCancelled(true);
             return;
         }
@@ -181,15 +196,15 @@ public class Jigsaw extends Ability {
     private void startGame(Player p, LivingEntity target) {
         GameInfo info = new GameInfo(p, target);
 
-        // 1. 랜덤 미션 설정 (구운 소고기 10~30개)
-        info.requiredBeef = new Random().nextInt(21) + 10; // 10 ~ 30
+        // 1. 미션 설정: 구운 소고기 16개 (고정)
+        info.requiredBeef = 16;
 
         // 2. 메시지 출력
         p.sendMessage("§c[직쏘] §f게임을 시작하지.");
         String targetName = target.getName();
-        Bukkit.broadcastMessage("§c직쏘 : " + targetName + "는 5초 안에 구운 소고기 " + info.requiredBeef + "개를 한 번에 버려라.");
+        Bukkit.broadcastMessage("§c직쏘 : " + targetName + "는 8초 안에 구운 소고기 " + info.requiredBeef + "개를 한 번에 버려라.");
 
-        // 3. 톱날 소환 (타겟의 우측)
+        // 3. 톱날 소환 (타겟과 나 사이)
         spawnSaws(info);
 
         // 4. 반복 태스크 (시선 고정 + 톱날 회전)
@@ -204,39 +219,40 @@ public class Jigsaw extends Ability {
                     return;
                 }
 
-                // [시선 고정] 서로 바라보게 함
-                if (!info.isFinished) { // 게임 중일 때만 고정
-                    lookAt(p, target.getLocation());
+                // [시선 고정 및 위치 고정]
+                if (!info.isFinished) {
+                    lookAt(p, target.getLocation(), info.jigsawLoc);
                     if (target instanceof Player tPlayer) {
-                        lookAt(tPlayer, p.getLocation());
+                        lookAt(tPlayer, p.getLocation(), info.targetLoc);
                     } else {
-                        // 몹인 경우 강제 회전 (텔레포트 필요)
-                        lookAtEntity(target, p.getLocation());
+                        lookAtEntity(target, p.getLocation(), info.targetLoc);
                     }
                 } else {
-                    // 실패 후 처형 단계에서는 타겟만 톱날을 보게 하거나 고정 유지 (기획: 상대는 고정 안 풀림)
+                    // 실패 후 처형 시에도 타겟은 고정
                     if (target instanceof Player tPlayer) {
-                        // 실패 시 타겟은 계속 고정
-                        lookAt(tPlayer, p.getLocation()); // 혹은 톱날을 보게? 일단 직쏘를 보게 유지
+                        lookAt(tPlayer, p.getLocation(), info.targetLoc);
                     }
-                    lookAtEntity(target, p.getLocation());
+                    lookAtEntity(target, p.getLocation(), info.targetLoc);
                 }
 
-                // [톱날 회전] 미친 듯이 회전 (Y축 회전)
-                angle += 0.5f; // 회전 속도
+                // [Fix] 처형 중이면 톱날이 타겟을 따라가야 함 (계속)
+                if (info.isFinished) {
+                    Location targetLoc = target.getLocation().add(0, 1, 0);
+                    if (info.sawBottom != null && info.sawBottom.isValid())
+                        info.sawBottom.teleport(targetLoc);
+                    if (info.sawTop != null && info.sawTop.isValid())
+                        info.sawTop.teleport(targetLoc.clone().add(0, 0.45, 0));
+                }
+
+                // [톱날 회전] 엄청 빠르게 회전
+                // '10배 빨리' 요청 -> 기존 6.0f -> 60.0f
+                angle += 60.0f;
                 if (info.sawTop != null && info.sawTop.isValid()) {
-                    // 위쪽 톱날: 정방향 회전
                     Transformation t = info.sawTop.getTransformation();
-                    t.getLeftRotation().set(new AxisAngle4f(angle, 0, 1, 0));
+                    t.getLeftRotation().set(new AxisAngle4f(angle, 0, 0, 1));
                     info.sawTop.setTransformation(t);
                 }
-                if (info.sawBottom != null && info.sawBottom.isValid()) {
-                    // 아래쪽 톱날: 역방향 회전 + 뒤집힘
-                    Transformation t = info.sawBottom.getTransformation();
-                    // 뒤집힌 상태(Scale Y = -1)에서 회전
-                    t.getLeftRotation().set(new AxisAngle4f(-angle, 0, 1, 0));
-                    info.sawBottom.setTransformation(t);
-                }
+                // sawBottom 제거됨 (하나만 사용)
             }
         }.runTaskTimer(plugin, 0L, 1L);
 
@@ -249,7 +265,7 @@ public class Jigsaw extends Ability {
                     failGame(info, "시간 초과");
                 }
             }
-        }.runTaskLater(plugin, 100L); // 5초 = 100틱
+        }.runTaskLater(plugin, 160L); // 8초 = 160틱
 
         // 데이터 등록
         activeGames.put(p.getUniqueId(), info);
@@ -259,32 +275,51 @@ public class Jigsaw extends Ability {
     }
 
     private void spawnSaws(GameInfo info) {
+        Location jigsawLoc = info.jigsaw.getLocation();
         Location targetLoc = info.target.getLocation();
-        Vector dir = targetLoc.getDirection().setY(0).normalize();
 
-        // 오른쪽 벡터 구하기 (Cross Product)
-        // (x, 0, z) cross (0, 1, 0) -> 우측 벡터
-        Vector right = dir.clone().crossProduct(new Vector(0, 1, 0)).normalize();
+        // 두 플레이어의 중간 지점 계산
+        // (A + B) / 2
+        Location midLoc = jigsawLoc.clone().add(targetLoc).multiply(0.5);
 
-        // 타겟 우측 1.5칸 거리
-        Location sawLoc = targetLoc.clone().add(right.multiply(1.5)).add(0, 1, 0); // 높이 보정
+        // 높이 보정 (+1칸 위)
+        Location sawLoc = midLoc.add(0, 1, 0);
 
         // [아래쪽 톱날]
-        info.sawBottom = (BlockDisplay) info.target.getWorld().spawnEntity(sawLoc, EntityType.BLOCK_DISPLAY);
-        info.sawBottom.setBlock(Bukkit.createBlockData(Material.STONECUTTER));
-        // 크기 조정 및 초기 회전
-        Transformation tBottom = info.sawBottom.getTransformation();
-        tBottom.getScale().set(1.5f, 1.5f, 1.5f); // 좀 크게
-        info.sawBottom.setTransformation(tBottom);
-
-        // [위쪽 톱날] - 바닥면끼리 겹치게 (위에서 아래로 뒤집음)
-        Location sawTopLoc = sawLoc.clone().add(0, 0.8, 0); // 살짝 위
+        // [톱날] - 1개만 사용 (sawTop만 사용)
+        // 세로로 서있는 형태 유지 (Z축 회전 사용 중)
+        Location sawTopLoc = sawLoc.clone().add(0, 0, 0);
         info.sawTop = (BlockDisplay) info.target.getWorld().spawnEntity(sawTopLoc, EntityType.BLOCK_DISPLAY);
         info.sawTop.setBlock(Bukkit.createBlockData(Material.STONECUTTER));
 
         Transformation tTop = info.sawTop.getTransformation();
-        tTop.getScale().set(1.5f, -1.5f, 1.5f); // Y축 반전 (뒤집기)
+        tTop.getScale().set(1.0f, 1.0f, 1.0f); // 크기 축소 (2.0 -> 1.0)
+        // [Fix] 회전 중심을 블록 중앙으로 설정
+        tTop.getTranslation().set(-0.5f, -0.5f, -0.5f); // 중심점 보정? 아니면 center 설정?
+        // BlockDisplay의 회전축은 Transformation의 Center가 결정함.
+        // 블록의 중앙은 (0.5, 0.5, 0.5)
+
+        // Spigot API: Transformation(translation, leftRot, scale, rightRot)
+        // Transformation 구조체에는 center가 없음?
+        // Display 엔티티 자체의 setTransformationMatrix 등이 있지만
+        // Paper/Bukkit API에서는 t.getLeftRotation() 등을 씀.
+        // JOML Transformation에는 center 없음?
+        // 아, Display 엔티티에는 setTransformation(Transformation) 이 있고...
+        // Transformation 객체는 (translation, leftRot, scale, rightRot) 임.
+        // 회전 축을 바꾸려면:
+        // 1. Translation으로 (-0.5, -0.5, -0.5) 이동 (블록 중심을 엔티티 위치로)
+        // 2. Rotation 적용
+        // => 이러면 엔티티 위치(EntityLoc)가 블록의 중앙이 됨.
+
+        // [수정]
+        // 1. Scale 1.0
+        // 2. Translation (-0.5, -0.5, -0.5) -> 블록의 중앙이 엔티티 좌표(0,0,0)에 오도록.
+        tTop.getTranslation().set(-0.5f, -0.5f, -0.5f);
+
         info.sawTop.setTransformation(tTop);
+
+        // sawBottom은 사용 안함
+        info.sawBottom = null;
 
         // 소리 재생 (전기톱 시동)
         info.target.getWorld().playSound(sawLoc, Sound.ITEM_TRIDENT_THUNDER, 1f, 2f);
@@ -308,7 +343,7 @@ public class Jigsaw extends Ability {
 
         ItemStack dropped = e.getItemDrop().getItemStack();
 
-        // 조건: 구운 소고기
+        // 조건: 구운 소고기 (COOKED_BEEF)
         if (dropped.getType() == Material.COOKED_BEEF) {
             // 조건: 한 번에 버린 개수 일치
             if (dropped.getAmount() == info.requiredBeef) {
@@ -319,10 +354,9 @@ public class Jigsaw extends Ability {
                 failGame(info, "개수 불일치");
             }
         } else {
-            // 다른 아이템 버림 -> 봐줌? 아니면 그냥 무시?
-            // 기획상 "한 번에 버리지 못 한 경우" 이므로 다른 템 버리는 건 횟수 차감이 없으니 무시하거나,
-            // "기회는 한 번"이라면 여기서도 실패 처리 가능.
-            // 여기서는 '소고기'를 버릴 때만 체크하도록 유하게 처리.
+            // [Fix] 다른 아이템 버려도 실패 처리
+            Bukkit.broadcastMessage("§c[직쏘] 그건 구운 소고기가 아니다...");
+            failGame(info, "잘못된 아이템");
         }
     }
 
@@ -361,17 +395,22 @@ public class Jigsaw extends Ability {
         // 타겟은 계속 속박됨 (onMove에서 처리)
 
         // 처형 애니메이션 시작
+        info.isGrinding = true; // [Fix] 즉시 데미지 허용 플래그 On
         startExecution(info);
     }
 
     private void startExecution(GameInfo info) {
-        // 톱날이 타겟에게 이동 (2초간)
-        Location startLoc = info.sawBottom.getLocation(); // 톱날 위치
+        // [Fix] 즉시 데미지 시작 (이동 단계 삭제)
+        // 톱날을 타겟 위치로 즉시 이동
+        Location targetLoc = info.target.getLocation().add(0, 1, 0);
+        if (info.sawBottom != null)
+            info.sawBottom.teleport(targetLoc);
+        if (info.sawTop != null)
+            info.sawTop.teleport(targetLoc.clone().add(0, 0.45, 0));
 
         // 처형 태스크
         info.grindTask = new BukkitRunnable() {
             int ticks = 0;
-            boolean reached = false;
 
             @Override
             public void run() {
@@ -381,53 +420,28 @@ public class Jigsaw extends Ability {
                     return;
                 }
 
-                if (!reached) {
-                    // [이동 단계] 2초(40틱) 동안 타겟에게 접근
-                    ticks++;
-                    double progress = (double) ticks / 40.0;
-
-                    Location targetLoc = info.target.getLocation().add(0, 1, 0); // 타겟 허리춤
-                    // 선형 보간 (Lerp) 이동
-                    Vector vec = targetLoc.toVector().subtract(startLoc.toVector()).multiply(progress);
-                    Location current = startLoc.clone().add(vec);
-
-                    if (info.sawBottom.isValid())
-                        info.sawBottom.teleport(current);
-                    if (info.sawTop.isValid())
-                        info.sawTop.teleport(current.clone().add(0, 0.8, 0));
-
-                    if (ticks >= 40) {
-                        reached = true;
-                        ticks = 0; // 리셋해서 30초 카운트용으로 씀
-                    }
-                } else {
-                    // [갈아버리기 단계] 30초 동안
-                    ticks++;
-                    if (ticks > 600) { // 30초(600틱) 경과
-                        cleanupGame(info);
-                        this.cancel();
-                        return;
-                    }
-
-                    // 대미지 주기 (매 틱 실행됨)
-                    // "0.1틱당 1뎀" -> 1틱(0.05초)당 10번? 불가능.
-                    // 1틱당 1뎀으로 구현하되, setNoDamageTicks(0)으로 무적 무시.
-                    // 기획의도: 엄청 빠르게 갈아버림.
-
-                    info.target.setNoDamageTicks(0); // 무적 시간 제거
-                    info.target.damage(1.0, info.jigsaw); // 1 데미지 (하트 0.5칸)
-
-                    // 피 튀기는 효과
-                    // 설명: 보내주신 Particle 클래스에 'BLOCK_CRACK'이 없습니다.
-                    // 블럭이 부서지는 효과는 이제 'Particle.BLOCK'을 사용합니다.
-                    info.target.getWorld().spawnParticle(
-                            org.bukkit.Particle.BLOCK, // BLOCK_CRACK -> BLOCK 으로 변경
-                            info.target.getLocation().add(0, 1, 0),
-                            10, 0.2, 0.2, 0.2,
-                            Bukkit.createBlockData(Material.REDSTONE_BLOCK));
-                    info.target.getWorld().playSound(info.target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.5f,
-                            2f);
+                // [갈아버리기 단계]
+                ticks++;
+                if (ticks > 200) { // 10초로 단축 (너무 김) 또는 30초 유지
+                    cleanupGame(info);
+                    this.cancel();
+                    return;
                 }
+
+                // [데미지 즉시 적용] 실패 판정 직후부터 딜이 들어감
+                // 1) 무적 시간 제거 (빠른 타격)
+                info.target.setNoDamageTicks(0);
+
+                // 2) 데미지 적용
+                info.target.damage(1.0, info.jigsaw);
+
+                // 3) 이펙트
+                info.target.getWorld().spawnParticle(
+                        org.bukkit.Particle.BLOCK,
+                        info.target.getLocation().add(0, 1, 0),
+                        10, 0.2, 0.2, 0.2,
+                        Bukkit.createBlockData(Material.REDSTONE_BLOCK));
+                info.target.getWorld().playSound(info.target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.5f, 2f);
             }
         }.runTaskTimer(plugin, 0L, 1L); // 매 틱 실행
     }
@@ -486,8 +500,8 @@ public class Jigsaw extends Ability {
                     if (isJigsaw && info.isFinished)
                         return;
 
-                    // 타겟은 실패해서 갈리는 중이면(grindTask 실행 중) 데미지 받아야 함
-                    if (isTarget && info.isFinished && info.grindTask != null && !info.grindTask.isCancelled()) {
+                    // 타겟은 실패해서 갈리는 중이면(isGrinding) 데미지 받아야 함
+                    if (isTarget && info.isFinished && info.isGrinding) {
                         return; // 처형 데미지는 허용
                     }
 
@@ -497,19 +511,19 @@ public class Jigsaw extends Ability {
         }
     }
 
-    // 시선 고정 유틸
-    private void lookAt(Player p, Location target) {
-        Location loc = p.getLocation();
-        Vector dir = target.toVector().subtract(loc.toVector()).normalize();
-        Location lookLoc = loc.clone();
+    // [Fix] 위치 고정 오버로딩
+    private void lookAt(Player p, Location target, Location fixedLoc) {
+        Vector dir = target.toVector().subtract(fixedLoc.toVector()).normalize();
+        Location lookLoc = fixedLoc.clone();
         lookLoc.setDirection(dir);
-        p.teleport(lookLoc); // 시점 강제 변경
+        p.teleport(lookLoc);
     }
 
-    private void lookAtEntity(LivingEntity entity, Location target) {
-        Location loc = entity.getLocation();
-        Vector dir = target.toVector().subtract(loc.toVector()).normalize();
-        loc.setDirection(dir);
-        entity.teleport(loc);
+    private void lookAtEntity(LivingEntity entity, Location target, Location fixedLoc) {
+        Vector dir = target.toVector().subtract(fixedLoc.toVector()).normalize();
+        Location lookLoc = fixedLoc.clone();
+        lookLoc.setDirection(dir);
+        entity.teleport(lookLoc);
     }
+
 }

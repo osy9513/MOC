@@ -55,6 +55,9 @@ public class TogaHimiko extends Ability {
     // 현재 변신 중인 플레이어 목록
     private final Set<UUID> isTransformed = new HashSet<>();
 
+    // [Fix] 변신 도중(능력 교체 중) cleanup에 의해 revertTask가 취소되는 것을 방지하기 위한 플래그
+    private final Set<UUID> ignoringCleanup = new HashSet<>();
+
     public TogaHimiko(JavaPlugin plugin) {
         super(plugin);
     }
@@ -268,7 +271,10 @@ public class TogaHimiko extends Ability {
         String targetAbCode = am.getPlayerAbilities().get(target.getUniqueId());
         // 만약 타겟이 능력이 없거나 오류 상태면 기본값 혹은 유지? 현재는 복사 시도
         if (targetAbCode != null) {
+            // [Fix] 능력 교체 시 cleanup이 호출되는데, 이때 revertTask가 취소되거나 즉시 원복되는 것을 방지
+            ignoringCleanup.add(p.getUniqueId());
             am.changeAbilityTemporary(p, targetAbCode);
+            ignoringCleanup.remove(p.getUniqueId());
 
             // 3. 인벤토리 복사
             p.getInventory().setContents(target.getInventory().getContents());
@@ -283,6 +289,15 @@ public class TogaHimiko extends Ability {
                 p.sendMessage("§a당신이 변신한 §e" + target.getName() + "§a 의 능력은 아래와 같습니다.");
                 p.sendMessage(" ");
                 newAbility.detailCheck(p);
+
+                // [Fix] 직쏘 등 아이템이 필수인 능력은 아이템 지급
+                // 인벤토리를 덮어씌웠지만, 상대가 아이템을 버렸거나 없을 수 있음.
+                // 또는 직쏘(049)의 경우 '석재 절단기'가 없으면 게임 시작 불가.
+                // 그냥 안전하게 giveItem 호출? -> 갑옷/칼 등 중복 지급 우려.
+                // 특정 능력 코드만 체크해서 지급
+                if (targetAbCode.equals("049")) { // 직쏘
+                    newAbility.giveItem(p);
+                }
             }
         }
 
@@ -382,9 +397,16 @@ public class TogaHimiko extends Ability {
 
     @Override
     public void cleanup(Player p) {
+        // [Fix] 변신 프로세스 중(능력 교체)에 호출된 cleanup이면 무시
+        if (ignoringCleanup.contains(p.getUniqueId())) {
+            super.cleanup(p); // 부모 cleanup (태스크 취소 등)은 수행하되
+            return; // revertToOriginal은 하지 않음
+        }
+
         // 게임 종료 등으로 강제 정리될 때 원래대로 돌려놓기
         if (isTransformed.contains(p.getUniqueId())) {
             revertToOriginal(p);
         }
+        super.cleanup(p);
     }
 }
