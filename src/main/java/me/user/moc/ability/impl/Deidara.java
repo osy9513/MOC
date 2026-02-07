@@ -125,7 +125,8 @@ public class Deidara extends Ability {
             long next = clayCooldowns.getOrDefault(p.getUniqueId(), 0L);
             if (now < next) {
                 double left = (next - now) / 1000.0;
-                p.sendMessage("§c점토 생성 쿨타임: " + String.format("%.1f", left) + "초");
+                p.sendActionBar(
+                        net.kyori.adventure.text.Component.text("§c점토 생성 쿨타임: " + String.format("%.1f", left) + "초"));
                 return;
             }
 
@@ -139,10 +140,23 @@ public class Deidara extends Ability {
             }
             p.getInventory().addItem(ammo);
             p.playSound(p.getLocation(), Sound.BLOCK_GRAVEL_PLACE, 1f, 1f);
-            p.sendMessage("§a예술 재료를 확보했다.");
+            // p.sendMessage("§a예술 재료를 확보했다.");
 
             // 쿨타임 적용
             clayCooldowns.put(p.getUniqueId(), now + 4000L);
+
+            // [추가] 쿨타임 알림 (4초 후)
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (p.isOnline() && AbilityManager.getInstance().hasAbility(p, getCode())) {
+                        // [변경] 채팅 -> 액션바
+                        p.sendActionBar(net.kyori.adventure.text.Component.text("§a예술 재료 준비 완료."));
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
+                    }
+                }
+            }.runTaskLater(plugin, 80L); // 4초
+
             return;
         }
 
@@ -195,7 +209,7 @@ public class Deidara extends Ability {
         }
 
         // 메시지
-        Bukkit.broadcastMessage("§c" + p.getName() + " : 폭발은 예술이다!");
+        Bukkit.broadcastMessage("§c데이다라 : 폭발은 예술이다!");
 
         int count = 0;
         for (TNTPrimed tnt : tnts) {

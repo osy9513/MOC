@@ -226,6 +226,11 @@ public class GameManager implements Listener {
                 continue;
             }
 
+            // [추가] 죽어있는 플레이어 강제 리스폰 (게임 참여를 위해)
+            if (p.isDead()) {
+                p.spigot().respawn();
+            }
+
             p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
             if (configManager.spawn_point != null) {
                 p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
@@ -701,6 +706,12 @@ public class GameManager implements Listener {
             @Override
             public void run() {
                 victim.spigot().respawn(); // <--- [여기 변경됨!!!] 자동 리스폰
+
+                // [추가] 죽은 플레이어의 능력(소환수 등) 정리
+                if (abilityManager != null) {
+                    abilityManager.cleanup(victim);
+                }
+
                 victim.setGameMode(GameMode.SPECTATOR); // <--- [여기 변경됨!!!] 관전 모드 변경
 
                 // 2. 생존자 체크 (스펙테이터가 아닌 사람만 필터링)
@@ -1039,8 +1050,10 @@ public class GameManager implements Listener {
 
     // AbilityManager에게 현재 플레이어의 능력을 물어봐서 출력
     public void showAbilityDetail(Player p) {
-        if (!isRunning)
-            return;
+        /*
+         * if (!isRunning)
+         * return;
+         */
         // (현재 구조상 AbilityManager가 담당하는게 맞음)
         if (abilityManager != null) {
             abilityManager.showAbilityDetail(p);
@@ -1131,5 +1144,14 @@ public class GameManager implements Listener {
             sb.append(" ");
         }
         return sb.toString();
+    }
+    /**
+     * [추가] 플레이어가 서버를 나갈 때 능력 관련 요소를 정리합니다.
+     */
+    @EventHandler
+    public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent e) {
+        if (abilityManager != null) {
+            abilityManager.cleanup(e.getPlayer());
+        }
     }
 }

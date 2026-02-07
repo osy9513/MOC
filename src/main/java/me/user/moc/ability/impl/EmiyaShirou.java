@@ -473,7 +473,8 @@ public class EmiyaShirou extends Ability {
 
             @Override
             public void run() {
-                if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround() || timer >= 200) {
+                // [Fix] 땅에 꽂혀도 바로 사라지지 않고 10초(200틱) 뒤에 사라짐
+                if (arrow.isDead() || !arrow.isValid() || timer >= 200) {
                     stand.remove();
                     List<ArmorStand> myFlying = flyingSwords.get(owner.getUniqueId());
                     if (myFlying != null)

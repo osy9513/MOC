@@ -57,7 +57,7 @@ public class FoxDevil extends Ability {
         p.sendMessage("§c전투 ● 여우의 악마(체인소맨)");
         p.sendMessage("§f여우의 악마와 계약해 콩을 사용합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f블럭을 바라보며 맨손으로 좌클릭 + 쉬프트를 동시에 눌러 체력을 5칸을 소모하여");
+        p.sendMessage("§f블럭을 바라보며 맨손으로 좌클릭 + 쉬프트를 동시에 눌러 체력을 3칸을 소모하여");
         p.sendMessage("§f해당 블럭에(100블럭 제한) 여우의 악마를 소환해 5*5*5 범위 내 생명체에게 13 데미지를 줌.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 8초.");
@@ -111,15 +111,15 @@ public class FoxDevil extends Ability {
         setCooldown(p, 8);
 
         if (p.getGameMode() != org.bukkit.GameMode.CREATIVE) {
-            // [안전장치] 체력이 10 이하면 죽을 수도 있음.
-            if (p.getHealth() > 10.0) {
-                p.setHealth(p.getHealth() - 10.0);
+            // [안전장치] 체력이 6 이하면 죽을 수도 있음. (3칸 = 6)
+            if (p.getHealth() > 6.0) {
+                p.setHealth(p.getHealth() - 6.0);
             } else {
                 p.setHealth(0); // 사망 처리
             }
         }
 
-        Bukkit.broadcast(Component.text(p.getName() + " : 콩!"));
+        Bukkit.broadcast(Component.text("여우의 악마 계약자 : 콩!"));
 
         // 6. 여우 소환 로직 (나머지는 기존과 동일)
         Location targetLoc = b.getLocation();

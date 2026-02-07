@@ -70,8 +70,8 @@ public class BartholomewKuma extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 바솔로뮤 쿠마(원피스)");
-        p.sendMessage("§f손바닥(아이템)으로 상대를 좌클릭하면 능력이 발동됩니다.");
-        p.sendMessage("§f적중 시 상대는 맵 내 랜덤한 위치의 상공(Y+64)으로 순간이동됩니다.");
+        p.sendMessage("§f바솔로뮤 쿠마의 손바닥으로 상대를 좌클릭하면 능력이 발동됩니다.");
+        p.sendMessage("§f적중 시 상대는 맵 내 랜덤한 위치의 상공(Y+32)으로 순간이동됩니다.");
         p.sendMessage("§f이후 낙하 데미지를 입을 때 30% 증가된 피해를 입습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 15초");
@@ -98,8 +98,8 @@ public class BartholomewKuma extends Ability {
     public void onAttack(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p))
             return;
-        if (!activeEntities.containsKey(p.getUniqueId()))
-            return; // 쿠마 능력자인지 확인
+        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
+            return; // 쿠마 능력자인지 확인 (Fix: activeEntities -> AbilityManager)
 
         // 아이템 확인
         ItemStack mainHand = p.getInventory().getItemInMainHand();
@@ -139,7 +139,7 @@ public class BartholomewKuma extends Ability {
         double safeRadius = Math.max(0, radius - 5);
         double randX = center.getX() + (random.nextDouble() * 2 - 1) * safeRadius;
         double randZ = center.getZ() + (random.nextDouble() * 2 - 1) * safeRadius;
-        double targetY = target.getLocation().getY() + 64;
+        double targetY = target.getLocation().getY() + 32; // 32 블럭으로 너픔
 
         // 월드 높이 제한 확인
         if (targetY > 319)

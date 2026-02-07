@@ -242,6 +242,19 @@ public class AbilityManager {
         // p.sendMessage("§e[Ability] 능력이 변경되었습니다.");
     }
 
+    // [추가] 특정 플레이어의 능력 관련 요소를 정리합니다.
+    public void cleanup(Player p) {
+        String code = playerAbilities.get(p.getUniqueId());
+        if (code != null) {
+            Ability ability = abilities.get(code);
+            if (ability != null) {
+                ability.cleanup(p);
+            }
+            // 주의: playerAbilities에서 제거하지 않음 (게임 끝나고 통계 볼 수도 있으니)
+            // 다만 죽은 상태라 능력 발동은 안 됨.
+        }
+    }
+
     /**
      * [수정 4] 능력 정보를 보여줄 때도 '코드'를 기준으로 검사합니다.
      * 인자로 들어오는 abilityCode는 이제 "001", "002" 같은 녀석들입니다.

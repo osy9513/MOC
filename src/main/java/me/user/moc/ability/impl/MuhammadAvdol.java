@@ -79,7 +79,7 @@ public class MuhammadAvdol extends Ability {
         p.sendMessage("§f쿨타임 : 4초 (자동)");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 
     private void summonStand(Player p) {

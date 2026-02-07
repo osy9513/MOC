@@ -1,9 +1,12 @@
 package me.user.moc.ability.impl;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -87,20 +90,15 @@ public class Singed extends Ability {
             meta.setDisplayName("§5방독면");
             meta.setLore(Arrays.asList("§7우클릭하여 착용 가능", "§7독 면역 제공", "§9방어력 +3"));
 
-            // 방어력 3 설정 (AttributeModifier)
+            // 방어력 3 설정
             NamespacedKey armorKey = new NamespacedKey(plugin, "singed_mask_armor");
             AttributeModifier armorMod = new AttributeModifier(
                     armorKey,
                     3.0,
                     AttributeModifier.Operation.ADD_NUMBER,
-                    EquipmentSlotGroup.HEAD // 머리에 꼈을 때만 적용
-            );
+                    EquipmentSlotGroup.HEAD);
 
-            // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
-            // 설명: 보내주신 Attribute 클래스에 GENERIC_ARMOR 대신 ARMOR로 정의되어 있어 수정했습니다.
             meta.addAttributeModifier(Attribute.ARMOR, armorMod);
-            // [▲▲▲ 여기까지 변경됨 ▲▲▲]
-
             gasMask.setItemMeta(meta);
         }
         p.getInventory().addItem(gasMask);
@@ -139,87 +137,110 @@ public class Singed extends Ability {
         p.removePotionEffect(PotionEffectType.SPEED);
 
         super.cleanup(p);
+        // [Fix] 독 구름 데이터 초기화 (라운드 종료 시 잔존 방지)
+        poisonTrail.clear();
     }
 
-    /**
-     * 신지드 메인 로직 (매 틱 실행)
-     */
     private void startSingedLogic(Player p) {
         singedTask = new BukkitRunnable() {
             @Override
             public void run() {
+                // 1. 플레이어 상태 체크
                 if (!p.isOnline() || p.isDead()) {
                     this.cancel();
                     return;
                 }
 
+                // 전투 시작 전에는 작동 X
+                if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted()) {
+                    return;
+                }
+
+                // 무적 상태 체크 (무적이고 크리에이티브가 아니면 작동 X)
+                if (p.isInvulnerable() && p.getGameMode() != org.bukkit.GameMode.CREATIVE) {
+                    return;
+                }
+
                 long currentTime = System.currentTimeMillis();
 
-                // 1. [기본 패시브] 신속 2 상시 유지 (신속 6 발동 중이 아닐 때만)
-                // 신속 6(Amplifier 5)이 적용 중이면 덮어씌우지 않음.
-                if (speedBoostTicks <= 0) {
-                    // PotionEffectType.SPEED, duration 20, amplifier 1 (신속2)
-                    // 지속시간을 짧게 계속 갱신
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, false, false, false));
-                } else {
-                    // 패시브(충돌) 효과: 신속 6 (Amplifier 5)
+                // 2. [패시브] 신속 관리
+                if (speedBoostTicks > 0) {
                     speedBoostTicks--;
-                    // 효과 부여 (이미 있으면 갱신됨)
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 10, 5, false, false, true));
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 5, false, false, true));
 
                     // [이펙트] 몸에 파랑 파티클 (오라)
                     p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3,
                             new Particle.DustOptions(Color.BLUE, 1.0f));
+                } else {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, false, false, false));
                 }
 
-                // 2. [맹독의 자취] 가스 생성
-                // 현재 위치 저장
+                // 3. [맹독의 자취] 가스 생성
                 poisonTrail.add(new GasCloud(p.getLocation()));
 
-                // 3. [맹독의 자취] 가스 관리 (오래된 가스 제거 및 효과 부여)
+                // 4. [맹독의 자취] 가스 관리
                 Iterator<GasCloud> iterator = poisonTrail.iterator();
+                Set<UUID> poisonedEntities = new HashSet<>();
+
                 while (iterator.hasNext()) {
                     GasCloud cloud = iterator.next();
 
-                    // 3초(3000ms) 지났으면 제거
+                    // 3초 지났으면 제거
                     if (currentTime - cloud.timestamp > 3000) {
                         iterator.remove();
                         continue;
                     }
 
-                    // 가스 시각 효과 (초록색 가스)
-                    // 성능을 위해 매 틱마다 모든 좌표에 뿌리면 많을 수 있으니, 확률적으로 뿌리거나 듬성듬성 뿌림
-                    // 여기서는 간단히 매번 뿌리되 개수를 적게
-                    cloud.location.getWorld().spawnParticle(Particle.ENTITY_EFFECT, cloud.location.add(0, 0.5, 0),
-                            0, 0.2, 0.8, 0.2, Color.GREEN);
-                    // ENTITY_EFFECT + Color 사용 시 count 0, offset을 색상(RGB)처럼 사용하지 않고 data로 Color 넘김
-                    // (1.13+)
+                    // [▼▼▼ 파티클 수정됨 ▼▼▼]
+                    // 1. 전체 양을 70%로 줄임 (Math.random() < 0.7)
+                    // 2. 30% 확률로 보라색, 70% 확률로 초록색 파티클 출력
+                    if (Math.random() < 0.7) {
+                        if (Math.random() < 0.3) {
+                            // 보라색 독 가스
+                            cloud.location.getWorld().spawnParticle(Particle.DUST,
+                                    cloud.location.clone().add(0, 0.2, 0),
+                                    1, 0.3, 0.3, 0.3,
+                                    new Particle.DustOptions(Color.PURPLE, 2.0f));
+                        } else {
+                            // 초록색(라임) 독 가스
+                            cloud.location.getWorld().spawnParticle(Particle.DUST,
+                                    cloud.location.clone().add(0, 0.2, 0),
+                                    1, 0.3, 0.3, 0.3,
+                                    new Particle.DustOptions(Color.LIME, 2.0f));
+                        }
+                    }
+                    // [▲▲▲ 여기까지 수정됨 ▲▲▲]
 
-                    // 주변 적 감지 (범위 1.0)
-                    for (Entity entity : cloud.location.getWorld().getNearbyEntities(cloud.location, 1.0, 1.0, 1.0)) {
+                    // 주변 적 감지 (범위 1.5)
+                    for (Entity entity : cloud.location.getWorld().getNearbyEntities(cloud.location, 1.5, 1.5, 1.5)) {
                         if (!(entity instanceof LivingEntity victim))
                             continue;
 
-                        // 본인 체크
-                        if (victim.equals(p)) {
-                            // 방독면 착용 여부 확인
-                            ItemStack helmet = p.getInventory().getHelmet();
-                            boolean hasMask = helmet != null && helmet.getType() == Material.NETHER_BRICK_FENCE;
+                        if (poisonedEntities.contains(victim.getUniqueId()))
+                            continue;
 
-                            if (!hasMask) {
-                                victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 40, 2)); // 독 3, 2초
-                            }
-                        } else {
-                            // 적군
-                            victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 40, 2)); // 독 3, 2초
+                        // 방독면 체크
+                        ItemStack helmet = victim.getEquipment().getHelmet();
+                        if (helmet != null && helmet.getType() == Material.NETHER_BRICK_FENCE) {
+                            continue; // 면역
                         }
+
+                        // 독 딜 씹힘 방지
+                        PotionEffect currentPoison = victim.getPotionEffect(PotionEffectType.POISON);
+                        if (currentPoison != null && currentPoison.getDuration() > 10) {
+                            poisonedEntities.add(victim.getUniqueId());
+                            continue;
+                        }
+
+                        // 독 부여
+                        victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 60, 2));
+                        poisonedEntities.add(victim.getUniqueId());
                     }
                 }
 
-                // 4. [충돌 패시브] 다른 생명체와 부딪침 감지
-                // getNearbyEntities로 본인 주변 0.8칸 탐색
+                // 5. [충돌 패시브]
                 boolean collided = false;
-                for (Entity entity : p.getNearbyEntities(0.8, 0.8, 0.8)) {
+                for (Entity entity : p.getNearbyEntities(1.2, 1.2, 1.2)) {
                     if (entity instanceof LivingEntity && !entity.equals(p)) {
                         collided = true;
                         break;
@@ -227,57 +248,41 @@ public class Singed extends Ability {
                 }
 
                 if (collided) {
-                    // 부딪힘 발생!
-                    if (speedBoostTicks <= 0) { // 이미 부스팅 중이 아닐 때 '팡' 효과
-                        p.getWorld().spawnParticle(Particle.FLASH, p.getLocation().add(0, 1, 0), 1); // 번쩍
-                        p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5,
-                                new Particle.DustOptions(Color.BLUE, 2.0f)); // 파란 팡
-                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 1.5f);
+                    if (speedBoostTicks <= 0) {
+                        p.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, p.getLocation().add(0, 1, 0), 15, 0.3, 0.5,
+                                0.3, 0.05);
+                        p.getWorld().spawnParticle(Particle.CRIT, p.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5);
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 2.0f);
                     }
-
-                    // 3초(60틱)간 가속
                     speedBoostTicks = 60;
                 }
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }
 
-    /**
-     * 방독면(네더 벽돌 울타리) 우클릭 착용 리스너
-     */
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         ItemStack item = e.getItem();
 
-        // 1. 아이템 체크
         if (item == null || item.getType() != Material.NETHER_BRICK_FENCE)
             return;
 
-        // 2. 액션 체크 (우클릭)
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)
             return;
 
-        // 3. 능력자 체크
-        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
-            return;
-
-        // 4. 착용 로직
-        e.setCancelled(true); // 설치 방지
+        // 착용 로직 (전투 전에도 착용 가능하도록 여기엔 전투 체크 안 넣음)
+        e.setCancelled(true);
 
         ItemStack currentHelmet = p.getInventory().getHelmet();
-
-        // 방독면을 머리에 씌움 (개수 1개 차감)
         ItemStack maskToWear = item.clone();
         maskToWear.setAmount(1);
 
         p.getInventory().setHelmet(maskToWear);
         p.getWorld().playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_GENERIC, 1f, 1f);
 
-        // 손에 있는 아이템 차감
         item.setAmount(item.getAmount() - 1);
 
-        // 기존에 투구가 있었다면 인벤토리로 되돌려줌 (혹은 바닥에 드롭)
         if (currentHelmet != null && currentHelmet.getType() != Material.AIR) {
             p.getInventory().addItem(currentHelmet);
         }
