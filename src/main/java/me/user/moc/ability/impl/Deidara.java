@@ -77,7 +77,7 @@ public class Deidara extends Ability {
             meta2.setDisplayName("§c기폭 점토");
             meta2.setLore(Arrays.asList(
                     "§7우클릭 시 설치된 모든 TNT를 폭발시킵니다.",
-                    "§c[C0 조건] §f폭죽 탄약 40개 이상 보유 시 궁극기 발동"));
+                    "§c[C0 조건] §f폭죽 탄약 20개 이상 보유 시 궁극기 발동"));
             item2.setItemMeta(meta2);
         }
 
@@ -93,8 +93,8 @@ public class Deidara extends Ability {
         p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다.");
         p.sendMessage(" ");
         p.sendMessage("§c[C0 - 자폭]");
-        p.sendMessage("§f인벤토리에 폭죽 탄약이 40개 이상일 때 부싯돌을 우클릭하면 발동.");
-        p.sendMessage("§f1초 뒤 자신의 위치에 §cTNT 40개 분량의 대폭발§f을 일으킵니다.");
+        p.sendMessage("§f인벤토리에 폭죽 탄약이 20개 이상일 때 부싯돌을 우클릭하면 발동.");
+        p.sendMessage("§f1초 뒤 자신의 위치에 §cTNT 20개 분량의 대폭발§f을 일으킵니다.");
         p.sendMessage("§f이 폭발은 물 속에서도 피해를 주며, 자신도 휘말릴 수 있습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 4초");
@@ -193,7 +193,7 @@ public class Deidara extends Ability {
                 }
             }
 
-            if (ammoCount >= 40) {
+            if (ammoCount >= 20) {
                 activateC0(p);
             } else {
                 detonateAll(p);
@@ -226,8 +226,8 @@ public class Deidara extends Ability {
     }
 
     private void activateC0(Player p) {
-        // 탄약 40개 제거
-        int toRemove = 40;
+        // 탄약 20개 제거
+        int toRemove = 20;
         for (int i = 0; i < p.getInventory().getSize(); i++) {
             ItemStack slot = p.getInventory().getItem(i);
             if (slot == null || slot.getType() != Material.FIREWORK_STAR)
@@ -282,8 +282,8 @@ public class Deidara extends Ability {
     private void spawnMassiveTNT(Player p) {
         Location center = p.getLocation();
 
-        // 40개 TNT 소환 (약간 퍼트려서)
-        for (int i = 0; i < 40; i++) {
+        // 20개 TNT 소환 (약간 퍼트려서)
+        for (int i = 0; i < 20; i++) {
             Location loc = center.clone().add(
                     (Math.random() - 0.5) * 4,
                     Math.random() * 2,

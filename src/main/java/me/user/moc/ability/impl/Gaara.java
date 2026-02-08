@@ -286,6 +286,9 @@ public class Gaara extends Ability {
                 useDesertBurial(p, target);
             }
         }
+
+        // [수정] 모래/붉은 모래 변환 로직 제거 (우클릭 -> 줍기 자동 변환으로 변경됨)
+        // 원래 있던 우클릭 변환 로직은 삭제합니다.
     }
 
     @EventHandler
@@ -296,6 +299,58 @@ public class Gaara extends Ability {
             if (item.getType() == Material.DECORATED_POT && item.getItemMeta() != null
                     && "§6모래 표주박".equals(item.getItemMeta().getDisplayName())) {
                 e.setCancelled(true);
+            }
+        }
+    }
+
+    // [추가] 아이템 줍기 시 사암/붉은 사암 자동 변환
+    @EventHandler
+    public void onPickup(org.bukkit.event.entity.EntityPickupItemEvent e) {
+        if (e.getEntity() instanceof Player p) {
+            if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+                return;
+
+            ItemStack item = e.getItem().getItemStack();
+            Material type = item.getType();
+
+            // 사암(SANDSTONE) 또는 붉은 사암(RED_SANDSTONE)인지 확인
+            // 사박퀴/사폭장송 등으로 생성된 블록이 파괴되어 떨어지는 것을 주웠을 때
+            if (type == Material.SANDSTONE || type == Material.RED_SANDSTONE) {
+                // 줍는 행위 자체는 허용하되, 1틱 뒤에 인벤토리 검사 수행
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        convertSandstone(p, type);
+                    }
+                }.runTaskLater(plugin, 1L);
+            }
+        }
+    }
+
+    private void convertSandstone(Player p, Material mat) {
+        // 인벤토리에 해당 사암이 2개 이상 있는지 확인
+        ItemStack toRemove = new ItemStack(mat, 2);
+        if (p.getInventory().containsAtLeast(toRemove, 2)) {
+            // 개수 확인: 몇 세트나 교환 가능한지?
+            // 반복적으로 전부 교환? 아니면 한 번에 1세트만?
+            // "자동으로 2개당 1개의 모래로 교환" -> 가능한 만큼 전부 교환이 자연스러움.
+
+            // 전체 개수 파악
+            int totalCount = 0;
+            for (ItemStack is : p.getInventory().getContents()) {
+                if (is != null && is.getType() == mat) {
+                    totalCount += is.getAmount();
+                }
+            }
+
+            int sandToGive = totalCount / 2;
+            int removeAmount = sandToGive * 2;
+
+            if (sandToGive > 0) {
+                p.getInventory().removeItem(new ItemStack(mat, removeAmount));
+                p.getInventory().addItem(new ItemStack(Material.SAND, sandToGive));
+                p.playSound(p.getLocation(), Sound.BLOCK_SAND_BREAK, 0.3f, 1.5f);
+                p.sendMessage("§e[가아라] " + mat.name() + " " + removeAmount + "개를 모래 " + sandToGive + "개로 변경했습니다.");
             }
         }
     }
@@ -409,6 +464,7 @@ public class Gaara extends Ability {
         p.sendMessage("§f        4초마다 인벤토리에 모리가 쌓입니다.");
         p.sendMessage("§f[액티브] §6모래 표주박 §f우클릭 시 모래 10개를 소모하여 사박궤를 시전합니다.");
         p.sendMessage("§f대상을 사암으로 가두며, 3초 뒤 사폭장송을 발동하여 15의 폭발 피해를 입힙니다.");
+        p.sendMessage("§f사암을 먹을 시 2개당 1개의 모래로 변경합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 14초");
         p.sendMessage("§f---");

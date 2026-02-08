@@ -1,6 +1,7 @@
 package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
+import java.util.Arrays;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -65,6 +66,7 @@ public class TheKingOfGockgangE extends Ability {
         ItemMeta meta = pickaxe.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§e왕 쩌는 곡갱이");
+            meta.setLore(Arrays.asList("§7블록 파괴 시 주변 적에게 피해를 입힙니다.", "§eShout Out TEAM PICKAXE"));
             meta.setUnbreakable(true); // 편의상 파괴 불가 설정
             // 내구성 인챈트 10 (요청사항: 내구성10)
             meta.addEnchant(Enchantment.UNBREAKING, 10, true);

@@ -11,6 +11,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -50,9 +51,15 @@ public class Pantheon extends Ability {
         p.getInventory().remove(Material.IRON_SWORD);
 
         // 추가 장비: 빵 64 * 3개
-        p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
-        p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
-        p.getInventory().addItem(new ItemStack(Material.BREAD, 64));
+        ItemStack bread = new ItemStack(Material.BREAD, 64);
+        ItemMeta meta = bread.getItemMeta();
+        if (meta != null) {
+            meta.setLore(Arrays.asList("§7우클릭 시 빵을 던져 피해를 입히고 배고픔을 회복합니다."));
+            bread.setItemMeta(meta);
+        }
+        p.getInventory().addItem(bread);
+        p.getInventory().addItem(bread);
+        p.getInventory().addItem(bread);
         // [장비 제거] 구운 소고기 제거
         p.getInventory().remove(Material.COOKED_BEEF);
 

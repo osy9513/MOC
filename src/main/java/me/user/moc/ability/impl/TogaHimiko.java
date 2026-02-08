@@ -97,7 +97,7 @@ public class TogaHimiko extends Ability {
         p.sendMessage("§f상대의 능력을 사용할 수 있고 30후 다시 토가 히미코로 돌아온다.");
         p.sendMessage(" ");
         p.sendMessage("§f유저 포션을 마실 때 체력 4칸을 회복한다.");
-        p.sendMessage("§f모든 포션을 80% 더 빨리 마신다.");
+        // p.sendMessage("§f모든 포션을 80% 더 빨리 마신다."); // 삭제됨
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초.");
         p.sendMessage("§f---");

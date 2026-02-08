@@ -71,7 +71,14 @@ public class Rimuru extends Ability {
     @Override
     public void giveItem(Player p) {
         p.getInventory().clear();
-        p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
+        p.getInventory().clear();
+        ItemStack bucket = new ItemStack(Material.WATER_BUCKET);
+        org.bukkit.inventory.meta.ItemMeta meta = bucket.getItemMeta();
+        if (meta != null) {
+            meta.setLore(List.of("§7슬라임 상태 유지에 필요한 수분입니다.", "§7다른 아이템 획득 시 흡수하여 성장에 사용합니다."));
+            bucket.setItemMeta(meta);
+        }
+        p.getInventory().addItem(bucket);
 
         p.setMaxHealth(70.0); // 3.5줄 (70칸)
         p.setHealth(70.0);

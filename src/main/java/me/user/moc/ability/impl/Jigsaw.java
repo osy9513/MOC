@@ -50,6 +50,10 @@ public class Jigsaw extends Ability {
         BlockDisplay sawTop;
         BlockDisplay sawBottom;
 
+        // [추가] 머리 위 해골 (시각 효과)
+        BlockDisplay jigsawSkull;
+        BlockDisplay targetSkull;
+
         // 관리용 태스크
         BukkitTask timerTask; // 5초 제한시간
         BukkitTask rotationTask; // 톱날 회전 및 시선 고정
@@ -76,6 +80,12 @@ public class Jigsaw extends Ability {
                 sawTop.remove();
             if (sawBottom != null && sawBottom.isValid())
                 sawBottom.remove();
+
+            // [추가] 해골 제거
+            if (jigsawSkull != null && jigsawSkull.isValid())
+                jigsawSkull.remove();
+            if (targetSkull != null && targetSkull.isValid())
+                targetSkull.remove();
 
             if (timerTask != null && !timerTask.isCancelled())
                 timerTask.cancel();
@@ -207,6 +217,9 @@ public class Jigsaw extends Ability {
         // 3. 톱날 소환 (타겟과 나 사이)
         spawnSaws(info);
 
+        // [추가] 머리 위 해골 소환
+        spawnSkulls(info);
+
         // 4. 반복 태스크 (시선 고정 + 톱날 회전)
         info.rotationTask = new BukkitRunnable() {
             float angle = 0;
@@ -242,6 +255,15 @@ public class Jigsaw extends Ability {
                         info.sawBottom.teleport(targetLoc);
                     if (info.sawTop != null && info.sawTop.isValid())
                         info.sawTop.teleport(targetLoc.clone().add(0, 0.45, 0));
+                }
+
+                // [추가] 해골 위치 동기화 (머리 위 고정)
+                if (info.jigsawSkull != null && info.jigsawSkull.isValid() && p.isOnline()) {
+                    // 회전 없이 위치만 이동
+                    info.jigsawSkull.teleport(p.getLocation().add(0, 0.5, 0));
+                }
+                if (info.targetSkull != null && info.targetSkull.isValid() && target.isValid()) {
+                    info.targetSkull.teleport(target.getLocation().add(0, 0.5, 0));
                 }
 
                 // [톱날 회전] 엄청 빠르게 회전
@@ -324,6 +346,37 @@ public class Jigsaw extends Ability {
         // 소리 재생 (전기톱 시동)
         info.target.getWorld().playSound(sawLoc, Sound.ITEM_TRIDENT_THUNDER, 1f, 2f);
         info.target.getWorld().playSound(sawLoc, Sound.UI_STONECUTTER_TAKE_RESULT, 2f, 0.5f);
+        info.target.getWorld().playSound(sawLoc, Sound.UI_STONECUTTER_TAKE_RESULT, 2f, 0.5f);
+    }
+
+    // [추가] 해골 소환 메서드
+    private void spawnSkulls(GameInfo info) {
+        info.jigsawSkull = createSkull(info.jigsaw);
+        info.targetSkull = createSkull(info.target);
+    }
+
+    private BlockDisplay createSkull(LivingEntity owner) {
+        Location loc = owner.getLocation().add(0, 0.5, 0); // 머리 위? 플레이어 키 고려
+        // BlockDisplay로 해골 머리를 씌움.
+        // PLAYER_HEAD 블록은 방향 설정이 까다로울 수 있음.
+        // SKELETON_SKULL 사용
+        BlockDisplay bd = (BlockDisplay) loc.getWorld().spawnEntity(loc, EntityType.BLOCK_DISPLAY);
+        bd.setBlock(Bukkit.createBlockData(Material.SKELETON_SKULL));
+
+        // 아이템 디스플레이가 아니라 블록 디스플레이라 SKELETON_SKULL 블록데이터 사용.
+        // 회전 고정: Billboard.FIXED
+        bd.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+
+        // 크기 및 위치 조정
+        Transformation t = bd.getTransformation();
+        t.getScale().set(0.6f); // 적당한 크기
+        // 머리에 딱 맞게 위치 조정 (블록 중심점 고려)
+        // SKELETON_SKULL은 바닥에 놓인 형태.
+        // Y축 조정 필요.
+        t.getTranslation().set(-0.3f, 1.4f, -0.3f); // 대략적인 머리 위치 맞춤
+
+        bd.setTransformation(t);
+        return bd;
     }
 
     // [3] 아이템 버리기 감지 (정답 체크)

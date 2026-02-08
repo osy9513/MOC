@@ -63,6 +63,7 @@ public class Windbreaker extends Ability {
         ItemMeta meta = bow.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text("§a메이플 보우"));
+            meta.setLore(List.of("§7웅크리기 2회 연타 시 '천공의 노래'를 시전합니다.", "§75초간 전방으로 화살을 난사합니다.", "§8(쿨타임 15초)"));
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);

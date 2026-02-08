@@ -48,8 +48,18 @@ public class Byakuya extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 기본 무기 철 검 지급
-        // p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
+        // 기본 무기 철 검에 설명 추가
+        p.getInventory().remove(Material.IRON_SWORD);
+
+        org.bukkit.inventory.ItemStack sword = new org.bukkit.inventory.ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§d천본앵");
+            meta.setLore(Arrays.asList("§7우클릭 시 만해를 시전합니다.", "§8(쿨타임 50초)"));
+            sword.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sword);
+
         cooldowns.put(p.getUniqueId(), 0L);
     }
 

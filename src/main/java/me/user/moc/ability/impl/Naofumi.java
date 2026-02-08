@@ -63,6 +63,10 @@ public class Naofumi extends Ability {
         ItemMeta meta = shield.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§c분노의 방패");
+            meta.setLore(Arrays.asList(
+                    "§7방어 성공 시 아이언 메이든 게이지가 충전됩니다.",
+                    "§710회 방어 후 우클릭 시 아이언 메이든을 발동합니다.",
+                    "§c발동 후 10초간 방패 사용이 불가능합니다."));
             meta.setUnbreakable(true); // [Fix] 내구도 무한
             shield.setItemMeta(meta);
         }
@@ -92,6 +96,7 @@ public class Naofumi extends Ability {
         p.sendMessage("§f발동 후 다시 발동하기 위해선 다시 10번의 공격을 막아야합니다.");
         p.sendMessage("§f아이언 메이든의 지속시간은 20초 입니다.");
         p.sendMessage("§f[제한] 대상이 플레이어일 경우, 체력이 3칸(6.0) 남으면 능력이 강제 종료됩니다.");
+        p.sendMessage("§f[패널티] 능력 발동 후 10초간 방패를 사용할 수 없습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
@@ -205,6 +210,10 @@ public class Naofumi extends Ability {
 
         p.sendMessage("§4아이언 메이든!");
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f); // 웅장한 소리
+
+        // [추가] 방패 쿨타임 10초 적용 (도끼로 찍힌 효과)
+        p.setCooldown(Material.SHIELD, 200);
+        p.sendMessage("§c[패널티] 방패가 10초간 비활성화됩니다.");
 
         // 2. 가마솥 소환 (BlockDisplay 활용)
         Location targetLoc = target.getLocation();

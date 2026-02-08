@@ -120,7 +120,7 @@ public class TungTungTungSahur extends Ability {
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 퉁퉁퉁 방망이");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f장비 제거 : 철 흉갑, 철 검");
 
     }
 
@@ -205,8 +205,9 @@ public class TungTungTungSahur extends Ability {
                 // 아까 Translation으로 조정했으니, 플레이어 위치 그대로 가면 됨.
                 // 하지만 회전이 문제.
 
-                // 단순하게: 플레이어 위치 + Yaw만 적용
-                // loc.setPitch(0); // 통나무가 기울면 이상하니 Pitch는 0
+                // 단순하게: 플레이어 위치 + Yaw만 적용하려 했으나, 요청사항에 따라 "고정" (회전 X)
+                loc.setYaw(0);
+                loc.setPitch(0);
 
                 // Transformation을 쓰지 않고 setRotation을 쓰거나 teleport.
                 display.teleport(loc);
@@ -413,43 +414,33 @@ public class TungTungTungSahur extends Ability {
         new BukkitRunnable() {
             @Override
             public void run() {
-                // 현재 이 플레이어를 기다리고 있는 사후르가 있는지 찾기
-                // ConcurrentHashMap이므로 순회 중 수정 안전(weakly consistent)하지만,
-                // 명확한 처리를 위해 iterator 권장.
-
+                // Match된 사후르 저장
+                List<UUID> matchedSahurs = new ArrayList<>();
                 for (Map.Entry<UUID, UUID> entry : currentTargets.entrySet()) {
-                    UUID sahurUUID = entry.getKey();
-                    UUID targetUUID = entry.getValue();
+                    if (entry.getValue().equals(speaker.getUniqueId())) {
+                        matchedSahurs.add(entry.getKey());
+                    }
+                }
 
-                    // 말한 사람이 타겟이라면?
-                    if (targetUUID.equals(speaker.getUniqueId())) {
-                        // 타겟 일치! 성공 처리.
+                // 매치된 사후르들에 대해 성공 처리
+                for (UUID sahurUUID : matchedSahurs) {
+                    // 1. 해당 사후르의 타임아웃 태스크 취소
+                    if (timeoutTasks.containsKey(sahurUUID)) {
+                        timeoutTasks.get(sahurUUID).cancel();
+                        timeoutTasks.remove(sahurUUID);
+                    }
 
-                        // 1. 해당 사후르의 타임아웃 태스크 취소
-                        if (timeoutTasks.containsKey(sahurUUID)) {
-                            timeoutTasks.get(sahurUUID).cancel();
-                            timeoutTasks.remove(sahurUUID);
-                        }
+                    // 2. 타겟 목록에서 제거 (이제 안 기다림)
+                    currentTargets.remove(sahurUUID);
 
-                        // 2. 타겟 목록에서 제거 (이제 안 기다림)
-                        currentTargets.remove(sahurUUID);
+                    // 3. 성공 알림 (전체 공지)
+                    plugin.getServer()
+                            .broadcast(Component.text("§e[정보] " + speaker.getName() + "님이 대답하여 버프를 얻지 못했습니다."));
 
-                        // 3. 성공 알림 (전체 공지)
-                        plugin.getServer()
-                                .broadcast(Component.text("§e[정보] " + speaker.getName() + "님이 대답하여 버프를 얻지 못했습니다."));
-
-                        // 4. [추가] 성공했으므로 4초 뒤 다음 요청 예약
-                        // (Speaker가 아니라 사후르 Player 객체가 필요함. sahurUUID로 가져와야 함)
-                        Player sahur = Bukkit.getPlayer(sahurUUID);
-                        if (sahur != null) {
-                            scheduleNextRequest(sahur, 80L);
-                        }
-
-                        // 한 번 "넵!"으로 나를 노리는 하나의 사후르만 무력화 (혹은 다수? 로직상 루프 돌면 다수 가능)
-                        // 여기서는 발견된 첫 번째 건만 처리하고 종료하여 중복 처리 방지
-
-                        // (동시에 여러 사후르가 같은 사람을 노리는 경우는 드물겠지만)
-                        break;
+                    // 4. 성공했으므로 4초 뒤 다음 요청 예약
+                    Player sahur = Bukkit.getPlayer(sahurUUID);
+                    if (sahur != null) {
+                        scheduleNextRequest(sahur, 80L);
                     }
                 }
             }
