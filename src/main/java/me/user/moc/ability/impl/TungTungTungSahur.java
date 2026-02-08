@@ -26,12 +26,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.Transformation;
-import org.joml.Vector3f;
-import org.joml.AxisAngle4f;
 
 import me.user.moc.ability.Ability;
 import net.kyori.adventure.text.Component;
@@ -82,12 +79,12 @@ public class TungTungTungSahur extends Ability {
             // [수정] 나무 검 스펙 강제 적용 (데미지 4, 공속 1.6)
             // 기본 막대기: 데미지 1, 공속 4.0 (빠름)
             // 목표: 데미지 4 (+3), 공속 1.6 (-2.4)
-            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE,
-                    new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 3.0,
-                            AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
-            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED,
-                    new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", -2.4,
-                            AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND));
+            meta.addAttributeModifier(Attribute.ATTACK_DAMAGE,
+                    new AttributeModifier(new org.bukkit.NamespacedKey(plugin, "tungtung_damage"), 3.0,
+                            AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HAND));
+            meta.addAttributeModifier(Attribute.ATTACK_SPEED,
+                    new AttributeModifier(new org.bukkit.NamespacedKey(plugin, "tungtung_speed"), -2.4,
+                            AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HAND));
 
             bat.setItemMeta(meta);
         }
