@@ -102,7 +102,9 @@ public class AbilityManager {
         addAbility(new Mothership(plugin)); // 032 모선
         addAbility(new Deidara(plugin)); // 044 데이다라
         addAbility(new Bajje(plugin)); // H01 베째
+        addAbility(new Jumptaengi(plugin)); // H03 점탱이
         addAbility(new MuhammadAvdol(plugin)); // 046 무함마드 압둘
+        addAbility(new Ddangkong(plugin)); // H04 땅콩
     }
 
     private void addAbility(Ability ability) {
