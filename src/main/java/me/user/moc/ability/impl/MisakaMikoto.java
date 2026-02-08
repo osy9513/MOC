@@ -56,6 +56,7 @@ public class MisakaMikoto extends Ability {
         ItemStack coin = new ItemStack(Material.PRISMARINE_CRYSTALS, 10);
         ItemMeta meta = coin.getItemMeta();
         meta.setDisplayName("§b코인");
+        meta.setLore(Arrays.asList("§7우클릭하여 레일건을 발사합니다.", "§8(소모품, 쿨타임 3초)"));
         coin.setItemMeta(meta);
         p.getInventory().addItem(coin);
     }

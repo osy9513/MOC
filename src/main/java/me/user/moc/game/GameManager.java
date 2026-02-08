@@ -131,7 +131,7 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§e=== 마인크래프트 오브 캐릭터즈 (버전 0.1.1) ===");
         Bukkit.broadcastMessage("§e=== 제작 : 원크, 알아서해 ===");
         Bukkit.broadcastMessage("§f기본 체력: 3줄(60칸)");
-        Bukkit.broadcastMessage("§f기본 지급: 철칼, 구운 소고기64개, 물 양동이, 유리10개, 재생포션, 철 흉갑");
+        Bukkit.broadcastMessage("§f기본 지급: 철칼, 구운 소고기64개, 물 양동이, 유리5개, 재생포션, 철 흉갑");
 
         // [추가] 통계 초기화
         if (abilityManager != null) {
@@ -353,6 +353,39 @@ public class GameManager implements Listener {
                 abilityManager.showAbilityInfo(p, abilityCode, 0);
             }
             deckIndex++;
+            deckIndex++;
+        }
+
+        // [추가] 리롤 포인트가 0인 경우 자동 준비 완료 처리
+        if (configManager.re_point <= 0) {
+            Bukkit.broadcastMessage("§a[MOC] 리롤 기회가 없어 자동으로 준비 완료됩니다.");
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!afkPlayers.contains(p.getName())) { // AFK 제외
+                    // 강제로 레디 처리
+                    if (!readyPlayers.contains(p.getUniqueId())) {
+                        readyPlayers.add(p.getUniqueId());
+                        p.sendMessage("§a[System] 자동 준비 완료되었습니다.");
+                    }
+                }
+            }
+            // 타이머도 짧게 단축 (5초 후 시작)
+            if (selectionTask != null)
+                selectionTask.cancel();
+            selectionTask = new BukkitRunnable() {
+                int count = 5;
+
+                @Override
+                public void run() {
+                    if (count <= 0) {
+                        this.cancel();
+                        prepareBattle();
+                        return;
+                    }
+                    Bukkit.broadcastMessage("§e" + count + "초 후 전투 준비 단계로 넘어갑니다.");
+                    count--;
+                }
+            }.runTaskTimer(plugin, 0, 20L);
+            return; // 기존 타이머 로직 스킵
         }
 
         // 2-2. 능력 추첨 시간 (콘피그 start_time 초)
@@ -574,8 +607,8 @@ public class GameManager implements Listener {
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
         // 3. 물 양동이
         p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
-        // 4. 유리 10개
-        p.getInventory().addItem(new ItemStack(Material.GLASS, 10));
+        // 4. 유리 5개
+        p.getInventory().addItem(new ItemStack(Material.GLASS, 5));
 
         // 5. [추가] 1레벨 체력 재생 포션 (1분)
         // 1.21 버전 대응 코드
@@ -789,7 +822,6 @@ public class GameManager implements Listener {
         }
 
         // 4. 점수 현황판 출력
-        // 4. 능력 및 점수 현황판 출력 (요청된 테이블 양식)
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
         Bukkit.broadcastMessage(" ");
@@ -797,119 +829,87 @@ public class GameManager implements Listener {
         // 데이터 수집용 리스트
         class ResultEntry {
             String name;
-            String abilityName;
             int score;
+            String abilityName;
+            int usage;
             boolean isWinner;
 
-            ResultEntry(String name, String abilityName, int score, boolean isWinner) {
+            public ResultEntry(String name, int score, String abilityName, int usage, boolean isWinner) {
                 this.name = name;
-                this.abilityName = abilityName;
                 this.score = score;
+                this.abilityName = abilityName;
+                this.usage = usage;
                 this.isWinner = isWinner;
             }
         }
 
         List<ResultEntry> results = new ArrayList<>();
 
-        // 능력 매니저에서 참가했던 모든 인원 가져오기
-        if (abilityManager != null) {
-            Map<UUID, String> assigned = abilityManager.getPlayerAbilities();
-            for (Map.Entry<UUID, String> entry : assigned.entrySet()) {
-                UUID uid = entry.getKey();
-                String code = entry.getValue();
-
-                // 플레이어 이름
-                String pName = Bukkit.getOfflinePlayer(uid).getName();
-                if (pName == null)
-                    pName = "알 수 없음";
-
-                // 능력 이름
-                String abName = "알 수 없음";
-                me.user.moc.ability.Ability ab = abilityManager.getAbility(code);
-                if (ab != null)
-                    abName = ab.getName();
-
-                // [수정] 점수 대신 '게임에 나온 횟수'를 출력합니다.
-                int scr = abilityManager.getUsageCount(code);
-
-                // 승자 여부 확인
-                boolean win = false;
-                for (Player w : winners) {
-                    if (w.getUniqueId().equals(uid)) {
-                        win = true;
-                        break;
-                    }
-                }
-
-                results.add(new ResultEntry(pName, abName, scr, win));
-            }
+        Set<UUID> checkSet = new HashSet<>(scores.keySet());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            checkSet.add(p.getUniqueId());
         }
 
-        // 정렬 로직: 1. 승자 우선, 2. 점수(횟수) 내림차순
-        results.sort((a, b) -> {
-            if (a.isWinner != b.isWinner) {
-                return a.isWinner ? -1 : 1; // 승자가 위로
+        for (UUID uuid : checkSet) {
+            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            if (name == null)
+                continue;
+
+            int score = scores.getOrDefault(uuid, 0);
+
+            String abilityCode = (abilityManager != null && abilityManager.getPlayerAbilities() != null)
+                    ? abilityManager.getPlayerAbilities().get(uuid)
+                    : null;
+            String abilityName = "없음";
+            int usage = 0;
+
+            if (abilityCode != null && abilityManager != null) {
+                me.user.moc.ability.Ability ab = abilityManager.getAbility(abilityCode);
+                if (ab != null) {
+                    abilityName = ab.getName();
+                }
+                usage = abilityManager.getUsageCount(abilityCode);
             }
-            return Integer.compare(b.score, a.score); // 점수 높은 순
+
+            boolean isWinner = false;
+            for (Player w : winners) {
+                if (w.getUniqueId().equals(uuid)) {
+                    isWinner = true;
+                    break;
+                }
+            }
+
+            results.add(new ResultEntry(name, score, abilityName, usage, isWinner));
+        }
+
+        // 정렬
+        results.sort((a, b) -> {
+            if (a.isWinner != b.isWinner)
+                return a.isWinner ? -1 : 1;
+            return Integer.compare(b.score, a.score);
         });
 
-        // ---------------------------------------------------------
-        // [테이블 정렬 로직 시작]
-        // ---------------------------------------------------------
+        // 출력 포맷팅
+        String header1 = "점수";
+        String header2 = "닉네임";
+        String header3 = "능력 이름";
+        String header4 = "이번 판 사용 횟수";
 
-        // 1. 헤더 텍스트 정의
-        String headerCol1 = "게임에 나온 횟수";
-        String headerCol2 = "능력 이름";
-        // String headerCol3 = "사용자";
-
-        // 2. 각 열(Column)의 최대 너비 찾기 (기본값: 헤더 길이)
-        int maxCol1 = getDisplayWidth(headerCol1);
-        int maxCol2 = getDisplayWidth(headerCol2);
-
-        // 데이터들을 순회하며 가장 긴 문자열을 찾습니다.
-        for (ResultEntry r : results) {
-            // "15번" 형태의 문자열 길이 계산
-            String scoreStr = r.score + "번";
-            int scoreLen = getDisplayWidth(scoreStr);
-            if (scoreLen > maxCol1)
-                maxCol1 = scoreLen;
-
-            // 능력 이름 길이 계산
-            int abilLen = getDisplayWidth(r.abilityName);
-            if (abilLen > maxCol2)
-                maxCol2 = abilLen;
-        }
-
-        // 3. 헤더 출력 (패딩 적용)
-        String paddedHeader1 = padRight(headerCol1, maxCol1);
-        String paddedHeader2 = padRight(headerCol2, maxCol2);
-
-        Bukkit.broadcastMessage("§7" + paddedHeader1 + " | " + paddedHeader2 + " | 사용자");
-        // Bukkit.broadcastMessage("§7--------------------------------------------------");
-        // // 구분선 (선택사항)
-
-        // 승자 마크 결정 (1명이면 ★, 여러명이면 ☆)
-        String winMark = (winners.size() > 1) ? "☆" : "★";
-
-        // 4. 데이터 출력 (패딩 적용)
-        for (ResultEntry r : results) {
-            String mark = r.isWinner ? "§6" + winMark + " " : "";
-            // 색상: 승자는 노랑, 나머지는 회색/흰색 등
-            String color = r.isWinner ? "§e" : "§f";
-
-            // 데이터 패딩 준비
-            String col1Data = padRight(r.score + "번", maxCol1);
-            String col2Data = padRight(r.abilityName, maxCol2);
-
-            // 최종 출력
-            // 포맷: [확장된 횟수] | [확장된 능력명] | [사용자]
-            Bukkit.broadcastMessage(String.format("%s%s §7| §f%s §7| %s%s%s",
-                    color, col1Data, col2Data, color, mark, r.name));
+        // 단순히 출력
+        Bukkit.broadcastMessage("§7Score | Nickname | Ability Name | Usage Count this game");
+        for (ResultEntry e : results) {
+            String color = e.isWinner ? "§e" : "§f";
+            String mark = e.isWinner ? "★ " : "";
+            // 포맷: Score | Nickname | Ability | Usage
+            // 예: 15 | 홍길동 | 사이타마 | 3
+            String line = String.format("%s%d | %s%s | %s | %d",
+                    color, e.score, mark, e.name, e.abilityName, e.usage);
+            Bukkit.broadcastMessage(line);
         }
 
         Bukkit.broadcastMessage("§6==========================");
 
-        // 5. 게임 완전 종료 체크 (승자들 중 목표 점수 도달자가 있는지 확인)
+        // 5. 승리 조건 체크
         boolean gameShouldStop = false;
         for (Player p : winners) {
             if (scores.getOrDefault(p.getUniqueId(), 0) >= configManager.win_value) {
@@ -917,10 +917,10 @@ public class GameManager implements Listener {
                 break;
             }
         }
+
         if (gameShouldStop) {
-            stopGame(); // 있으면 게임 종료
+            stopGame();
         } else {
-            // 없으면 5초 뒤 다음 라운드
             Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
             startRoundAfterDelay();
         }

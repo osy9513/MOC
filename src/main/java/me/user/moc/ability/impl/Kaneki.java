@@ -24,6 +24,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +69,15 @@ public class Kaneki extends Ability {
         p.getInventory().clear();
 
         // 2. 썩은 고기 100개 지급 (64 + 36)
-        p.getInventory().addItem(new ItemStack(Material.ROTTEN_FLESH, 36));
+        ItemStack flesh = new ItemStack(Material.ROTTEN_FLESH, 36);
+        org.bukkit.inventory.meta.ItemMeta meta = flesh.getItemMeta();
+        if (meta != null) {
+            meta.setLore(Arrays.asList("§7구울의 주식입니다.", "§7이것으로만 배고픔을 채울 수 있습니다."));
+            flesh.setItemMeta(meta);
+        }
+        p.getInventory().addItem(flesh); // 36개
+        flesh.setAmount(64);
+        p.getInventory().addItem(flesh); // 64개
 
         // 3. 기본 버프 (재생 5, 허기 11)
         // 재생 5 (Amplifier 4)

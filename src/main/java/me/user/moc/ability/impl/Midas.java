@@ -19,7 +19,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class Midas extends Ability {
 
@@ -94,7 +97,13 @@ public class Midas extends Ability {
             glowPotion.setItemMeta(meta);
         }
         // 금괴 1280개 (64 * 20)
-        p.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, 64 * 20));
+        ItemStack goldIngot = new ItemStack(Material.GOLD_INGOT, 64 * 20);
+        ItemMeta goldMeta = goldIngot.getItemMeta();
+        if (goldMeta != null) {
+            goldMeta.setLore(Arrays.asList("§7우클릭하여 섭취합니다.", "§7배고픔을 회복합니다."));
+            goldIngot.setItemMeta(goldMeta);
+        }
+        p.getInventory().addItem(goldIngot);
         p.getInventory().addItem(glowPotion);
 
         p.updateInventory();

@@ -52,6 +52,7 @@ public class KurosakiIchigo extends Ability {
         ItemMeta meta = sword.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§b참월");
+            meta.setLore(Arrays.asList("§7우클릭 시 호로화 상태가 됩니다.", "§7호로화 중 공격 시 순간이동하며 추가 피해를 입힙니다.", "§8(쿨타임 30초)"));
             meta.setUnbreakable(true);
             sword.setItemMeta(meta);
         }

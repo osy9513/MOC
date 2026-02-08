@@ -77,7 +77,7 @@ public class KingHassan extends Ability {
         ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = sword.getItemMeta();
         meta.setDisplayName("§5산의 노인의 대검");
-        meta.setLore(List.of("§7만종은 그대의 이름을 가리켰다.", "§c방어력 무시 32 대미지"));
+        meta.setLore(List.of("§7기본 공격 시 방어력을 무시합니다.", "§c방어력 무시 32 대미지"));
         meta.setUnbreakable(true);
         meta.setCustomModelData(12345);
         sword.setItemMeta(meta);

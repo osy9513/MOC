@@ -55,6 +55,7 @@ public class Ddangkong extends Ability {
         ItemStack bullet = new ItemStack(Material.FIREWORK_STAR);
         ItemMeta bulletMeta = bullet.getItemMeta();
         bulletMeta.displayName(Component.text("§c총알"));
+        bulletMeta.setLore(Arrays.asList("§7우클릭하여 발사합니다.", "§8(데미지 10)"));
         bulletMeta.setCustomModelData(4001); // 식별용 데이터
         bullet.setItemMeta(bulletMeta);
 
@@ -62,6 +63,7 @@ public class Ddangkong extends Ability {
         ItemStack grenade = new ItemStack(Material.TNT);
         ItemMeta grenadeMeta = grenade.getItemMeta();
         grenadeMeta.displayName(Component.text("§c훈련용 수류탄"));
+        grenadeMeta.setLore(Arrays.asList("§7우클릭하여 투척합니다.", "§8(3초 후 폭발)"));
         grenadeMeta.setCustomModelData(4002);
         grenade.setItemMeta(grenadeMeta);
 

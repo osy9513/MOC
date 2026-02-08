@@ -12,6 +12,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -57,9 +59,15 @@ public class TrafalgarLaw extends Ability {
     @Override
     public void giveItem(Player p) {
         // 기본 지급 아이템: 철 검 (있다면 지급 안 함)
-        if (!p.getInventory().contains(Material.IRON_SWORD)) {
-            p.getInventory().addItem(new org.bukkit.inventory.ItemStack(Material.IRON_SWORD));
+        // 기본 지급 아이템: 철 검 (있다면 지급 안 함 -> 지급하고 Lore 추가)
+        p.getInventory().remove(Material.IRON_SWORD);
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setLore(Arrays.asList("§7웅크리기 + 우클릭 : ROOM 전개", "§7ROOM 안에서 우클릭 : 샴블즈 (위치 교환)"));
+            sword.setItemMeta(meta);
         }
+        p.getInventory().addItem(sword);
         p.sendMessage("§e[MOC] §fROOM, 샴블즈(Shambles).");
     }
 

@@ -52,6 +52,8 @@ public class GoldSilverAxe extends Ability {
         ItemStack axe = new ItemStack(Material.WOODEN_AXE);
         ItemMeta meta = axe.getItemMeta();
         meta.setUnbreakable(true);
+        meta.setDisplayName("§e낡은 나무 도끼");
+        meta.setLore(Arrays.asList("§7물에 던지면 산신령이 나타납니다.", "§8(확률적으로 좋은 도끼 획득)"));
         axe.setItemMeta(meta);
         p.getInventory().addItem(axe);
     }

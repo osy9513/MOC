@@ -62,7 +62,14 @@ public class Ueki extends Ability {
     @Override
     public void giveItem(Player p) {
         // 능력 전용 아이템: 묘목 64개
-        p.getInventory().addItem(new ItemStack(Material.OAK_SAPLING, 64));
+        // 능력 전용 아이템: 묘목 64개
+        ItemStack sapling = new ItemStack(Material.OAK_SAPLING, 64);
+        org.bukkit.inventory.meta.ItemMeta meta = sapling.getItemMeta();
+        if (meta != null) {
+            meta.setLore(List.of("§7우클릭 시 주변의 생명체와 아이템을 나무로 바꿉니다.", "§8(쿨타임 8초)"));
+            sapling.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sapling);
     }
 
     @EventHandler

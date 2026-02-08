@@ -101,7 +101,8 @@ public class Singed extends Ability {
             meta.addAttributeModifier(Attribute.ARMOR, armorMod);
             gasMask.setItemMeta(meta);
         }
-        p.getInventory().addItem(gasMask);
+        // [수정] 방독면을 투구 슬롯에 장착
+        p.getInventory().setHelmet(gasMask);
 
         // 3. 채팅 메시지
         p.getServer().broadcast(Component.text("섞을까 말까. 그것이 문제로다.")

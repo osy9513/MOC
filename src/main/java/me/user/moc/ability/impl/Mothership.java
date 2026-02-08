@@ -69,8 +69,8 @@ public class Mothership extends Ability {
             meta.setDisplayName("§b모선 호출기");
             meta.setLore(Arrays.asList(
                     "§7우클릭 시 모선을 소환합니다.",
-                    "§f지속시간: 12초",
-                    "§c쿨타임은 모선 소멸 후 적용됩니다."));
+                    "§7모선은 주변 적을 공격합니다.",
+                    "§8(지속 12초, 쿨타임 20초)"));
             item.setItemMeta(meta);
         }
         p.getInventory().addItem(item);
@@ -471,7 +471,7 @@ public class Mothership extends Ability {
                         knockback = new Vector(1, 0, 0);
                     }
 
-                    knockback.normalize().multiply(1.2).setY(0.3); // 수평 1.2강도, 위로 0.3 (살짝 뜸)
+                    knockback.normalize().multiply(2.5).setY(0.3); // 수평 2.5강도 (상향), 위로 0.3
                     e.setVelocity(knockback);
                 }
             }

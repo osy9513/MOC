@@ -2,6 +2,7 @@ package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
+import java.util.Arrays;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -73,6 +74,7 @@ public class Yugi extends Ability {
         ItemMeta meta = deck.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§6카드 덱");
+            meta.setLore(Arrays.asList("§7우클릭하여 카드를 뽑습니다.", "§7뽑은 카드를 우클릭하여 능력을 사용합니다."));
             deck.setItemMeta(meta);
         }
         p.getInventory().addItem(deck);
@@ -171,6 +173,7 @@ public class Yugi extends Ability {
         ItemStack card = new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE);
         ItemMeta meta = card.getItemMeta();
         meta.setDisplayName("§b" + cardName);
+        meta.setLore(Arrays.asList("§7우클릭하여 능력을 발동합니다."));
         card.setItemMeta(meta);
         p.getInventory().addItem(card);
 

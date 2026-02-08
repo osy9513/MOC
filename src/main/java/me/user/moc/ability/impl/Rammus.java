@@ -63,6 +63,7 @@ public class Rammus extends Ability {
         if (meta != null) {
             meta.setUnbreakable(true);
             meta.displayName(Component.text("§a가시박힌 껍질"));
+            meta.setLore(List.of("§7착용 시 '몸 말아 웅크리기' 상태가 됩니다.", "§7피격 시 받은 피해의 90%를 반사합니다.", "§c착용 중에는 이동 속도가 느려집니다."));
             helmet.setItemMeta(meta);
             // 1) 가시 레벨 수정 (10레벨 = 150% 확률로 발동 -> 100% 반사)
             helmet.addUnsafeEnchantment(Enchantment.THORNS, 10);

@@ -51,6 +51,7 @@ public class NanayaShiki extends Ability {
         ItemMeta meta = sword.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§b나나츠요루");
+            meta.setLore(Arrays.asList("§7우클릭 시 단검을 투척합니다.", "§7적중 시 대상에게 순간이동하며 치명적인 피해를 입힙니다.", "§8(쿨타임 18초)"));
             meta.setUnbreakable(true);
             sword.setItemMeta(meta);
         }

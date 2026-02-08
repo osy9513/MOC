@@ -57,6 +57,7 @@ public class Ulquiorra extends Ability {
         ItemMeta meta = lanza.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text("§a란사 델 렐람파고"));
+            meta.setLore(List.of("§7우클릭 시 2초간 기를 모아 강력한 창을 던집니다.", "§7적중 시 대상을 끌고 가며 큰 피해를 입힙니다.", "§8(쿨타임 20초)"));
             meta.setUnbreakable(true); // 부서지지 않음
             lanza.setItemMeta(meta);
         }

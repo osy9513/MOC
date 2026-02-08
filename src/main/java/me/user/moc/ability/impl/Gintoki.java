@@ -64,6 +64,7 @@ public class Gintoki extends Ability {
         ItemMeta meta = snowBlock.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text(ITEM_NAME));
+            meta.setLore(Arrays.asList("§7우클릭하여 눈 블럭을 설치합니다.", "§7특정 패턴으로 쌓아 완성합니다.", "§8(쿨타임 1.5초)"));
             snowBlock.setItemMeta(meta);
         }
         p.getInventory().addItem(snowBlock);

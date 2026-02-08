@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -65,7 +66,14 @@ public class Olaf extends Ability {
         // 장비 제거: 철 검
         p.getInventory().remove(Material.IRON_SWORD);
         // 추가 장비: 철 도끼 2개
-        p.getInventory().addItem(new ItemStack(Material.IRON_AXE, 2));
+        ItemStack axe = new ItemStack(Material.IRON_AXE, 2);
+        ItemMeta meta = axe.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§b올라프의 도끼");
+            meta.setLore(List.of("§7우클릭 시 도끼를 던져 피해를 입히고 구속을 겁니다.", "§7던진 도끼를 직접 회수하면 쿨타임이 초기화됩니다.", "§8(쿨타임 5초)"));
+            axe.setItemMeta(meta);
+        }
+        p.getInventory().addItem(axe);
     }
 
     @EventHandler
