@@ -69,8 +69,9 @@ public class PolarBearAbility extends Ability {
     public void giveItem(Player p) {
         // [초기화]
         p.getInventory().remove(Material.IRON_SWORD);
-        p.setMaxHealth(100.0); // 50칸 (5줄)
-        p.setHealth(100.0);
+        // [너프] 3줄 5반 (71칸)
+        p.setMaxHealth(71.0);
+        p.setHealth(71.0);
 
         // [추가] 구운 소고기 제거 및 생고기 지급
         p.getInventory().remove(Material.COOKED_BEEF);
@@ -81,7 +82,7 @@ public class PolarBearAbility extends Ability {
         ItemMeta meta = claw.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§f곰 손톱");
-            meta.setLore(Arrays.asList("§7북극곰의 날카로운 손톱입니다."/* , "§c우클릭 사용 불가" */));
+            meta.setLore(Arrays.asList("§7북극곰의 날카로운 손톱입니다."));
 
             // 1. 데미지 설정 (4.0 추가 = 총 5.0)
             AttributeModifier damageMod = new AttributeModifier(
@@ -126,7 +127,7 @@ public class PolarBearAbility extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§b유틸 ● 북극곰(무한도전)");
-        p.sendMessage("§f체력 5줄(50칸)의 북극곰으로 변신합니다.");
+        p.sendMessage("§f체력 3줄 5반(71칸)의 북극곰으로 변신합니다.");
         p.sendMessage("§f[배부름] 배고픔 5칸 초과 : 신속 2, 힘 2");
         p.sendMessage("§f[배고픔] 배고픔 5칸 이하 : 힘 4 (신속 없음)");
         p.sendMessage("§f생명체를 죽이면 생소고기를 2개 얻습니다.");

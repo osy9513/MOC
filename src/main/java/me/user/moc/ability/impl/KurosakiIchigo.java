@@ -64,7 +64,7 @@ public class KurosakiIchigo extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● 쿠로사키 이치고(블리치)");
         p.sendMessage("§f호로의 힘을 빌려 잠시 동안 강해집니다.");
-        p.sendMessage("§f참월 우클릭 시 15초 동안 호로화 상태가 됩니다(신속2, 재생2).");
+        p.sendMessage("§f참월 우클릭 시 7.5초 동안 호로화 상태가 됩니다(신속2, 재생2).");
         p.sendMessage("§f호로화 상태에서 공격 시 대상 근처로 순간이동하며 공격 속도가 대폭 증가하며,");
         p.sendMessage("§f호로화 종료 시 5초간 구속 3 효과를 받습니다.");
         p.sendMessage(" ");
@@ -111,10 +111,10 @@ public class KurosakiIchigo extends Ability {
         p.getServer().broadcastMessage("§c§l쿠로사키 이치고 : §f내가 지킨다!!");
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f);
 
-        // 지속 효과 (15초)
+        // 지속 효과 (7.5초)
         // 신속 2, 재생 2
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 1));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 300, 1));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 150, 1));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 150, 1));
 
         // 공격 속도 대폭 증가 (딜레이 제거)
         // 기본 4.0 -> 100.0 (거의 무한)
@@ -128,7 +128,8 @@ public class KurosakiIchigo extends Ability {
 
             @Override
             public void run() {
-                if (!p.isOnline() || !isHollow.contains(p.getUniqueId()) || ticks >= 15 * 5) { // 15초 동안
+                if (!p.isOnline() || !isHollow.contains(p.getUniqueId()) || ticks >= 38) { // 약 7.5초 (38 * 4 ticks =
+                                                                                           // 152)
                     cancel();
                     if (isHollow.contains(p.getUniqueId())) {
                         deactivateHollow(p);
@@ -152,7 +153,7 @@ public class KurosakiIchigo extends Ability {
                     deactivateHollow(p);
                 }
             }
-        }.runTaskLater(plugin, 300L);
+        }.runTaskLater(plugin, 150L);
     }
 
     private void deactivateHollow(Player p) {

@@ -8,6 +8,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
@@ -29,9 +30,31 @@ import java.util.UUID;
 
 public class Yesung extends Ability {
 
+    private final java.util.Map<UUID, List<UUID>> activeMoons = new java.util.HashMap<>();
+
     public Yesung(JavaPlugin plugin) {
         super(plugin);
     }
+
+    // ... (rest of class)
+
+    // In activateSkill:
+    // List<UUID> entityUuids = spawnVoxelMoon(center);
+    // activeMoons.put(p.getUniqueId(), entityUuids);
+
+    // In cleanupMoonEntities(Player p):
+    // List<UUID> uuids = activeMoons.remove(p.getUniqueId());
+    // if (uuids != null) { ... remove entities ... }
+
+    @Override
+    public void cleanup(Player p) {
+        super.cleanup(p);
+        cleanupMoonEntities(p);
+    }
+
+    // In applyGlobalDamage:
+    // target.setNoDamageTicks(0);
+    // target.damage(13.0, attacker);
 
     @Override
     public String getCode() {
@@ -124,12 +147,13 @@ public class Yesung extends Ability {
 
                 // 달 생성 (BlockDisplay)
                 List<UUID> entityUuids = spawnVoxelMoon(center);
+                activeMoons.put(p.getUniqueId(), entityUuids);
 
                 // 생성된 엔티티 관리 10초 뒤 강제 삭제 태스크 예약
                 var cleanupTask = new BukkitRunnable() {
                     @Override
                     public void run() {
-                        cleanupMoonEntities(w, entityUuids);
+                        cleanupMoonEntities(p);
                     }
                 }.runTaskLater(plugin, 200L);
                 registerTask(p, cleanupTask);
@@ -268,17 +292,22 @@ public class Yesung extends Ability {
     }
 
     // 엔티티 정리
-    private void cleanupMoonEntities(World w, List<UUID> uuids) {
-        if (uuids != null) {
-            for (UUID uid : uuids) {
-                Entity e = w.getEntity(uid);
-                if (e != null)
-                    e.remove();
+    private void cleanupMoonEntities(Player p) {
+        UUID pid = p.getUniqueId();
+        if (activeMoons.containsKey(pid)) {
+            List<UUID> uuids = activeMoons.remove(pid);
+            if (uuids != null) {
+                World w = p.getWorld();
+                for (UUID uid : uuids) {
+                    Entity e = w.getEntity(uid);
+                    if (e != null)
+                        e.remove();
+                }
             }
         }
 
         // 혹시 모르니 태그로 한번 더 청소 (찌꺼기 방지)
-        for (Entity e : w.getEntities()) {
+        for (Entity e : p.getWorld().getEntities()) {
             if (e.getScoreboardTags().contains("moc_yesung_moon")) {
                 e.remove();
             }
@@ -292,12 +321,14 @@ public class Yesung extends Ability {
         for (Entity e : w.getEntities()) {
             if (e.equals(attacker))
                 continue;
-            if (!(e instanceof Damageable target))
+            if (!(e instanceof LivingEntity target))
                 continue;
             // BlockDisplay 등은 제외
             if (e instanceof Display)
                 continue;
 
+            // [추가] 무적 시간 무시 (True Damage 효과)
+            target.setNoDamageTicks(0);
             target.damage(13.0, attacker);
             w.spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.1);
             count++;

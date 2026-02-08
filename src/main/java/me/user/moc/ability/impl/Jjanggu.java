@@ -55,8 +55,8 @@ public class Jjanggu extends Ability {
         // [밸런스 패치] 철 칼 지급 제거 (맨손/다른 무기 사용 유도 or 기본 지급된 철검 제거)
         p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
 
-        // [장비 지급] 초코비(쿠키) 10개
-        ItemStack chocobi = new ItemStack(Material.COOKIE, 2);
+        // [장비 지급] 초코비(쿠키) 1개 (2개 -> 1개 너프)
+        ItemStack chocobi = new ItemStack(Material.COOKIE, 1);
         ItemMeta meta = chocobi.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§6초코비");
@@ -71,13 +71,13 @@ public class Jjanggu extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 짱구(짱구는 못말려)");
-        p.sendMessage("§f배고픔을 가득 채워주는 초코비 2개를 얻습니다.");
+        p.sendMessage("§f배고픔을 가득 채워주는 초코비 1개를 얻습니다.");
         p.sendMessage("§f쉬프트를 눌리면 0.2초간 이동 속도가 엄청 빨라집니다.");
         p.sendMessage("§f이동 속도가 높아진 상태에서 생명체에게 부딪치면 2.5칸의 고정 피해를 줍니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 초코비(쿠키) 2개");
+        p.sendMessage("§f추가 장비 : 초코비(쿠키) 1개");
         p.sendMessage("§f장비 제거 : 구운 소고기");
     }
 
@@ -183,5 +183,37 @@ public class Jjanggu extends Ability {
                 }
             }
         }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    /**
+     * [이벤트] 초코비 섭취 시 배고픔 풀 회복
+     */
+    @EventHandler
+    public void onConsume(org.bukkit.event.player.PlayerItemConsumeEvent e) {
+        Player p = e.getPlayer();
+        ItemStack item = e.getItem();
+
+        // 1. 내 능력인지 확인
+        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
+            return;
+        }
+
+        // 2. 초코비(쿠키)인지 확인
+        if (item.getType() == Material.COOKIE && item.hasItemMeta()
+                && item.getItemMeta().getDisplayName().contains("초코비")) {
+            // 3. 배고픔 가득 채우기 (20)
+            // 이벤트가 완료된 후(섭취 후) 적용되도록 1틱 뒤 실행하거나,
+            // 지금 즉시 적용해도 되지만, 쿠키 자체 회복량과 겹칠 수 있음.
+            // 깔끔하게 20으로 고정.
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    p.setFoodLevel(20);
+                    p.setSaturation(20f); // 포화도도 가득
+                    p.sendMessage("§a[짱구] §f초코비를 먹어 배가 빵빵해졌습니다!");
+                    p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
+                }
+            }.runTaskLater(plugin, 1L);
+        }
     }
 }

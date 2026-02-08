@@ -3,7 +3,7 @@ package me.user.moc.ability.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,13 +37,16 @@ import net.kyori.adventure.text.format.TextColor;
 public class TungTungTungSahur extends Ability {
 
     // 현재 지목된 대상 정보를 저장하는 맵 (사후르 UUID -> 대상 UUID)
-    private final Map<UUID, UUID> currentTargets = new HashMap<>();
+    private final Map<UUID, UUID> currentTargets = new java.util.concurrent.ConcurrentHashMap<>();
 
     // 현재 진행 중인 타임아웃 태스크 (사후르 UUID -> 태스크)
-    private final Map<UUID, BukkitTask> timeoutTasks = new HashMap<>();
+    private final Map<UUID, BukkitTask> timeoutTasks = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // [추가] 다음 요청을 예약하는 태스크 (사후르 UUID -> 태스크)
+    private final Map<UUID, BukkitTask> nextRequestTasks = new java.util.concurrent.ConcurrentHashMap<>();
 
     // 버프 중첩 횟수 (사후르 UUID -> 스택 수), 최대 9
-    private final Map<UUID, Integer> buffStacks = new HashMap<>();
+    private final Map<UUID, Integer> buffStacks = new java.util.concurrent.ConcurrentHashMap<>();
 
     public TungTungTungSahur(JavaPlugin plugin) {
         super(plugin);
@@ -102,8 +105,8 @@ public class TungTungTungSahur extends Ability {
         // 3. 채팅창에 변신 대사 출력
         p.getServer().broadcast(Component.text("퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.사후르").color(TextColor.color(0xc16c15)));
 
-        // 4. 8초마다 반복되는 루프 시작
-        startLoop(p);
+        // 4. 최초 요청 예약 (8초 후 시작, 혹은 4초 후? 기존 8초 였으니 4초 대기 후 시작으로 변경)
+        scheduleNextRequest(p, 80L); // 4초 후 첫 번째 질문 시작
     }
 
     @Override
@@ -134,8 +137,17 @@ public class TungTungTungSahur extends Ability {
             timeoutTasks.remove(uuid);
         }
 
+        if (nextRequestTasks.containsKey(uuid)) {
+            nextRequestTasks.get(uuid).cancel();
+            nextRequestTasks.remove(uuid);
+        }
+
         // 변신 해제
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
+
+        // [추가] 적용된 버프 제거 (힘, 신속)
+        p.removePotionEffect(PotionEffectType.STRENGTH);
+        p.removePotionEffect(PotionEffectType.SPEED);
 
         // 부모 클래스의 cleanup 호출 (activeTasks, activeEntities 등 정리)
         super.cleanup(p);
@@ -227,46 +239,66 @@ public class TungTungTungSahur extends Ability {
                 Material.OAK_LOG.createBlockData());
     }
 
-    private void startLoop(Player p) {
-        UUID sahurUUID = p.getUniqueId();
+    /**
+     * 다음 요청을 예약합니다.
+     * 
+     * @param delayTicks 지연 시간 (틱 단위)
+     */
+    private void scheduleNextRequest(Player p, long delayTicks) {
+        UUID uuid = p.getUniqueId();
 
-        BukkitTask loopTask = new BukkitRunnable() {
+        // 기존 예약된 게 있다면 취소
+        if (nextRequestTasks.containsKey(uuid)) {
+            nextRequestTasks.get(uuid).cancel();
+        }
+
+        BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                // 플레이어가 없거나 죽었으면 중단
-                if (!p.isOnline() || p.isDead()) {
-                    this.cancel();
-                    return;
-                }
-
-                // 최대 중첩(9) 도달 시 호명 중단
-                int currentStack = buffStacks.getOrDefault(sahurUUID, 0);
-                if (currentStack >= 9) {
-                    // (선택사항) 이미 만렙이라 안 부른다는 메시지를 띄우고 싶다면?
-                    // 너무 시끄러울 수 있으니 생략. 루프는 계속 돌되 아무것도 안 함.
-                    return;
-                }
-
-                // 대상 선정
-                Player target = selectRandomTarget(p);
-                if (target == null) {
-                    // 대상이 없으면(혼자 남았거나 등) 스킵
-                    return;
-                }
-
-                // 타겟 등록
-                currentTargets.put(sahurUUID, target.getUniqueId());
-
-                // 채팅 출력: [닉네임] 넵!이라고 대답하라.
-                p.getServer().broadcast(Component.text("[" + target.getName() + "] 넵!이라고 대답하라.")
-                        .color(TextColor.color(0xFFA500))); // 주황색
-
-                // 4초 타이머 시작 for 타임아웃
-                scheduleTimeout(p, target);
+                // 실행 시점에서 맵에서 제거
+                nextRequestTasks.remove(uuid);
+                startRequestCycle(p);
             }
-        }.runTaskTimer(plugin, 160L, 160L); // 8초 지연 후 시작, 8초(160틱) 간격 반복
+        }.runTaskLater(plugin, delayTicks);
 
-        registerTask(p, loopTask);
+        nextRequestTasks.put(uuid, task);
+    }
+
+    /**
+     * 실제 질문 사이클을 시작합니다.
+     */
+    private void startRequestCycle(Player p) {
+        // 플레이어가 없거나 죽었으면 중단
+        if (!p.isOnline() || p.isDead()) {
+            return;
+        }
+
+        UUID sahurUUID = p.getUniqueId();
+
+        // 최대 중첩(9) 도달 시 스케줄링 중단? 아니면 계속 체크?
+        // 기획 상 "더 이상 이름을 부르지 않습니다" -> 아예 멈춤.
+        int currentStack = buffStacks.getOrDefault(sahurUUID, 0);
+        if (currentStack >= 9) {
+            return;
+        }
+
+        // 대상 선정
+        Player target = selectRandomTarget(p);
+        if (target == null) {
+            // 대상이 없으면(혼자 남았거나 등) 잠시 후 다시 시도 (4초 뒤)
+            scheduleNextRequest(p, 80L);
+            return;
+        }
+
+        // 타겟 등록
+        currentTargets.put(sahurUUID, target.getUniqueId());
+
+        // 채팅 출력: [닉네임] 넵!이라고 대답하라.
+        p.getServer().broadcast(Component.text("[" + target.getName() + "] 넵!이라고 대답하라.")
+                .color(TextColor.color(0xFFA500))); // 주황색
+
+        // 4초 타이머 시작 for 타임아웃
+        scheduleTimeout(p, target);
     }
 
     /**
@@ -324,6 +356,9 @@ public class TungTungTungSahur extends Ability {
                 // 3. 타겟 정보 초기화 (이제 더 이상 기다리지 않음)
                 currentTargets.remove(sahurUUID);
                 timeoutTasks.remove(sahurUUID);
+
+                // 4. [추가] 사이클 종료 후 4초 뒤 다음 요청 예약
+                scheduleNextRequest(sahur, 80L);
             }
         }.runTaskLater(plugin, 80L); // 4초 (80틱)
 
@@ -362,55 +397,62 @@ public class TungTungTungSahur extends Ability {
     /**
      * 채팅 이벤트 리스너
      */
+    /**
+     * 채팅 이벤트 리스너
+     */
     @EventHandler
     public void onChat(AsyncPlayerChatEvent e) {
         Player speaker = e.getPlayer();
         String message = e.getMessage().trim();
 
-        // 메시지가 "넵!" 인지 확인
+        // 메시지가 정확히 "넵!" 인지 확인
         if (!message.equals("넵!"))
             return;
 
-        // 현재 이 플레이어를 기다리고 있는 사후르가 있는지 찾기
-        // currentTargets 맵: 사후르UUID -> 타겟UUID(speaker)
-        // 역으로 탐색하거나, 사후르 리스트를 순회
+        // 비동기 이벤트이므로 안전하게 메인 스레드에서 로직 처리
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 현재 이 플레이어를 기다리고 있는 사후르가 있는지 찾기
+                // ConcurrentHashMap이므로 순회 중 수정 안전(weakly consistent)하지만,
+                // 명확한 처리를 위해 iterator 권장.
 
-        // 동시에 여러 사후르가 있을 수 있으므로 모든 사후르를 체크
-        for (UUID sahurUUID : currentTargets.keySet()) {
-            UUID targetUUID = currentTargets.get(sahurUUID);
+                for (Map.Entry<UUID, UUID> entry : currentTargets.entrySet()) {
+                    UUID sahurUUID = entry.getKey();
+                    UUID targetUUID = entry.getValue();
 
-            // 말한 사람이 타겟이라면?
-            if (targetUUID.equals(speaker.getUniqueId())) {
+                    // 말한 사람이 타겟이라면?
+                    if (targetUUID.equals(speaker.getUniqueId())) {
+                        // 타겟 일치! 성공 처리.
 
-                // 타겟 일치! 성공 처리.
+                        // 1. 해당 사후르의 타임아웃 태스크 취소
+                        if (timeoutTasks.containsKey(sahurUUID)) {
+                            timeoutTasks.get(sahurUUID).cancel();
+                            timeoutTasks.remove(sahurUUID);
+                        }
 
-                // 1. 해당 사후르의 타임아웃 태스크 취소
-                if (timeoutTasks.containsKey(sahurUUID)) {
-                    timeoutTasks.get(sahurUUID).cancel();
-                    timeoutTasks.remove(sahurUUID);
+                        // 2. 타겟 목록에서 제거 (이제 안 기다림)
+                        currentTargets.remove(sahurUUID);
+
+                        // 3. 성공 알림 (전체 공지)
+                        plugin.getServer()
+                                .broadcast(Component.text("§e[정보] " + speaker.getName() + "님이 대답하여 버프를 얻지 못했습니다."));
+
+                        // 4. [추가] 성공했으므로 4초 뒤 다음 요청 예약
+                        // (Speaker가 아니라 사후르 Player 객체가 필요함. sahurUUID로 가져와야 함)
+                        Player sahur = Bukkit.getPlayer(sahurUUID);
+                        if (sahur != null) {
+                            scheduleNextRequest(sahur, 80L);
+                        }
+
+                        // 한 번 "넵!"으로 나를 노리는 하나의 사후르만 무력화 (혹은 다수? 로직상 루프 돌면 다수 가능)
+                        // 여기서는 발견된 첫 번째 건만 처리하고 종료하여 중복 처리 방지
+
+                        // (동시에 여러 사후르가 같은 사람을 노리는 경우는 드물겠지만)
+                        break;
+                    }
                 }
-
-                // 2. 타겟 목록에서 제거 (이제 안 기다림)
-                currentTargets.remove(sahurUUID);
-
-                // 3. 성공 알림? (명세엔 없지만 헷갈리지 않게 사후르에게만 살짝?)
-                Player sahur = Bukkit.getPlayer(sahurUUID);
-                if (sahur != null) {
-                    sahur.sendMessage("§e[정보] " + speaker.getName() + "님이 대답하여 버프를 얻지 못했습니다.");
-                }
-
-                // 한 번 "넵!"으로 나를 노리는 모든 사후르를 무력화할지, 하나만 할지?
-                // 로직상 루프 돌면서 다 무력화하는 게 맞을 듯 (동시에 불렸다면)
-                // ConcurrentModificationException 방지를 위해 break 하거나 iterator 사용 필요.
-                // 여기선 간단히 return (한 번 넵 하면 하나만 처리? 아니면 map 구조상 keySet iterator 필요)
-
-                // 안전하게 map.remove를 위해선 iterator가 필요하지만,
-                // 여기서는 '넵!' 한 번에 하나의 위기만 모면한다고 가정하거나,
-                // 어차피 사후르가 여러 명인 판이 드물 테니...
-
-                // 일단 break로 하나만 처리하고 나갑시다. (가장 급한 불 끄기)
-                break;
             }
-        }
+        }.runTask(plugin);
     }
 }

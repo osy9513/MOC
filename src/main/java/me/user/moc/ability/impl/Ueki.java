@@ -134,9 +134,37 @@ public class Ueki extends Ability {
 
         // 5. 사용된 나무 개수만큼 묘목 소모
         if (treeCount > 0) {
-            ItemStack sapling = new ItemStack(Material.OAK_SAPLING, treeCount);
-            p.getInventory().removeItem(sapling);
-            p.sendMessage("§a[MOC] §f주변 쓰레기를 나무로 바꾸며 묘목 " + treeCount + "개를 소모했습니다.");
+            int leftToRemove = treeCount;
+
+            // 1. 인벤토리(메인핸드 포함)에서 먼저 제거 시도
+            // removeItem은 지우지 못한 잔여 아이템을 반환합니다.
+            java.util.HashMap<Integer, ItemStack> failed = p.getInventory()
+                    .removeItem(new ItemStack(Material.OAK_SAPLING, leftToRemove));
+
+            // 2. 만약 다 제거 못했으면(남은 게 있으면) 오프핸드 확인
+            if (!failed.isEmpty()) {
+                // removeItem은 실패한 덩어리를 인덱스 0에 넣어 반환함
+                leftToRemove = failed.get(0).getAmount();
+
+                ItemStack offhand = p.getInventory().getItemInOffHand();
+                if (offhand != null && offhand.getType() == Material.OAK_SAPLING) {
+                    if (offhand.getAmount() <= leftToRemove) {
+                        // 오프핸드도 부족하거나 딱 맞음 -> 오프핸드 다 씀
+                        int inOffhand = offhand.getAmount();
+                        p.getInventory().setItemInOffHand(null);
+                        leftToRemove -= inOffhand;
+                    } else {
+                        // 오프핸드는 충분함 -> 부분 차감
+                        offhand.setAmount(offhand.getAmount() - leftToRemove);
+                        p.getInventory().setItemInOffHand(offhand);
+                        leftToRemove = 0;
+                    }
+                }
+            }
+
+            // 실제로 소모된 개수 계산
+            int consumed = treeCount - leftToRemove;
+            p.sendMessage("§a[MOC] §f주변 쓰레기를 나무로 바꾸며 묘목 " + consumed + "개를 소모했습니다.");
         }
     }
 }

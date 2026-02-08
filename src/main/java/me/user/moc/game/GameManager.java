@@ -239,6 +239,9 @@ public class GameManager implements Listener {
             p.getInventory().clear();
             p.setHealth(20); // 기본 체력으로 일단 리셋 (전투 시작 시 60으로 늘어남)
             p.setFoodLevel(20);
+            // [추가] 피격 무적 시간 초기화 (버그 방지)
+            p.setMaximumNoDamageTicks(20);
+            p.setNoDamageTicks(0);
 
             for (PotionEffect effect : p.getActivePotionEffects())
                 p.removePotionEffect(effect.getType());
@@ -1145,6 +1148,7 @@ public class GameManager implements Listener {
         }
         return sb.toString();
     }
+
     /**
      * [추가] 플레이어가 서버를 나갈 때 능력 관련 요소를 정리합니다.
      */

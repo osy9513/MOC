@@ -201,7 +201,7 @@ public class MisakaMikoto extends Ability {
         // 1. 투사체(화살) 생성 - 중력 무시, 빠른 속도
         Arrow arrow = p.launchProjectile(Arrow.class);
         arrow.setShooter(p);
-        arrow.setVelocity(p.getLocation().getDirection().multiply(4.0)); // 매우 빠름
+        arrow.setVelocity(p.getLocation().getDirection().multiply(8.0)); // 매우 빠름 (4.0 -> 8.0)
         arrow.setMetadata("MisakaFullPower", new FixedMetadataValue(plugin, true));
         arrow.setSilent(true);
         arrow.setGravity(false); // 직선으로 날아감
@@ -251,8 +251,8 @@ public class MisakaMikoto extends Ability {
             arrow.getWorld().strikeLightningEffect(hitLoc);
             arrow.getWorld().playSound(hitLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2f, 1f);
 
-            // 2. 광역 대미지 (3x3 범위, 약 반경 2블록)
-            for (Entity nearby : arrow.getWorld().getNearbyEntities(hitLoc, 2, 2, 2)) {
+            // 2. 광역 대미지 (기존 반경 2 -> 반경 5로 상향)
+            for (Entity nearby : arrow.getWorld().getNearbyEntities(hitLoc, 5, 5, 5)) {
                 if (nearby instanceof LivingEntity target && target != arrow.getShooter()) {
                     if (target instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
                         continue;

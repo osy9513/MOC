@@ -73,7 +73,7 @@ public class MuhammadAvdol extends Ability {
         p.sendMessage("§c전투 ● 무함마드 압둘");
         p.sendMessage("§f우측 후방에 『매지션즈 레드』(거대한 닭)를 소환합니다.");
         p.sendMessage("§f스탠드는 4초마다 근처 적에게 불꽃(8 데미지)을 날립니다.");
-        p.sendMessage("§f40% 확률로 **크로스파이어 허리케인**(21 데미지)을 시전합니다.");
+        p.sendMessage("§f20% 확률로 **크로스파이어 허리케인**(21 데미지)을 시전합니다.");
         p.sendMessage("§f[크로스파이어 허리케인]: 앙크 모양의 불꽃, 21블록 관통, 21초간 화염 지속.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 4초 (자동)");
@@ -112,7 +112,7 @@ public class MuhammadAvdol extends Ability {
         BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!p.isOnline() || p.isDead() || !chicken.isValid()) {
+                if (!p.isOnline() || p.isDead()) {
                     removeStand(p);
                     this.cancel();
                     return;
@@ -122,6 +122,13 @@ public class MuhammadAvdol extends Ability {
                 if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
                     removeStand(p);
                     this.cancel();
+                    return;
+                }
+
+                // [추가] 스탠드가 (자기장 등으로) 사망했거나 사라졌다면? -> 본체 살아있으니 재소환
+                if (!chicken.isValid() || chicken.isDead()) {
+                    summonStand(p); // 재소환 (새로운 태스크 시작)
+                    this.cancel(); // 구형 태스크 종료
                     return;
                 }
 
@@ -171,8 +178,8 @@ public class MuhammadAvdol extends Ability {
                 if (target == null)
                     return; // 타겟 없으면 대기
 
-                // 40% 확률로 크로스파이어 허리케인
-                if (random.nextDouble() < 0.4) {
+                // 20% 확률로 크로스파이어 허리케인
+                if (random.nextDouble() < 0.2) {
                     performCrossfireHurricane(p, stand, target);
                 } else {
                     performNormalAttack(p, stand, target);
