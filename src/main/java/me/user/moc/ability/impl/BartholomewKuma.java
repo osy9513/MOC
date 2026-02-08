@@ -71,7 +71,7 @@ public class BartholomewKuma extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§d복합 ● 바솔로뮤 쿠마(원피스)");
         p.sendMessage("§f바솔로뮤 쿠마의 손바닥으로 상대를 좌클릭하면 능력이 발동됩니다.");
-        p.sendMessage("§f적중 시 상대는 맵 내 랜덤한 위치의 상공(Y+32)으로 순간이동됩니다.");
+        p.sendMessage("§f적중 시 상대는 맵 중앙(에메랄드 블럭) 상공(Y+32)으로 순간이동됩니다.");
         p.sendMessage("§f이후 낙하 데미지를 입을 때 30% 증가된 피해를 입습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 15초");
@@ -123,29 +123,22 @@ public class BartholomewKuma extends Ability {
         setCooldown(p, 15); // 15초 쿨타임
 
         // 1. 텔레포트 좌표 계산
-        // 맵 중앙을 기준으로 config.map_size 범위 내 랜덤 좌표
-        // ConfigManager에 map_size가 있고, ArenaManager는 보통 (0, 0) 근처를 씀?
-        // 게임 중앙 좌표를 가져와야 정확함.
-        // 하지만 Ability에서 GameManager나 ArenaManager에 접근하기 까다로울 수 있음.
-        // 보통 맵은 (0,0) ~ (size, size) 가 아니라 center 기준 +- size/2 임.
-        // ConfigManager.map_size는 지름일 수도 있고 반지름일 수도 있음. (ArenaManager를 보면 size =
-        // border.getSize() / 2.0; 로 반지름 계산함)
-        // ConfigManager.map_size는 "전장 크기" -> 보통 지름(Diameter)을 의미함.
+        // 맵 중앙(에메랄드 블럭) 상공으로 이동 (요청사항 반영)
+        Location center = p.getWorld().getWorldBorder().getCenter();
+        // 중앙은 보통 블럭의 중심(x.5, z.5)이거나 정수 좌표일 수 있음.
+        // getCenter()가 정수라면 +0.5를 해주는게 좋음.
+        // 하지만 WorldBorder.getCenter()는 보통 정확한 double 좌표를 반환함.
+        // 안전하게 블록 중심으로 보정
+        double targetX = center.getBlockX() + 0.5;
+        double targetZ = center.getBlockZ() + 0.5;
 
-        Location center = p.getWorld().getWorldBorder().getCenter(); // 현재 월드보더 센터 사용
-        double radius = config.map_size / 2.0;
-
-        // 안전한 랜덤 좌표 (반지름보다 약간 작게)
-        double safeRadius = Math.max(0, radius - 5);
-        double randX = center.getX() + (random.nextDouble() * 2 - 1) * safeRadius;
-        double randZ = center.getZ() + (random.nextDouble() * 2 - 1) * safeRadius;
-        double targetY = target.getLocation().getY() + 32; // 32 블럭으로 너픔
+        double targetY = target.getLocation().getY() + 32; // 32 블럭 위로
 
         // 월드 높이 제한 확인
         if (targetY > 319)
             targetY = 319;
 
-        Location teleportLoc = new Location(center.getWorld(), randX, targetY, randZ);
+        Location teleportLoc = new Location(center.getWorld(), targetX, targetY, targetZ);
 
         // 시선 처리 (아래를 보게 할까? 랜덤?) -> 그냥 유지
         teleportLoc.setYaw(target.getLocation().getYaw());

@@ -316,7 +316,7 @@ public class Mothership extends Ability {
                     double dist = dir.length();
 
                     if (dist > 0.5) {
-                        dir.normalize().multiply(0.35); // 틱당 0.35칸 (0.5 -> 0.35 감속, 약 30% 너프)
+                        dir.normalize().multiply(0.53); // 틱당 0.53칸 (0.35 -> 0.53 상향, 약 50% 버프)
                         currentShipLoc.add(dir);
                     }
                 }

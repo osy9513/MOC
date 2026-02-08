@@ -231,9 +231,15 @@ public class DIO extends Ability {
                 // 엔티티 고정 & 투사체 고정
                 for (Entity entity : world.getEntities()) {
                     // DIO 제외
-                    if (entity instanceof Player && AbilityManager.getInstance((me.user.moc.MocPlugin) plugin)
-                            .hasAbility((Player) entity, getCode())) {
-                        continue;
+                    if (entity instanceof Player) {
+                        Player pPlayer = (Player) entity;
+                        if (AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(pPlayer, getCode())) {
+                            continue;
+                        }
+                        // [너프] 관전자 제외
+                        if (pPlayer.getGameMode() == GameMode.SPECTATOR) {
+                            continue;
+                        }
                     }
 
                     // [추가] 투사체 정지
@@ -388,9 +394,15 @@ public class DIO extends Ability {
                 attacker.spawnParticle(Particle.CRIT, e.getEntity().getLocation().add(0, 1, 0), 5);
 
                 UUID targetId = e.getEntity().getUniqueId();
-                damageAccumulation.put(targetId, damageAccumulation.getOrDefault(targetId, 0) + 1);
+                int currentStack = damageAccumulation.getOrDefault(targetId, 0);
 
-                attacker.sendMessage("§e무다무다무다무다무다!!! " + damageAccumulation.get(targetId) + "회 타격!");
+                // [너프] 무다무다 스택 최대 20제한
+                if (currentStack < 20) {
+                    damageAccumulation.put(targetId, currentStack + 1);
+                    attacker.sendMessage("§e무다무다무다무다무다!!! " + (currentStack + 1) + "회 타격!");
+                } else {
+                    attacker.sendMessage("§e무다무다무다무다무다!!! (최대 스택 도달)");
+                }
             }
         } else {
             // DIO가 아닌데 공격했다면? (화살 등)
@@ -438,6 +450,11 @@ public class DIO extends Ability {
         // 시간이 멈추지 않았다면 패스
         if (timeStoppers.isEmpty())
             return false;
+
+        // [너프] 관전자는 멈추지 않음
+        if (p.getGameMode() == GameMode.SPECTATOR)
+            return false;
+
         // DIO 능력을 가진 플레이어는 면역
         return !AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode());
     }

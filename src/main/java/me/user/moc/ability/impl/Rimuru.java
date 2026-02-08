@@ -275,7 +275,7 @@ public class Rimuru extends Ability {
         team.addEntry(p.getName());
 
         // 1. Private Slime (본인용 - 나에게만 보여야 함)
-        // [복구] 3중 겹치기로 농도 강화 (유저 요청: "이전처럼 불투명하게")
+        // [복구] 3중 겹치기로 농도 강화
         for (int i = 0; i < 3; i++) {
             Slime privateSlime = (Slime) p.getWorld().spawnEntity(p.getLocation(), EntityType.SLIME);
             privateSlime.setSize(2);
@@ -286,9 +286,10 @@ public class Rimuru extends Ability {
             privateSlime.setMaxHealth(100.0);
             privateSlime.addScoreboardTag("RIMURU_PRIVATE");
 
-            // [복구] 투명화 적용 (팀원은 반투명하게 보임 - 3겹이라 진하게 보임)
+            // [수정] 본인 시점에서 반투명하게 보이게 하기 위해 투명화 적용 + 팀 설정
             privateSlime.addPotionEffect(
-                    new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+                    new PotionEffect(PotionEffectType.INVISIBILITY,
+                            PotionEffect.INFINITE_DURATION, 0, false, false));
 
             // [핵심] 다른 플레이어들에게는 Private Slime을 숨김
             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -296,6 +297,9 @@ public class Rimuru extends Ability {
                     online.hideEntity(plugin, privateSlime);
                 }
             }
+            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함
+            team.addEntry(privateSlime.getUniqueId().toString());
+
             entities.add(privateSlime);
         }
 
@@ -426,6 +430,15 @@ public class Rimuru extends Ability {
 
                         // [핵심] 시야 분리 유지 Check
                         if (slime.getScoreboardTags().contains("RIMURU_PRIVATE")) {
+                            // [수정] 본인에게는 반투명하게 보여야 함 (팀 설정 + 은신)
+                            p.showEntity(plugin, slime);
+
+                            // 은신 효과가 풀리지 않도록 유지
+                            if (!slime.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+                                slime.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,
+                                        PotionEffect.INFINITE_DURATION, 0, false, false));
+                            }
+
                             for (Player online : Bukkit.getOnlinePlayers()) {
                                 if (!online.getUniqueId().equals(p.getUniqueId())) {
                                     // 다른 사람에게는 숨김

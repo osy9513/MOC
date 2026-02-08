@@ -48,6 +48,8 @@ public class TogaHimiko extends Ability {
         double attackDamage;
         double movementSpeed;
         java.util.Collection<org.bukkit.potion.PotionEffect> potionEffects;
+        // [추가] 무적 시간 백업
+        int maxNoDamageTicks;
     }
 
     // 변신 전 원본 상태 저장소
@@ -251,6 +253,7 @@ public class TogaHimiko extends Ability {
                 : 0.2; // 플레이어 기본 이속 0.2
 
         state.potionEffects = p.getActivePotionEffects(); // 현재 버프 목록 복사
+        state.maxNoDamageTicks = p.getMaximumNoDamageTicks(); // 무적 시간 설정 백업
 
         savedStates.put(p.getUniqueId(), state);
         isTransformed.add(p.getUniqueId());
@@ -266,6 +269,8 @@ public class TogaHimiko extends Ability {
             online.hidePlayer(plugin, p);
             online.showPlayer(plugin, p);
         }
+        // [추가] 본인 클라이언트 갱신을 위한 인벤토리 업데이트
+        p.updateInventory();
 
         // 2. 능력 복사 및 교체
         String targetAbCode = am.getPlayerAbilities().get(target.getUniqueId());
@@ -348,6 +353,7 @@ public class TogaHimiko extends Ability {
                 online.hidePlayer(plugin, p);
                 online.showPlayer(plugin, p);
             }
+            p.updateInventory();
 
             p.getInventory().setContents(original.inventory);
             p.getInventory().setArmorContents(original.armor);
@@ -378,6 +384,10 @@ public class TogaHimiko extends Ability {
                 p.addPotionEffects(original.potionEffects);
             }
 
+            // [추가] 무적 시간(NoDamageTicks) 관련 설정 복구
+            p.setMaximumNoDamageTicks(original.maxNoDamageTicks);
+            p.setNoDamageTicks(0); // 혹시 모를 잔여 무적 시간 초기화
+
             // 3. 원래 능력 코드로 복귀
             am.changeAbilityTemporary(p, original.abilityCode);
 
@@ -396,6 +406,23 @@ public class TogaHimiko extends Ability {
     }
 
     @Override
+    public void reset() {
+        // [Fix] 게임이 끝날 때(혹은 시작될 때) 변신 중인 모든 플레이어를 원상복구합니다.
+        // 변경된 능력을 가진 상태라 cleanup()이 호출되지 않았을 수 있기 때문입니다.
+        for (UUID uuid : new HashSet<>(isTransformed)) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) {
+                revertToOriginal(p);
+            }
+        }
+        isTransformed.clear();
+        savedStates.clear();
+        ignoringCleanup.clear();
+
+        super.reset();
+    }
+
+    @Override
     public void cleanup(Player p) {
         // [Fix] 변신 프로세스 중(능력 교체)에 호출된 cleanup이면 무시
         if (ignoringCleanup.contains(p.getUniqueId())) {
@@ -408,5 +435,17 @@ public class TogaHimiko extends Ability {
             revertToOriginal(p);
         }
         super.cleanup(p);
+    }
+
+    // [추가] 사망 시 변신 해제 (원래 모습 복구)
+    @EventHandler
+    public void onDeath(org.bukkit.event.entity.PlayerDeathEvent e) {
+        Player p = e.getEntity();
+        if (isTransformed.contains(p.getUniqueId())) {
+            revertToOriginal(p);
+            // 킬 점수는 GameManager에서 처리되므로 여기선 모습 복구만 신경씀.
+            // 다만 GameManager.onDeath가 먼저 호출되는지, 이게 먼저인지 순서에 따라
+            // 킬러 정보(getKiller)가 달라질 수 있으나, 변신 여부와 상관없이 Player 객체는 동일하므로 OK.
+        }
     }
 }

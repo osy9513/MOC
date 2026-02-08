@@ -131,8 +131,8 @@ public class Naruto extends Ability {
             clone.setImmovable(false);
 
             if (clone.getAttribute(Attribute.MAX_HEALTH) != null)
-                clone.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);
-            clone.setHealth(20.0);
+                clone.getAttribute(Attribute.MAX_HEALTH).setBaseValue(6.0);
+            clone.setHealth(6.0);
 
             if (clone.getAttribute(Attribute.ATTACK_DAMAGE) != null)
                 clone.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(playerDamage);
@@ -200,6 +200,9 @@ public class Naruto extends Ability {
 
                 for (Entity e : clone.getNearbyEntities(minDistance, 10, minDistance)) {
                     if (e instanceof LivingEntity victim && !e.equals(owner) && !e.hasMetadata("NarutoOwner")) {
+                        // [추가] 관전자 제외
+                        if (e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         double d = clone.getLocation().distance(e.getLocation());
                         if (d < minDistance) {
                             minDistance = d;

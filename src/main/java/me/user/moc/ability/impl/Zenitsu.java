@@ -147,7 +147,8 @@ public class Zenitsu extends Ability {
             LivingEntity target = (LivingEntity) entity;
             target.damage(8.0, p);
             p.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10);
-            p.getWorld().spawnParticle(Particle.FLASH, target.getLocation().add(0, 1, 0), 1);
+            // [Fix] Particle.FLASH가 데이터 클래스(Color)를 요구한다는 오류가 있어 EXPLOSION으로 대체
+            p.getWorld().spawnParticle(Particle.EXPLOSION, target.getLocation().add(0, 1, 0), 1);
         }
 
         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 1)); // Speed 2

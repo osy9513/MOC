@@ -93,9 +93,25 @@ public class Alex extends Ability {
         long now = System.currentTimeMillis();
 
         // 이미 진행 중이라면 시간 갱신만
-        if (activeTasks.containsKey(p.getUniqueId()) && !activeTasks.get(p.getUniqueId()).isEmpty()) {
-            lastInteractTime.put(p.getUniqueId(), now);
-            return;
+        if (activeTasks.containsKey(p.getUniqueId())) {
+            boolean isRunning = false;
+            java.util.List<BukkitTask> tasks = activeTasks.get(p.getUniqueId());
+            // [Fix] 실제 실행 중인 태스크가 있는지 검증 (찌꺼기 데이터 방지)
+            for (BukkitTask t : tasks) {
+                if (plugin.getServer().getScheduler().isQueued(t.getTaskId())
+                        || plugin.getServer().getScheduler().isCurrentlyRunning(t.getTaskId())) {
+                    isRunning = true;
+                    break;
+                }
+            }
+
+            if (isRunning) {
+                lastInteractTime.put(p.getUniqueId(), now);
+                return;
+            } else {
+                // 실행 중인 태스크가 없는데 맵에 남아있다면 제거 (버그 수정)
+                activeTasks.remove(p.getUniqueId());
+            }
         }
 
         // 4. 해킹 시작
@@ -106,39 +122,46 @@ public class Alex extends Ability {
         BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                // 1. 플레이어 유효성 체크
-                if (!p.isOnline() || p.isDead()) {
-                    this.cancel();
-                    cleanupData(p.getUniqueId());
-                    return;
-                }
-
-                // 2. 지속성 체크 (0.5초 이상 입력 없으면 중단)
-                long last = lastInteractTime.getOrDefault(p.getUniqueId(), 0L);
-                if (System.currentTimeMillis() - last > 500) {
-                    p.sendMessage("§c해킹이 중단되었습니다.");
-                    this.cancel();
-                    cleanupData(p.getUniqueId());
-                    return;
-                }
-
-                // 3. 진행도 알림 (Actionbar)
-                long start = hackingStartTime.getOrDefault(p.getUniqueId(), 0L);
-                long elapsed = System.currentTimeMillis() - start;
-                double secondsLeft = (20000 - elapsed) / 1000.0;
-
-                if (secondsLeft <= 0) {
-                    // [성공]
-                    successHacking(p);
-                    this.cancel();
-                    cleanupData(p.getUniqueId());
-                } else {
-                    p.sendActionBar(net.kyori.adventure.text.Component
-                            .text("§a해킹 진행 중... " + String.format("%.1f", secondsLeft) + "초"));
-                    // 효과음 (띠띠띠...)
-                    if (elapsed % 1000 < 100) { // 대략 1초마다 소리
-                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 2f);
+                try {
+                    // 1. 플레이어 유효성 체크
+                    if (!p.isOnline() || p.isDead()) {
+                        this.cancel();
+                        cleanupData(p.getUniqueId());
+                        return;
                     }
+
+                    // 2. 지속성 체크 (0.5초 이상 입력 없으면 중단)
+                    long last = lastInteractTime.getOrDefault(p.getUniqueId(), 0L);
+                    if (System.currentTimeMillis() - last > 500) {
+                        p.sendMessage("§c해킹이 중단되었습니다.");
+                        this.cancel();
+                        cleanupData(p.getUniqueId());
+                        return;
+                    }
+
+                    // 3. 진행도 알림 (Actionbar)
+                    long start = hackingStartTime.getOrDefault(p.getUniqueId(), 0L);
+                    long elapsed = System.currentTimeMillis() - start;
+                    double secondsLeft = (20000 - elapsed) / 1000.0;
+
+                    if (secondsLeft <= 0) {
+                        // [성공]
+                        successHacking(p);
+                        this.cancel();
+                        cleanupData(p.getUniqueId());
+                    } else {
+                        p.sendActionBar(net.kyori.adventure.text.Component
+                                .text("§a해킹 진행 중... " + String.format("%.1f", secondsLeft) + "초"));
+                        // 효과음 (띠띠띠...)
+                        if (elapsed % 1000 < 100) { // 대략 1초마다 소리
+                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 2f);
+                        }
+                    }
+                } catch (Exception e) {
+                    // [예외 처리] 실행 중 에러 발생 시 안전하게 정리
+                    e.printStackTrace();
+                    this.cancel();
+                    cleanupData(p.getUniqueId());
                 }
             }
         }.runTaskTimer(plugin, 0L, 5L); // 0.25초마다 검사
