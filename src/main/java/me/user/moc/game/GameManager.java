@@ -152,7 +152,7 @@ public class GameManager implements Listener {
             configManager.spawn_point = spawn;
 
         Bukkit.broadcastMessage("§f스폰 위치 : " + spawn.getBlockX() + ", " + spawn.getBlockY() + ", " + spawn.getBlockZ());
-        Bukkit.broadcastMessage("§f게임 모드 : 개인전");
+        // Bukkit.broadcastMessage("§f게임 모드 : 개인전");
         Bukkit.broadcastMessage("§7잠시 후 능력을 추첨합니다.");
         Bukkit.broadcastMessage("§e========================================");
 
@@ -209,6 +209,12 @@ public class GameManager implements Listener {
         List<String> deck = new ArrayList<>();
         if (abilityManager != null) {
             deck.addAll(abilityManager.getAbilityCodes());
+
+            // [추가] 배틀맵(기반암)이 없으면 알렉스(020) 능력 제외 (바닥 파괴 불가능)
+            if (!configManager.battle_map) {
+                deck.remove("020");
+                // Bukkit.getLogger().info("[MocPlugin] 배틀맵 미사용으로 알렉스(020) 능력이 제외되었습니다.");
+            }
         } else {
             // 만약 매니저가 없으면 비상용으로 기본 코드만 넣음 (안전장치)
             deck.add("001");
@@ -441,15 +447,29 @@ public class GameManager implements Listener {
             spawn = Bukkit.getOnlinePlayers().iterator().next().getLocation();
 
         // 3-1. 랜덤 좌표 텔레포트
+        // 3-1. 랜덤 좌표 텔레포트
+        // [수정] 자기장 크기(map_size) 내에서 랜덤하게 뿌립니다.
+        // map_size는 지름이므로 반으로 나누면 반지름입니다. 안전을 위해 2블록 여유를 둡니다.
+        int radius = (configManager.map_size / 2) - 2;
+
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (afkPlayers.contains(p.getName()))
                 continue;
 
-            // 스폰 포인트 주변 랜덤 산개
-            double rx = (Math.random() * 20) - 10;
-            double rz = (Math.random() * 20) - 10;
-            Location tpLoc = spawn.clone().add(rx, 1, rz);
-            p.teleport(tpLoc);
+            // 스폰 포인트(자기장 중심) 기준 랜덤 좌표 생성
+            double rx = (Math.random() * (radius * 2)) - radius; // -radius ~ +radius
+            double rz = (Math.random() * (radius * 2)) - radius;
+
+            Location targetLoc = spawn.clone().add(rx, 0, rz);
+
+            // [사용자 요청 반영] 동굴이나 블럭 사이에 끼지 않도록 반드시 '맨 윗 블럭' 위로 잡습니다.
+            // world.getHighestBlockYAt은 하늘에서부터 내려오며 처음 만나는 블록의 Y좌표를 줍니다.
+            int highestY = targetLoc.getWorld().getHighestBlockYAt(targetLoc.getBlockX(), targetLoc.getBlockZ());
+
+            // 타겟 Y좌표 설정 (블록 위 + 1칸)
+            targetLoc.setY(highestY + 1.0);
+
+            p.teleport(targetLoc);
         }
 
         // [수정] 평화 시간(무적)을 이 카운트다운 타이머에 적용합니다.

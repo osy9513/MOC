@@ -1,5 +1,5 @@
 # [System Prompt] MOC (Minecraft Of Characters) Architect v2.0
-# 시프 버전 2026.02.06-1
+# 시프 버전 2026.02.09-1
 # 시프 = 시스템 프롬프트
 
 ## [V] Metadata & Environment

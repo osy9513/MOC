@@ -34,12 +34,13 @@ public class ConfigManager {
     // public boolean teammod = false; // 팀전인가요? (아니오=개인전)
     public int re_point = 1; // 능력 다시 뽑기 기회 (1번)
     public int start_time = 30; // 능력 추첨 제한 시간 (30초)
-    public boolean final_fight = true; // 시간이 지나면 자기장이 생기나요?
-    public int final_time = 120; // 게임 시작 몇 초 뒤에 자기장이 생기나요? (120초 = 2분)
+    public boolean final_fight = true; // 시간이 지나면 자기장이 줄어드나요?
+    public int final_time = 120; // 게임 시작 몇 초 뒤에 자기장이 줄어드나요? (120초 = 2분)
     // public boolean map_end = true; // 전장 외곽 벽을 활성화할까요?
     public int map_size = 75; // 전장(경기장)의 크기
     public int win_value = 40; // 몇 점을 먼저 따면 최종 우승인가요?
     public boolean hidden = false; // 숨겨진 캐릭터가 등장하나요?
+    public boolean battle_map = true; // [추가] 전장 바닥(배드락)을 생성할까요? (false=야생맵 사용)
 
     /**
      * [설정 불러오기]
@@ -61,6 +62,7 @@ public class ConfigManager {
         map_size = config.getInt("map_size", 75);
         win_value = config.getInt("win_value", 40);
         hidden = config.getBoolean("hidden", false);
+        battle_map = config.getBoolean("battle_map", true); // [추가]
 
         // 위치 정보는 좌표 X, Y, Z가 다 필요해서 따로 저장합니다. 지금은 일단 패스.
         // spawn_point는 나중에 Location 저장 로직 추가 필요.
@@ -86,6 +88,7 @@ public class ConfigManager {
         config.set("map_size", map_size);
         config.set("win_value", win_value);
         config.set("hidden", hidden);
+        config.set("battle_map", battle_map); // [추가]
 
         plugin.saveConfig(); // 실제로 파일에 씁니다.
     }

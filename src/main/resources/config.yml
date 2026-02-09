@@ -30,3 +30,6 @@ win_value: 40
 
 # 히든 캐릭터 등장 여부
 hidden: false
+
+# 전장 바닥(배드락) 생성 및 지형 변경 여부 (true=기반암 전장 생성 / false=야생 맵 유지)
+battle_map: true

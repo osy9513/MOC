@@ -8,6 +8,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -44,21 +45,20 @@ public class Midas extends Ability {
     public List<String> getDescription() {
         List<String> list = new ArrayList<>();
         list.add("§6유틸 ● 미다스(그리스 로마 신화)");
-        list.add("§f손에 닿는 모든 게 §e금이 된다.");
+        list.add("§f금괴를 던져 맞춘 모든 것을 §e금§f으로 만듭니다.");
         return list;
     }
 
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§6유틸 ● 미다스(그리스 로마 신화)");
-        p.sendMessage("§f손으로 블럭을 때리면 그 블럭은 §e금 블럭§f이 됩니다.");
-        p.sendMessage("§f손으로 상대를 때리면 상대가 입고 있던 방어구는 §e금 방어구§f가 됩니다.");
-        p.sendMessage("§f플레이어가 아닌 대상을 손으로 좌클릭 시 §e황금 블럭§f으로 교체시킵니다.");
-        p.sendMessage("§f금괴를 먹을 수 있습니다. (배고픔 2칸 회복)");
+        p.sendMessage("§f금괴를 우클릭하면 전방으로 던집니다.");
+        p.sendMessage("§f던져진 금괴에 맞은 상대가 입고 있던 방어구는 §e금 방어구§f가 됩니다.");
+        p.sendMessage("§f플레이어가 아닌 대상을 맞출 시 §e금 블럭§f으로 교체시킵니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 0초");
+        p.sendMessage("§f쿨타임 : 0.5초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 금 갑옷, 금 칼, 발광포션, 황금 사과 64개, 금괴 1280개");
+        p.sendMessage("§f추가 장비 : 금 갑옷, 금 칼, 발광포션, 황금 사과 64개, 금괴 64개");
         p.sendMessage("§f장비 제거 : 철 갑옷, 철 칼, 체력재생포션, 고기 64개");
     }
 
@@ -77,8 +77,15 @@ public class Midas extends Ability {
         }
 
         // 2. [추가 장비 지급]
-        // 금 칼
-        p.getInventory().addItem(new ItemStack(Material.GOLDEN_SWORD));
+        // 금 칼 (불괴)
+        ItemStack goldSword = new ItemStack(Material.GOLDEN_SWORD);
+        ItemMeta swordMeta = goldSword.getItemMeta();
+        if (swordMeta != null) {
+            swordMeta.setUnbreakable(true);
+            goldSword.setItemMeta(swordMeta);
+        }
+        p.getInventory().addItem(goldSword);
+
         // 금 갑옷 세트 (입혀줌)
         p.getInventory().setChestplate(new ItemStack(Material.GOLDEN_CHESTPLATE));
         p.getInventory().setHelmet(new ItemStack(Material.GOLDEN_HELMET));
@@ -96,11 +103,12 @@ public class Midas extends Ability {
             meta.setDisplayName("§e미다스의 빛");
             glowPotion.setItemMeta(meta);
         }
-        // 금괴 1280개 (64 * 20)
-        ItemStack goldIngot = new ItemStack(Material.GOLD_INGOT, 64 * 20);
+
+        // 금괴 64개
+        ItemStack goldIngot = new ItemStack(Material.GOLD_INGOT, 64);
         ItemMeta goldMeta = goldIngot.getItemMeta();
         if (goldMeta != null) {
-            goldMeta.setLore(Arrays.asList("§7우클릭하여 섭취합니다.", "§7배고픔을 회복합니다."));
+            goldMeta.setLore(Arrays.asList("§7우클릭하여 던집니다.", "§7적중 시 대상을 금으로 만듭니다."));
             goldIngot.setItemMeta(goldMeta);
         }
         p.getInventory().addItem(goldIngot);
@@ -109,122 +117,107 @@ public class Midas extends Ability {
         p.updateInventory();
     }
 
-    // 1. 블럭 좌클릭 -> 금 블럭 (맨손 아니어도 됨? "손에 닿는 모든 게" -> 일단 맨손 OR 아무거나, 설명엔 "손으로 블럭을
-    // 때리면")
-    // 상세 설명: "손으로 블럭을 때리면" -> 보통 좌클릭. 도구 제한 언급 없음. 그냥 다 바꿈.
+    // 1. 금괴 투척 (우클릭)
     @EventHandler
-    public void onInteract(PlayerInteractEvent e) {
+    public void onThrow(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (!isMidas(p))
             return;
 
-        // [추가] 맨손일 때만 발동 (사용자 요청)
-        if (p.getInventory().getItemInMainHand().getType() != Material.AIR)
-            return;
+        if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            ItemStack item = e.getItem();
+            if (item != null && item.getType() == Material.GOLD_INGOT) {
+                e.setCancelled(true); // 먹거나 설치 방지
 
-        // 좌클릭 + 블럭
-        if (e.getAction() == Action.LEFT_CLICK_BLOCK && e.getClickedBlock() != null) {
-            // 이미 금블럭인 것만 빼고 다시 금블럭으로
-            if (e.getClickedBlock().getType() != Material.GOLD_BLOCK) {
-                e.getClickedBlock().setType(Material.GOLD_BLOCK);
-                e.getClickedBlock().getWorld().playSound(e.getClickedBlock().getLocation(),
-                        Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
-            }
-        }
-    }
+                // 쿨타임 체크 (투척 속도 제한용, 0.5초)
+                if (p.hasCooldown(Material.GOLD_INGOT))
+                    return;
+                p.setCooldown(Material.GOLD_INGOT, 10);
 
-    // 2. 엔티티 좌클릭 -> 금 블럭 (플레이어 제외)
-    // PlayerInteractEntityEvent는 우클릭 기준임. 좌클릭(공격)은 EntityDamageByEntityEvent에서 처리해야
-    // 함.
-    // 하지만 "플레이어가 아닌 대상을 손으로 좌클릭 시" 라고 했으므로 공격 이벤트로 간주.
-    @EventHandler
-    public void onEntityHit(EntityDamageByEntityEvent e) {
-        if (!(e.getDamager() instanceof Player p))
-            return;
-        if (!isMidas(p))
-            return;
+                // 아이템 소모
+                item.setAmount(item.getAmount() - 1);
 
-        // "손으로" -> 맨손 검사 필요? 설명엔 "손으로 상대를 때리면".
-        // 보통 능력이 손을 써야 발동되면 맨손(AIR)을 체크함.
-        // 하지만 미다스는 금칼도 줌. "손에 닿는" 컨셉이면 맨손이 어울리긴 함.
-        // 상세 설명의 "금괴를 먹을 수 있다" 제외하고는 "손으로" 라고 되어 있음.
-        // 일단 "맨손(AIR)"일 때만 발동하도록 설정 (안전장치 및 밸런스)
-        // 만약 도구 들어도 되면 너무 사기일 수 있음 (금칼로 때리면서 방어구 다 벗김).
-        // 기획의 "손으로"를 "맨손"으로 해석.
-        ItemStack item = p.getInventory().getItemInMainHand();
-        if (item.getType() != Material.AIR)
-            return;
-
-        Entity target = e.getEntity();
-
-        // 3. 상대 플레이어 타격 -> 방어구 금으로 변환
-        if (target instanceof Player victim) {
-            // 방어구 변환 로직
-            boolean changed = false;
-            ItemStack[] armor = victim.getInventory().getArmorContents();
-
-            for (int i = 0; i < armor.length; i++) {
-                ItemStack piece = armor[i];
-                if (piece != null && piece.getType() != Material.AIR) {
-                    Material goldType = getGoldArmorType(piece.getType());
-                    if (goldType != null && piece.getType() != goldType) {
-                        armor[i].setType(goldType);
-                        changed = true;
-                    }
-                }
-            }
-
-            if (changed) {
-                victim.getInventory().setArmorContents(armor);
-                // 이펙트
-                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f); // 띠링!
-                // 메시지 출력
-                Bukkit.broadcastMessage("§e미다스 : §f반짝이는 건 언제나 옳지, 안 그래?");
-            }
-        }
-        // 4. 플레이어가 아닌 대상 -> 황금 블럭으로 교체
-        else if (target instanceof LivingEntity) { // 생명체만 (액자 등 제외)
-            // 즉사 시키고 그 자리에 금 블럭 설치
-            target.remove();
-            target.getLocation().getBlock().setType(Material.GOLD_BLOCK);
-            // 이펙트
-            target.getWorld().playSound(target.getLocation(), Sound.ENTITY_VILLAGER_TRADE, 1f, 1f);
-            p.sendMessage("§e[MOC] §f대상을 황금으로 만들었습니다.");
-        }
-    }
-
-    // 5. 금괴 섭취 (우클릭 -> 먹기)
-    // PlayerItemConsumeEvent는 먹는 행위 완료 시점.
-    // 금괴는 먹는 아이템이 아니므로 Interact에서 처리해야 함.
-    @EventHandler
-    public void onConsumeGold(PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        if (!isMidas(p))
-            return;
-
-        if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) &&
-                e.getItem() != null && e.getItem().getType() == Material.GOLD_INGOT) {
-
-            // 배고픔이 꽉 차지 않았을 때만
-            if (p.getFoodLevel() < 20) {
-                e.setCancelled(true); // 설치 방지 등
-
-                // 아이템 하나 소비
-                e.getItem().setAmount(e.getItem().getAmount() - 1);
-
-                // 배고픔 회복 2칸 (4)
+                // 배고픔 회복 (2칸)
                 p.setFoodLevel(Math.min(20, p.getFoodLevel() + 4));
                 p.setSaturation(Math.min(20, p.getSaturation() + 2));
-
-                // 먹는 소리
                 p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
-                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 2f); // 맑은 소리 추가
+
+                // 투사체 발사 (눈덩이 기반, 아이템 모양 변경)
+                Snowball projectile = p.launchProjectile(Snowball.class);
+                projectile.setItem(new ItemStack(Material.GOLD_INGOT));
+                projectile.setShooter(p);
+
+                // 메타데이터로 미다스 투사체 식별
+                projectile.addScoreboardTag("midas_gold");
+
+                p.playSound(p.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1f, 1f);
+            }
+        }
+    }
+
+    // 2. 투사체 적중 (능력 발동)
+    @EventHandler
+    public void onProjectileHit(org.bukkit.event.entity.ProjectileHitEvent e) {
+        if (!(e.getEntity() instanceof Snowball projectile))
+            return;
+        if (!projectile.getScoreboardTags().contains("midas_gold"))
+            return;
+
+        if (!(projectile.getShooter() instanceof Player p))
+            return;
+
+        // 블럭 적중
+        if (e.getHitBlock() != null) {
+            if (e.getHitBlock().getType() != Material.GOLD_BLOCK && e.getHitBlock().getType() != Material.BEDROCK
+                    && e.getHitBlock().getType() != Material.BARRIER) {
+                e.getHitBlock().setType(Material.GOLD_BLOCK);
+                e.getHitBlock().getWorld().playSound(e.getHitBlock().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
+                        0.5f, 1.5f);
+            }
+        }
+
+        // 엔티티 적중
+        if (e.getHitEntity() != null) {
+            Entity target = e.getHitEntity();
+
+            // 대미지 1 주기
+            if (target instanceof LivingEntity livingTarget) {
+                livingTarget.damage(1.0, p);
+            }
+
+            // 플레이어 적중 -> 방어구 변환
+            if (target instanceof Player victim) {
+                boolean changed = false;
+                ItemStack[] armor = victim.getInventory().getArmorContents();
+
+                for (int i = 0; i < armor.length; i++) {
+                    ItemStack piece = armor[i];
+                    if (piece != null && piece.getType() != Material.AIR) {
+                        Material goldType = getGoldArmorType(piece.getType());
+                        if (goldType != null && piece.getType() != goldType) {
+                            armor[i].setType(goldType);
+                            changed = true;
+                        }
+                    }
+                }
+
+                if (changed) {
+                    victim.getInventory().setArmorContents(armor);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f);
+                    Bukkit.broadcastMessage("§e미다스 : §f반짝이는 건 언제나 옳지, 안 그래?");
+                }
+            }
+            // 몹 적중 -> 황금 블럭으로 교체 (즉사)
+            else if (target instanceof LivingEntity && !(target instanceof Player)) {
+                target.remove();
+                target.getLocation().getBlock().setType(Material.GOLD_BLOCK);
+                target.getWorld().playSound(target.getLocation(), Sound.ENTITY_VILLAGER_TRADE, 1f, 1f);
+                p.sendMessage("§e[MOC] §f대상을 황금으로 만들었습니다.");
             }
         }
     }
 
     private boolean isMidas(Player p) {
-        // [게임 상태 확인] 전투 시작 전에는 카운트 안 함
         if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
             return false;
         if (plugin instanceof MocPlugin moc) {
