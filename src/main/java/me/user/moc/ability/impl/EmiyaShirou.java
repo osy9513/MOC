@@ -459,7 +459,8 @@ public class EmiyaShirou extends Ability {
         arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 
         arrow.setMetadata(KEY_UBW_HOMING, new FixedMetadataValue(plugin, owner.getUniqueId().toString()));
-        arrow.addPassenger(stand); // 아머스탠드를 화살에 태움
+        // [수정] 아머스탠드를 화살에 태우지 않고 위치 동기화 (화살 숨기기 위함)
+        // arrow.addPassenger(stand);
 
         // 소리 [수정] 칼 날아가는 소리 (날카로운 금속음)
         stand.getWorld().playSound(startLoc, Sound.ITEM_TRIDENT_THROW, 1.0f, 2.0f); // 쉭! (고음)
@@ -467,7 +468,7 @@ public class EmiyaShirou extends Ability {
 
         stand.getWorld().spawnParticle(Particle.CRIT, startLoc, 5);
 
-        // 디스폰 체크용 태스크 (화살 박히면 제거, 10초 제한 추가)
+        // 디스폰 체크용 태스크 (화살 박히면 제거, 10초 제한 추가) + 위치 동기화
         new BukkitRunnable() {
             int timer = 0; // [추가] 10초 자동 제거를 위한 타이머
 
@@ -484,6 +485,14 @@ public class EmiyaShirou extends Ability {
                     this.cancel();
                     return;
                 }
+
+                // [수정] 위치 동기화: 화살 위치를 따라가되, Y축을 낮춰서 화살이 칼(아머스탠드 손) 위치에 가려지도록 함
+                Location currentLoc = arrow.getLocation();
+                // 아머스탠드 높이(약 1.9m)와 손 위치(약 1.4m) 고려, -1.5m 정도 내리면 화살이 손 부근(칼)에 위치
+                Location standLoc = currentLoc.clone().add(0, -1.5, 0);
+                standLoc.setYaw(currentLoc.getYaw());
+                standLoc.setPitch(currentLoc.getPitch());
+                stand.teleport(standLoc);
 
                 // [추가] 10초 뒤 자동 제거를 위한 타이머 증가
                 timer++;
@@ -525,10 +534,15 @@ public class EmiyaShirou extends Ability {
             // [수정] 데미지 4 고정 (너프)
             e.setDamage(4.0);
 
-            // 아머스탠드 제거
-            for (Entity passenger : arrow.getPassengers()) {
-                passenger.remove();
+            // [추가] 화살이 몸에 박힌 흔적 제거
+            arrow.remove(); // 화살 객체를 즉시 제거하여 꽂히지 않게 함
+            if (e.getEntity() instanceof LivingEntity le) {
+                le.setArrowsInBody(0); // 혹시 박혔을 경우를 대비해 0으로 초기화
             }
+
+            // 아머스탠드 제거 (동기화 로직에서 arrow.isDead() 체크하므로 자동 제거됨, 하지만 즉시 반응을 위해 처리)
+            // Passengers 로직은 더 이상 사용하지 않으므로, flyingSwords 목록에서 찾아 제거해야 함.
+            // 하지만 arrow.remove()를 하면 위 Runnable에서 다음 틱에 감지하고 stand.remove()를 호출함.
         }
     }
 

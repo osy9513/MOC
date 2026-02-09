@@ -88,7 +88,8 @@ public class TungTungTungSahur extends Ability {
             meta.addAttributeModifier(Attribute.ATTACK_SPEED,
                     new AttributeModifier(new org.bukkit.NamespacedKey(plugin, "tungtung_speed"), -2.4,
                             AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HAND));
-
+            // CustomModelData를 1로 설정 -> 텍스처팩이 이걸 보고 퉁퉁퉁 방망이 그림을 보여줌
+            meta.setCustomModelData(1);
             bat.setItemMeta(meta);
         }
         p.getInventory().addItem(bat);

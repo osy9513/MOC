@@ -83,9 +83,31 @@ public class ArenaManager implements Listener {
         world.getWorldBorder().setCenter(center);
         world.getWorldBorder().setSize(config.map_size - 2);
 
-        // 3. [건축] 기반암 바닥 생성 시작 + 아이템 청소 + 몬스터 청소.
-        // 특정 좌표기준으로 , 어느 높이에 설정할지 하는 함수.
-        generateSquareFloor(center, center.getBlockY() - 1);
+        // [추가] 배틀맵 설정이 켜져있을 때만 바닥 공사를 합니다. (야생맵 보존)
+        // [추가] 배틀맵 설정이 켜져있을 때만 바닥 공사를 합니다. (야생맵 보존)
+        if (config.battle_map) {
+            // 3. [건축] 기반암 바닥 생성 시작 + 아이템 청소 + 몬스터 청소.
+            // 특정 좌표기준으로 , 어느 높이에 설정할지 하는 함수.
+            generateSquareFloor(center, center.getBlockY() - 1);
+        } else {
+            // 배틀맵이 아니면 바로 청소만 하고 끝냅니다.
+            clearManager.allCear();
+
+            // [추가] 야생맵이어도 중앙(스폰포인트) 표시를 위해 에메랄드 블럭 하나는 설치합니다.
+            // 일부 능력에서 에메랄드 블럭을 참조하기도 합니다.
+            center.getBlock().setType(Material.EMERALD_BLOCK);
+
+            // 플레이어들을 위한 스폰 이동 등은 GameManager에서 처리하거나 여기서 보조
+            if (config.spawn_tf) {
+                // 야생맵이어도 중앙으로 모으고 싶다면 이동
+                // 하지만 보통 야생맵은 랜덤 텔포로 퍼지니까 굳이 안 모아도 됨.
+                // 그래도 prepareArean 호출 시점에는 모으는게 맞음 (대기 시간)
+                // 다만 기반암이 없으므로 Y좌표 안전하게 잡는 게 중요.
+                // 일단 기존 로직인 generateSquareFloor completion 부분과 맞추기 위해
+                // 여기서 바로 텔포 시키지 않고 GameManager 흐름을 따릅니다.
+                // (GameManager.startRound에서 prepareArena 호출 후 텔포 로직이 또 있음)
+            }
+        }
     }
 
     /**
@@ -93,6 +115,10 @@ public class ArenaManager implements Listener {
      * 기반암 바닥을 사각형으로 깔고 위아래를 청소한 뒤, 중앙에 에메랄드를 설치합니다.
      */
     public void generateSquareFloor(Location center, int targetY) {
+        // [추가] 설정 확인
+        if (!config.battle_map)
+            return;
+
         this.gameCenter = center;
         World world = center.getWorld();
         if (world == null)
@@ -156,6 +182,10 @@ public class ArenaManager implements Listener {
      * 생성된 기반암 바닥을 모두 공기(AIR)로 제거합니다.
      */
     public void removeSquareFloor() {
+        // [추가] 설정 확인 (야생맵이면 지우면 큰일남)
+        if (!config.battle_map)
+            return;
+
         if (this.gameCenter == null)
             return;
         World world = gameCenter.getWorld();
@@ -196,6 +226,10 @@ public class ArenaManager implements Listener {
      * [추가] 전장 바닥 전체 재질 변경 (룰렛 연출용)
      */
     public void setArenaFloor(Material mat) {
+        // [추가] 설정 확인 (야생맵이면 바닥 바꾸면 안됨)
+        if (!config.battle_map)
+            return;
+
         if (this.gameCenter == null || mat == null)
             return;
         World world = gameCenter.getWorld();
@@ -225,6 +259,10 @@ public class ArenaManager implements Listener {
      * [추가] 중앙 블록 복구 (에메랄드)
      */
     public void resetCenterBlock() {
+        // [추가] 설정 확인 (삭제: 야생맵이어도 중앙 에메랄드는 복구함)
+        // if (!config.battle_map)
+        // return;
+
         if (this.gameCenter == null)
             return;
         this.gameCenter.getBlock().setType(Material.EMERALD_BLOCK);

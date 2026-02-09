@@ -66,7 +66,7 @@ public class Deidara extends Ability {
         ItemMeta meta1 = item1.getItemMeta();
         if (meta1 != null) {
             meta1.setDisplayName("§f점토");
-            meta1.setLore(Arrays.asList("§7우클릭 시 폭죽 탄약을 생성합니다.", "§f쿨타임: 4초 (개별 적용)"));
+            meta1.setLore(Arrays.asList("§7우클릭 시 폭죽 탄약을 생성합니다.", "§f쿨타임: 4초"));
             item1.setItemMeta(meta1);
         }
 
@@ -88,7 +88,7 @@ public class Deidara extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 데이다라(나루토)");
-        p.sendMessage("§f[점토] 우클릭 시 폭죽 탄약 1개를 생성합니다. (쿨타임 4초)");
+        p.sendMessage("§f[점토] 우클릭 시 폭죽 탄약 1개를 생성합니다.");
         p.sendMessage("§f[폭죽 탄약] 우클릭 시 소모하며 점화된 TNT를 발사합니다. (터지지 않음)");
         p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다.");
         p.sendMessage(" ");
