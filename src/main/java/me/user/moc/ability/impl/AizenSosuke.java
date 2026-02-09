@@ -55,6 +55,17 @@ public class AizenSosuke extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        // 기존 철 칼 제거
+        p.getInventory().remove(Material.IRON_SWORD);
+
+        org.bukkit.inventory.ItemStack sword = new org.bukkit.inventory.ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        meta.setDisplayName("§5경화수월");
+        meta.setLore(Arrays.asList("§7깨져라, 경화수월."));
+        meta.setCustomModelData(5); // 리소스팩: aizensosuke
+        sword.setItemMeta(meta);
+
+        p.getInventory().addItem(sword);
     }
 
     private void startCheckTask() {

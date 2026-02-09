@@ -1,0 +1,54 @@
+{
+    "model": {
+        "type": "minecraft:range_dispatch",
+        "property": "minecraft:custom_model_data",
+        "entries": [
+            {
+                "threshold": 1,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/inuyasha"
+                }
+            },
+            {
+                "threshold": 2,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/rooki"
+                }
+            },
+            {
+                "threshold": 3,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/togahimiko"
+                }
+            },
+            {
+                "threshold": 4,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/nanayashiki"
+                }
+            },
+            {
+                "threshold": 5,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/aizensosuke"
+                }
+            },
+            {
+                "threshold": 6,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/kurosakiichigo"
+                }
+            }
+        ],
+        "fallback": {
+            "type": "minecraft:model",
+            "model": "minecraft:item/iron_sword"
+        }
+    }
+}

@@ -53,6 +53,7 @@ public class NanayaShiki extends Ability {
             meta.setDisplayName("§b나나츠요루");
             meta.setLore(Arrays.asList("§7우클릭 시 단검을 투척합니다.", "§7적중 시 대상에게 순간이동하며 치명적인 피해를 입힙니다.", "§8(쿨타임 18초)"));
             meta.setUnbreakable(true);
+            meta.setCustomModelData(4); // 리소스팩: nanayashiki
             sword.setItemMeta(meta);
         }
         p.getInventory().addItem(sword);
@@ -140,6 +141,9 @@ public class NanayaShiki extends Ability {
             }
 
             if (e.getHitEntity() instanceof LivingEntity target) {
+                // [Fix] 관전자는 대상에서 제외
+                if (target instanceof Player pTarget && pTarget.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
                 Player shooter = (Player) arrow.getShooter();
                 if (shooter == null)
                     return;

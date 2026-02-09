@@ -53,6 +53,7 @@ public class Inuyasha extends Ability {
         var meta = item.getItemMeta();
         meta.setDisplayName("§f철쇄아");
         meta.setLore(List.of("§7우클릭 시 바람의 상처를 발동합니다."));
+        meta.setCustomModelData(1); // 리소스팩: inuyasha
         item.setItemMeta(meta);
         p.getInventory().addItem(item);
     }

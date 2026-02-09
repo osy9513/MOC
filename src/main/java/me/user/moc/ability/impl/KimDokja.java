@@ -50,6 +50,7 @@ public class KimDokja extends Ability {
         ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = sword.getItemMeta();
         meta.setDisplayName("§b사인참사검");
+        meta.setCustomModelData(1); // 리소스팩: kimdokja
         sword.setItemMeta(meta);
         p.getInventory().addItem(sword);
 

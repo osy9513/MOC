@@ -206,6 +206,25 @@ public class AbilityManager {
     // ... resetAbilities, setPlayerAbility, setRerollCount 함수는 그대로 둬도 됩니다 ...
     // ... 단, setPlayerAbility의 두 번째 인자는 이제 "우에키"가 아니라 "001"이 들어와야 합니다 ...
     public void setPlayerAbility(UUID uuid, String abilityCode) {
+        Player p = plugin.getServer().getPlayer(uuid);
+
+        // [Fix] 기존 능력이 있다면 정리(cleanup)
+        // 특히 토가 히미코 변신 상태라면 강제로 원래대로 되돌린 후 변경해야 꼬이지 않음
+        Ability togaAb = abilities.get("047");
+        if (togaAb instanceof TogaHimiko toga && toga.isTransformed(uuid)) {
+            if (p != null) {
+                toga.cleanup(p); // 원래 상태(047)로 복구 + 변신 능력 cleanup
+            }
+        }
+
+        String oldCode = playerAbilities.get(uuid);
+        if (oldCode != null) {
+            Ability oldAbility = abilities.get(oldCode);
+            if (oldAbility != null && p != null) {
+                oldAbility.cleanup(p);
+            }
+        }
+
         playerAbilities.put(uuid, abilityCode);
 
         // [추가] 능력 등장 횟수 카운트 (통계용)
