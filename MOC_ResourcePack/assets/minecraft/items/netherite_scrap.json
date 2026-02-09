@@ -7,13 +7,13 @@
                 "threshold": 1,
                 "model": {
                     "type": "minecraft:model",
-                    "model": "minecraft:item/mothership"
+                    "model": "minecraft:item/yugi0"
                 }
             }
         ],
         "fallback": {
             "type": "minecraft:model",
-            "model": "minecraft:item/beacon"
+            "model": "minecraft:item/netherite_scrap"
         }
     }
 }

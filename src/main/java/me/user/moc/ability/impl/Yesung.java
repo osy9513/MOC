@@ -100,7 +100,7 @@ public class Yesung extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 40초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 루키의 검");
+        p.sendMessage("§f추가 장비 : 제네시스 두손검");
         p.sendMessage("§f장비 제거 : 철 칼");
     }
 
@@ -118,10 +118,10 @@ public class Yesung extends Ability {
         if (item == null)
             return;
 
-        // 전용 아이템 체크 (루키의 검)
+        // 전용 아이템 체크 (제네시스 두손검)
         if (item.getType() != Material.IRON_SWORD)
             return;
-        if (item.getItemMeta() == null || !"§f루키의 검".equals(item.getItemMeta().getDisplayName()))
+        if (item.getItemMeta() == null || !"§f제네시스 두손검".equals(item.getItemMeta().getDisplayName()))
             return;
 
         if (!checkCooldown(p))

@@ -13,7 +13,7 @@
         ],
         "fallback": {
             "type": "minecraft:model",
-            "model": "minecraft:block/decorated_pot_sherds_0"
+            "model": "minecraft:item/decorated_pot"
         }
     }
 }
