@@ -89,6 +89,7 @@ public class DIO extends Ability {
         ItemStack clock = new ItemStack(Material.CLOCK);
         org.bukkit.inventory.meta.ItemMeta meta = clock.getItemMeta();
         meta.setDisplayName("§e§l[ 더 월드 ]");
+        meta.setCustomModelData(1); // 리소스팩: dio
         clock.setItemMeta(meta);
 
         // 시계 지급

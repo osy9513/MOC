@@ -128,6 +128,7 @@ public class Spiderman extends Ability {
         if (shooterMeta != null) {
             shooterMeta.displayName(Component.text("§f웹 슈터"));
             shooterMeta.setLore(Arrays.asList("§7좌클릭 시 거미줄을 발사하여 적을 묶거나 벽에 설치합니다.", "§7우클릭 시 설치된 거미줄로 빠르게 이동합니다."));
+            shooterMeta.setCustomModelData(1); // 리소스팩: spiderman
             webShooter.setItemMeta(shooterMeta);
         }
         p.getInventory().addItem(webShooter);

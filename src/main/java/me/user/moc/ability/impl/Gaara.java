@@ -88,6 +88,7 @@ public class Gaara extends Ability {
             potState.setSherd(DecoratedPot.Side.RIGHT, Material.HEARTBREAK_POTTERY_SHERD);
             bsm.setBlockState(potState);
             bsm.setDisplayName("§6모래 표주박");
+            bsm.setCustomModelData(1); // 리소스팩: gaara
             potItem.setItemMeta(bsm);
         }
         p.getInventory().addItem(potItem);

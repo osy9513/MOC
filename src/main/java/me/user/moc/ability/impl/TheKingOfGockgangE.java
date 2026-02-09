@@ -70,6 +70,7 @@ public class TheKingOfGockgangE extends Ability {
             meta.setUnbreakable(true); // 편의상 파괴 불가 설정
             // 내구성 인챈트 10 (요청사항: 내구성10)
             meta.addEnchant(Enchantment.UNBREAKING, 10, true);
+            meta.setCustomModelData(1); // 리소스팩: thekingofgockgange
             pickaxe.setItemMeta(meta);
         }
 

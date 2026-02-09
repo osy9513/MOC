@@ -127,6 +127,7 @@ public class Jigsaw extends Ability {
         ItemStack item = new ItemStack(Material.STONECUTTER);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§c게임 시작");
+        meta.setCustomModelData(1); // 리소스팩: jigsaw
         item.setItemMeta(meta);
         p.getInventory().addItem(item);
     }
@@ -166,6 +167,10 @@ public class Jigsaw extends Ability {
         if (!(e.getDamager() instanceof Player p))
             return;
         if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+
+        // [Fix] 관전자는 대상에서 제외 (게임 시작 불가)
+        if (target instanceof Player pTarget && pTarget.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         // 능력자 체크

@@ -62,6 +62,7 @@ public class Jjanggu extends Ability {
         if (meta != null) {
             meta.setDisplayName("§6초코비");
             meta.setLore(Arrays.asList("§7우클릭하여 섭취합니다.", "§7배고픔을 완전히 회복합니다."));
+            meta.setCustomModelData(1); // 리소스팩: jjanggu
             chocobi.setItemMeta(meta);
         }
         p.getInventory().addItem(chocobi);

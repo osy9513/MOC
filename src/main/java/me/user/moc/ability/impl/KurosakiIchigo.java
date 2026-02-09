@@ -54,6 +54,7 @@ public class KurosakiIchigo extends Ability {
             meta.setDisplayName("§b참월");
             meta.setLore(Arrays.asList("§7우클릭 시 호로화 상태가 됩니다.", "§7호로화 중 공격 시 순간이동하며 추가 피해를 입힙니다.", "§8(쿨타임 30초)"));
             meta.setUnbreakable(true);
+            meta.setCustomModelData(6); // 리소스팩: kurosakiichigo
             sword.setItemMeta(meta);
         }
         p.getInventory().addItem(sword);
@@ -179,6 +180,9 @@ public class KurosakiIchigo extends Ability {
         if (e.getDamager() instanceof Player p && isHollow.contains(p.getUniqueId())) {
             // 호로화 상태 공격 시
             if (e.getEntity() instanceof LivingEntity target) {
+                // [Fix] 관전자는 대상에서 제외
+                if (target instanceof Player pTarget && pTarget.getGameMode() == GameMode.SPECTATOR)
+                    return;
 
                 // 1. 피격 무적 시간 무시 (강화됨)
                 // 만약 데미지가 0이거나 캔슬된 상태라면(무적이라서) -> 강제로 데미지 적용

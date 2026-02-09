@@ -89,6 +89,7 @@ public class Singed extends Ability {
         if (meta != null) {
             meta.setDisplayName("§5방독면");
             meta.setLore(Arrays.asList("§7우클릭하여 착용 가능", "§7독 면역 제공", "§9방어력 +3"));
+            meta.setCustomModelData(1); // 리소스팩: singed
 
             // 방어력 3 설정
             NamespacedKey armorKey = new NamespacedKey(plugin, "singed_mask_armor");
@@ -217,6 +218,10 @@ public class Singed extends Ability {
                         if (!(entity instanceof LivingEntity victim))
                             continue;
 
+                        // [Fix] 관전자는 대상에서 제외
+                        if (victim instanceof Player pVictim && pVictim.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
+
                         if (poisonedEntities.contains(victim.getUniqueId()))
                             continue;
 
@@ -243,6 +248,10 @@ public class Singed extends Ability {
                 boolean collided = false;
                 for (Entity entity : p.getNearbyEntities(1.2, 1.2, 1.2)) {
                     if (entity instanceof LivingEntity && !entity.equals(p)) {
+                        // [Fix] 관전자는 충돌 대상에서 제외
+                        if (entity instanceof Player pEntity && pEntity.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
+
                         collided = true;
                         break;
                     }

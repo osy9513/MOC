@@ -67,6 +67,7 @@ public class Deidara extends Ability {
         if (meta1 != null) {
             meta1.setDisplayName("§f점토");
             meta1.setLore(Arrays.asList("§7우클릭 시 폭죽 탄약을 생성합니다.", "§f쿨타임: 4초"));
+            meta1.setCustomModelData(1); // 리소스팩: deidara0
             item1.setItemMeta(meta1);
         }
 
@@ -78,6 +79,7 @@ public class Deidara extends Ability {
             meta2.setLore(Arrays.asList(
                     "§7우클릭 시 설치된 모든 TNT를 폭발시킵니다.",
                     "§c[C0 조건] §f폭죽 탄약 20개 이상 보유 시 궁극기 발동"));
+            meta2.setCustomModelData(1); // 리소스팩: deidara2
             item2.setItemMeta(meta2);
         }
 
@@ -136,6 +138,7 @@ public class Deidara extends Ability {
             if (meta != null) {
                 meta.setDisplayName("§e폭죽 탄약");
                 meta.setLore(Arrays.asList("§7우클릭하여 발사"));
+                meta.setCustomModelData(1); // 리소스팩: deidara1
                 ammo.setItemMeta(meta);
             }
             p.getInventory().addItem(ammo);

@@ -62,6 +62,7 @@ public class BartholomewKuma extends Ability {
         if (meta != null) {
             meta.setDisplayName("§d바솔로뮤 쿠마의 손바닥"); // 분홍색
             meta.setLore(Arrays.asList("§7상대를 튕겨내 여행을 보냅니다.", "§c좌클릭 시 발동 (쿨타임 15초)"));
+            meta.setCustomModelData(1); // 리소스팩: kuma
             pad.setItemMeta(meta);
         }
         p.getInventory().addItem(pad);
@@ -117,6 +118,10 @@ public class BartholomewKuma extends Ability {
         }
 
         if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+
+        // [Fix] 관전자는 대상에서 제외
+        if (target instanceof Player pTarget && pTarget.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         // 능력 발동
