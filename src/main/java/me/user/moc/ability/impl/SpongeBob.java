@@ -3,6 +3,8 @@ package me.user.moc.ability.impl;
 import me.user.moc.MocPlugin;
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -129,7 +131,7 @@ public class SpongeBob extends Ability {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 4)); // 신속 5
                 p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0)); // 힘 1
 
-                p.sendMessage("§d주문하신 게살버거 나왔습니다!");
+                p.sendMessage("§d햄버거 좋아~");
                 p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
                 return;
             }
@@ -230,7 +232,7 @@ public class SpongeBob extends Ability {
         burger.setItemMeta(meta);
 
         p.getWorld().dropItem(b.getLocation().add(0.5, 1, 0.5), burger);
-        p.sendMessage("§e게살버거가 완성되었습니다!");
+        Bukkit.broadcastMessage("§e스펀지밥: 주문하신 게살버거 나왔습니다!");
         p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
     }
 

@@ -33,6 +33,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
@@ -45,7 +46,6 @@ public class PolarBearAbility extends Ability {
 
     public PolarBearAbility(JavaPlugin plugin) {
         super(plugin);
-        startTickTask();
     }
 
     @Override
@@ -113,6 +113,7 @@ public class PolarBearAbility extends Ability {
 
         // [추가] 갑옷 제거
         p.getInventory().setArmorContents(null);
+        startTickTask();
     }
 
     @Override
@@ -305,10 +306,21 @@ public class PolarBearAbility extends Ability {
         return result;
     }
 
+    private BukkitTask tickTask;
+
     private void startTickTask() {
-        new BukkitRunnable() {
+        if (tickTask != null && !tickTask.isCancelled())
+            return;
+
+        tickTask = new BukkitRunnable() {
             @Override
             public void run() {
+                if (activeEntities.isEmpty()) {
+                    this.cancel();
+                    tickTask = null;
+                    return;
+                }
+
                 for (UUID uuid : new ArrayList<>(activeEntities.keySet())) {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null || !p.isOnline())

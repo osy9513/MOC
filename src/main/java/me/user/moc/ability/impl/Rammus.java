@@ -16,14 +16,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
 
 public class Rammus extends Ability {
+    // [추가] 껍질을 착용 중인 플레이어들을 추적하는 장부
+    private final java.util.Set<java.util.UUID> wearingShell = new java.util.HashSet<>();
 
     public Rammus(JavaPlugin plugin) {
         super(plugin);
-        startArmorCheckTask();
     }
 
     @Override
@@ -69,6 +71,7 @@ public class Rammus extends Ability {
             helmet.addUnsafeEnchantment(Enchantment.THORNS, 10);
         }
         p.getInventory().addItem(helmet);
+        startArmorCheckTask();
     }
 
     // 2) 90% 반사 로직 (이벤트 핸들러)
@@ -102,10 +105,31 @@ public class Rammus extends Ability {
         }
     }
 
+    private BukkitTask armorCheckTask;
+
     private void startArmorCheckTask() {
-        new BukkitRunnable() {
+        if (armorCheckTask != null && !armorCheckTask.isCancelled())
+            return;
+
+        armorCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
+                // [수정] 월드에 한 명이라도 람머스 능력자가 있는지 확인
+                boolean rammusExists = false;
+                for (Player p : plugin.getServer().getOnlinePlayers()) {
+                    if (MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode())) {
+                        rammusExists = true;
+                        break;
+                    }
+                }
+
+                // 람머스가 없으면 태스크 종료 (최적화)
+                if (!rammusExists) {
+                    this.cancel();
+                    armorCheckTask = null;
+                    return;
+                }
+
                 // 3) 모든 플레이어 검사 (타인이 모자 쓴 경우 체크를 위해)
                 for (Player p : plugin.getServer().getOnlinePlayers()) {
                     boolean isRammusOwner = MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode());
@@ -117,16 +141,18 @@ public class Rammus extends Ability {
 
     private void checkHelmet(Player p, boolean isRammusOwner) {
         ItemStack helmet = p.getInventory().getHelmet();
-        // 이름까지 체크하여 일반 거북이 등딱지와 구분 (선택 사항, 여기선 타입만 체크하되 이름 체크 권장)
+        // 이름까지 체크하여 일반 거북이 등딱지와 구분
         boolean isSpikedShell = (helmet != null && helmet.getType() == Material.TURTLE_HELMET
                 && helmet.hasItemMeta() && helmet.getItemMeta().hasDisplayName()
                 && helmet.getItemMeta().getDisplayName().contains("가시박힌 껍질"));
 
-        boolean hasSlowness = p.hasPotionEffect(PotionEffectType.SLOWNESS);
+        // [수정] 장부를 사용하여 이전에 껍질을 쓰고 있었는지 확인
+        boolean wasWearing = wearingShell.contains(p.getUniqueId());
 
         if (isSpikedShell) {
-            // 모자를 쓰고 있는데, 효과가 아직 없다면 (막 썼을 때)
-            if (!hasSlowness) {
+            // 모자를 새로 썼을 때
+            if (!wasWearing) {
+                wearingShell.add(p.getUniqueId()); // 장부에 등록
                 if (isRammusOwner) {
                     // [주인] 구속 2 부여
                     p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 1,
@@ -142,11 +168,24 @@ public class Rammus extends Ability {
                 }
             }
         } else {
-            // 모자를 벗었을 때 효과 해제
-            if (hasSlowness) {
-                // 주의: 다른 버프 때문에 구속이 있을 수도 있지만, 편의상 해제
+            // [중요] 모자를 쓰고 있다가 '벗었을 때만' 효과 해제
+            if (wasWearing) {
+                wearingShell.remove(p.getUniqueId()); // 장부에서 삭제
                 p.removePotionEffect(PotionEffectType.SLOWNESS);
+                p.sendMessage("§c가시박힌 껍질을 벗었습니다."); // 메시지 출력
             }
         }
+    }
+
+    @Override
+    public void cleanup(Player p) {
+        wearingShell.remove(p.getUniqueId());
+        super.cleanup(p);
+    }
+
+    @Override
+    public void reset() {
+        wearingShell.clear();
+        super.reset();
     }
 }
