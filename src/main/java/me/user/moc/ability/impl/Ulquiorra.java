@@ -59,6 +59,7 @@ public class Ulquiorra extends Ability {
             meta.displayName(Component.text("§a란사 델 렐람파고"));
             meta.setLore(List.of("§7우클릭 시 2초간 기를 모아 강력한 창을 던집니다.", "§7적중 시 대상을 끌고 가며 큰 피해를 입힙니다.", "§8(쿨타임 20초)"));
             meta.setUnbreakable(true); // 부서지지 않음
+            meta.setCustomModelData(1); // 리소스팩: ulquiorra
             lanza.setItemMeta(meta);
         }
         p.getInventory().addItem(lanza);
@@ -81,6 +82,10 @@ public class Ulquiorra extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+            return;
+
+        // [Fix] 관전자는 능력 발동 불가
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         ItemStack item = e.getItem();
@@ -110,8 +115,9 @@ public class Ulquiorra extends Ability {
             setCooldown(p, 20); // 테스트 용
 
             // === [1단계: 시전 준비] ===
-            // 2. 구속 5 (Amplifier 4) 2초 -> 3초 (60 ticks)
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 4));
+            // 2. 구속 255 + 점프 불가 (안전하게 70틱 부여 후 발사 시 해제)
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 70, 5, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 70, 255, false, false, false));
 
             // 3. 메시지 출력
             p.getServer().broadcastMessage("우르키오라 쉬퍼 : §2닫아라, 무르시엘라고");
@@ -148,6 +154,11 @@ public class Ulquiorra extends Ability {
             org.bukkit.scheduler.BukkitTask launchTask = new BukkitRunnable() {
                 @Override
                 public void run() {
+                    // 발사 시 구속 해제
+                    if (p.isOnline()) {
+                        p.removePotionEffect(PotionEffectType.SLOWNESS);
+                        p.removePotionEffect(PotionEffectType.JUMP_BOOST);
+                    }
                     fireLanza(p);
                 }
             }.runTaskLater(plugin, 60L); // 60 ticks = 3 sec
@@ -164,7 +175,11 @@ public class Ulquiorra extends Ability {
 
         // 거대한 삼지창 생성 (ItemDisplay)
         ItemDisplay projectile = p.getWorld().spawn(startLoc, ItemDisplay.class);
-        projectile.setItemStack(new ItemStack(Material.TRIDENT));
+        ItemStack trident = new ItemStack(Material.TRIDENT);
+        ItemMeta tMeta = trident.getItemMeta();
+        tMeta.setCustomModelData(1); // 리소스팩: ulquiorra
+        trident.setItemMeta(tMeta);
+        projectile.setItemStack(trident);
 
         // [중요] 라운드 종료 시 삭제되도록 등록
         registerSummon(p, projectile);
@@ -269,6 +284,9 @@ public class Ulquiorra extends Ability {
                     if (entity.equals(projectile))
                         continue; // 투사체 자체 제외
                     if (entity instanceof LivingEntity) {
+                        if (entity instanceof Player
+                                && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         draggedEntities.add(entity);
                     }
                 }

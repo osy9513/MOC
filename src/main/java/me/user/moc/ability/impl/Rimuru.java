@@ -494,6 +494,9 @@ public class Rimuru extends Ability {
                             .forEach(target -> {
                                 if (target != p && !finalSlimes.contains(target)
                                         && target instanceof LivingEntity livingTarget) {
+                                    if (livingTarget instanceof Player
+                                            && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                        return;
                                     if (slimeBox.overlaps(target.getBoundingBox())) {
                                         if (livingTarget.getNoDamageTicks() <= 0) {
                                             isSlamming.add(p.getUniqueId());

@@ -161,6 +161,9 @@ public class Inuyasha extends Ability {
                     for (Location loc : path) {
                         for (Entity e : loc.getWorld().getNearbyEntities(loc, 1.0, 1.0, 1.0)) {
                             if (e instanceof LivingEntity target && !e.equals(p)) {
+                                if (target instanceof Player
+                                        && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                    continue;
                                 target.setNoDamageTicks(0);
                                 target.damage(1, p); // 20회 / 20대미지? -> 3초면 20번(6틱간격). 20 * 1 = 20
                                 target.setNoDamageTicks(0);

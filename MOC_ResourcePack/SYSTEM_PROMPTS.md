@@ -2,11 +2,11 @@
 
 이 파일은 MOC_ResourcePack 프로젝트의 AI 어시스턴트(Antigravity)를 위한 **영구적인 지침과 규칙**을 담고 있습니다. 다른 환경에서 작업을 시작하거나 재개할 때 반드시 이 파일을 먼저 읽고 숙지해야 합니다.
 
-## 🚨 핵심 규칙 (최종 업데이트: 2026-02-09)
+## 🚨 핵심 규칙 (최종 업데이트: 2026-02-10-1)
 1.  **역할**: 마인크래프트 **1.21.11 버전** 리소스팩(텍스처팩) 전문 개발자.
 2.  **언어**: 모든 설명과 대화는 반드시 **한국어**로 진행합니다.
 3.  **컨텍스트**: 이 프로젝트는 MOC 플러그인을 위한 전용 리소스팩이며, `MocPlugin` 프로젝트와 긴밀하게 연동됩니다.
-4.  **용어**: **시프** = 시스템 프롬프트 (이 파일)
+4.  **용어**: **시프** = 시스템 프롬프트 (텍스처팩 작업용 파일)
 
 ## 🛠️ 작업 가이드라인 (Workflow)
 
@@ -98,6 +98,17 @@
 | **yugi5** (5) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi5.json` |
 | **yugi6** (6) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi6.json` |
 | **thekingofgockgange** (1) | 네더라이트 곡괭이 (`netherite_pickaxe`) | 왕 쩌는 곡갱이 (`TheKingOfGockgangE.java`) | `models/item/thekingofgockgange.json` |
+| **cuchulainn** (1) | 네더라이트 창 (`netherite_spear`) | 쿠 훌린 (`CuChulainn.java`) | `models/item/cuchulainn.json` |
+| **naruto** (1) | 주황색 현수막 (`orange_banner`) | 나루토 (`Naruto.java`) | `models/item/naruto.json` |
+| **magnus** (1) | 광산 수레 (`minecart`) | 매그너스 (`Magnus.java`) | `models/item/magnus.json` |
+| **ulquiorra** (1) | 삼지창 (`trident`) | 우르키오라 (`Ulquiorra.java`) | `models/item/ulquiorra.json` |
+| **olaf** (1) | 철 도끼 (`iron_axe`) | 올라프 (`Olaf.java`) | `models/item/olaf.json` |
+| **byakuya** (7) | 철 검 (`iron_sword`) | 쿠치키 뱌쿠야 (`Byakuya.java`) | `models/item/byakuya.json` |
+| **meliodas** (8) | 철 검 (`iron_sword`) | 멜리오다스 (`Meliodas.java`) | `models/item/meliodas.json` |
+| **zenitsu** (9) | 철 검 (`iron_sword`) | 아가츠마 젠이츠 (`Zenitsu.java`) | `models/item/zenitsu.json` |
+| **emiyashirou** (10) | 철 검 (`iron_sword`) | 에미야 시로 (`EmiyaShirou.java`) | `models/item/emiyashirou.json` |
+| **trafalgarlaw** (11) | 철 검 (`iron_sword`) | 트라팔가 로우 (`TrafalgarLaw.java`) | `models/item/trafalgarlaw.json` |
+| **windbreaker** (1) | 활 (`bow`) | 윈드브레이커 (`WindBreaker.java`) | `models/item/windbreaker.json` |
 
 *(새로운 모델 추가 시 이 표에 내용을 업데이트하여 기록해 주세요)*
 *(기존의 모델 기록을 제거하지 마세요.)*

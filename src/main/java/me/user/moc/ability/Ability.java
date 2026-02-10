@@ -154,6 +154,12 @@ public abstract class Ability implements Listener {
             return true;
         }
 
+        // [추가] 관전 모드는 능력 사용 불가
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+            // p.sendMessage("§c관전 모드에서는 능력을 사용할 수 없습니다."); // 메시지는 너무 많이 뜰 수 있으니 생략하거나 액션바로
+            return false;
+        }
+
         // [게임 상태 확인] 전투 전에는 능력 사용 불가
         MocPlugin moc = (MocPlugin) plugin;
         GameManager gm = moc.getGameManager();

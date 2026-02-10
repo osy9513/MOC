@@ -48,6 +48,7 @@ public class Naruto extends Ability {
         if (meta != null) {
             meta.setDisplayName("§6금술 두루마리");
             meta.setLore(List.of("§7우클릭 시 다중 그림자 분신술을 사용합니다."));
+            meta.setCustomModelData(1); // 리소스팩: naruto
             item.setItemMeta(meta);
         }
         p.getInventory().addItem(item);

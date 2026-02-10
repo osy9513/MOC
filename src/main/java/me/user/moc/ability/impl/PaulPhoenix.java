@@ -177,7 +177,9 @@ public class PaulPhoenix extends Ability {
         // 타겟이 없으면 RayTrace로 탐색 (범위 너비 1.0으로 넉넉하게)
         if (target == null) {
             RayTraceResult result = w.rayTraceEntities(startLoc, direction, 4.5, 1.0,
-                    entity -> entity instanceof LivingEntity && !entity.getUniqueId().equals(p.getUniqueId()));
+                    entity -> entity instanceof LivingEntity && !entity.getUniqueId().equals(p.getUniqueId())
+                            && !(entity instanceof Player
+                                    && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR));
             if (result != null && result.getHitEntity() instanceof LivingEntity hit) {
                 target = hit;
             }
@@ -203,8 +205,8 @@ public class PaulPhoenix extends Ability {
         }
 
         // 2. 그로기 (CC) - 구속, 점프 불가
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 255, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 20, 128, false, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 5, false, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 20, 255, false, false));
 
         // 3. 적중 시 소리 (타격감 극대화)
         World w = target.getWorld();
@@ -218,6 +220,9 @@ public class PaulPhoenix extends Ability {
         // 타겟 주변 3블록 내 적들에게 넉백
         for (Entity e : target.getNearbyEntities(3, 3, 3)) {
             if (e instanceof LivingEntity nearby && !e.equals(attacker) && !e.equals(target)) {
+                if (nearby instanceof Player && ((Player) nearby).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    continue;
+
                 // 중심에서 바깥으로 밀어내기
                 Vector knockback = e.getLocation().toVector().subtract(target.getLocation().toVector()).normalize()
                         .multiply(1.2).setY(0.4);

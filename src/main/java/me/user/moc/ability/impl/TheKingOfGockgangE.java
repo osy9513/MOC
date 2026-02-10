@@ -139,6 +139,8 @@ public class TheKingOfGockgangE extends Ability {
 
         for (Entity entity : world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1.5, 1.5, 1.5)) {
             if (entity instanceof LivingEntity && entity != p) {
+                if (entity instanceof Player && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    continue;
                 ((LivingEntity) entity).damage(3.0, p);
             }
         }

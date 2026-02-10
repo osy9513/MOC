@@ -465,6 +465,9 @@ public class Yugi extends Ability {
                     if (duration % 3 == 0) {
                         for (Entity e : p.getWorld().getNearbyEntities(point, 2.5, 2.5, 2.5)) {
                             if (e instanceof LivingEntity le && e != p && !isAlly(p, e)) {
+                                if (le instanceof Player
+                                        && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                    continue;
                                 le.damage(6.0, p); // 3칸 = 6 대미지
                                 le.setNoDamageTicks(0);
                             }
