@@ -173,7 +173,7 @@ public List<String> getDescription() {
 
 #### [주의] 파일명 규칙 (필수)
 - **리소스팩의 모든 파일명(이미지, JSON 등)은 반드시 소문자여야 합니다.**
-- 만약 사용자가 대문자가 포함된 파일(예: `Gojo.png`)을 추가했다면, **반드시 소문자로 변경(`gojo.png`)**한 뒤 작업을 진행하십시오.
+- 만약 사용자가 대문자가 포함된 파일(예: `Gojo.png`)을 추가했다면, **반드시 소문자로 변경**(예: `gojo.png`)한 뒤 작업을 진행하십시오.
 - JSON 모델 파일 내부에서 텍스처 경로를 지정할 때도 소문자로 작성해야 합니다.
 
 #### 1단계: 아이템 정의 파일 (Item Definition)
@@ -221,9 +221,8 @@ public List<String> getDescription() {
 
 ### 2. 리소스팩 압축 및 해시 제공
 사용자가 압축을 요청하면 다음 절차를 따릅니다.
-1.  **대상**: `assets` 폴더와 `pack.mcmeta` 파일만 포함.
+1.  **대상**: `assets` 폴더와 `pack.mcmeta`, `pack.png` 파일만 포함.
 2.  **파일명**: `MOC_ResourcePack.zip` (프로젝트 루트에 생성)
-3.  **해시**: 압축 완료 후 반드시 **SHA-1 해시값(소문자)**을 계산하여 사용자에게 제공합니다.
 
 ---
 
@@ -276,7 +275,7 @@ public List<String> getDescription() {
 | **gojo** (1) | 검은색 양털 (`black_wool`) | 고죠 사토루 (`GojoSatoru.java`) | `models/item/gojo.json` |
 | **spongebob** (1) | 철 삽 (`iron_shovel`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob.json` |
 | **spongebob2** (1) | 구운 소고기 (`cooked_beef`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob2.json` |
-| **kinghassan** (2) | 네더라이트 검 (`netherite_sword`) | 산의 노인 (`KingHassan.java`) | `models/item/kinghassan.json` |
+| **kinghassan_** (2) | 네더라이트 검 (`netherite_sword`) | 산의 노인 (`KingHassan.java`) | `models/item/kinghassan.json` |
 
 ---
 
