@@ -17,6 +17,11 @@ import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import org.bukkit.util.Transformation;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 
 public class EmiyaShirou extends Ability {
 
@@ -77,6 +82,17 @@ public class EmiyaShirou extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        p.getInventory().remove(Material.IRON_SWORD);
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§c막야");
+            meta.setLore(List.of("§7라운드 시작 15초 후 무한의 검제를 전개합니다."));
+            meta.setCustomModelData(10); // 리소스팩: emiyashirou
+            sword.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sword);
+
         startAutoTriggerCheck();
     }
 
@@ -438,70 +454,88 @@ public class EmiyaShirou extends Ability {
 
         rSword.fired = true;
 
-        ArmorStand stand = rSword.stand;
-        flyingSwords.computeIfAbsent(owner.getUniqueId(), k -> new ArrayList<>()).add(stand);
+        // 기존 아머스탠드 제거 (땅에서 솟아오른 것)
+        if (rSword.stand != null) {
+            rSword.stand.remove();
+        }
 
         // 발사 로직
         // 1. 타겟 방향 벡터 계산
-        Location startLoc = stand.getLocation().add(0, 1.5, 0); // 눈높이 보정
+        Location startLoc = rSword.stand.getLocation().add(0, 1.5, 0); // 눈높이 보정
         Location targetLoc = target.getEyeLocation();
         Vector dir = targetLoc.toVector().subtract(startLoc.toVector()).normalize();
 
-        // 2. 투명 화살(Projectile) 생성하여 태우기
-        // 직접 이동시키면 충돌 판정이 어려우므로 Arrow를 사용
-        Arrow arrow = stand.getWorld().spawn(startLoc, Arrow.class);
+        // 2. 화살(Projectile) 생성
+        Arrow arrow = startLoc.getWorld().spawn(startLoc, Arrow.class);
         arrow.setShooter(owner);
-        arrow.setDamage(4.0); // [수정] 데미지 너프 (8 -> 4)
-        arrow.setVelocity(dir.multiply(1.5)); // [수정] 속도 2배 너프 (3.0 -> 1.5)
+        arrow.setDamage(4.0);
+        arrow.setVelocity(dir.multiply(1.5));
         arrow.setSilent(true);
-        arrow.setGravity(false); // [추가] 포물선 제거 (직선 비행)
-        // [추가] 화살 줍기 방지 (인벤토리 들어오는 것 방지)
+        arrow.setGravity(false); // 직선 비행
         arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+        // [Fix] 화살 투명화 (올라프 스타일)
+        // Entity.setInvisible(true)는 클라이언트 버전에 따라 화살에 적용 안 될 수도 있어서 포션 효과도 같이 적용
+        arrow.setInvisible(true);
+        // arrow.setColor는 TippedArrow가 아니면 안 될 수 있음.
+        // 일반 Arrow도 PotionEffect는 가질 수 있음.
+        try {
+            // 투명 포션 효과 적용 (입자 없음)
+            arrow.addCustomEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 600, 0, false, false), true);
+        } catch (Exception ignored) {
+        }
 
         arrow.setMetadata(KEY_UBW_HOMING, new FixedMetadataValue(plugin, owner.getUniqueId().toString()));
-        // [수정] 아머스탠드를 화살에 태우지 않고 위치 동기화 (화살 숨기기 위함)
-        // arrow.addPassenger(stand);
 
-        // 소리 [수정] 칼 날아가는 소리 (날카로운 금속음)
-        stand.getWorld().playSound(startLoc, Sound.ITEM_TRIDENT_THROW, 1.0f, 2.0f); // 쉭! (고음)
-        stand.getWorld().playSound(startLoc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f); // 챙!
+        // 3. ItemDisplay 생성 (검은색/흰색 검 - 막야/간장)
+        // 리소스팩: emiyashirou (CustomModelData 10)
+        ItemDisplay visual = startLoc.getWorld().spawn(startLoc, ItemDisplay.class, entity -> {
+            ItemStack sword = new ItemStack(Material.IRON_SWORD);
+            org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+            if (meta != null) {
+                meta.setCustomModelData(10); // emiyashirou
+                sword.setItemMeta(meta);
+            }
+            entity.setItemStack(sword);
+            // 크기 및 회전 조정 (칼이 날아가는 방향으로 눕게)
+            // 기본 ItemDisplay는 수직으로 서 있음.
+            // X축 90도 회전하면 앞으로 누움.
+            entity.setTransformation(new Transformation(
+                    new Vector3f(0, 0, 0),
+                    new AxisAngle4f((float) (Math.PI / 2), 1, 0, 0), // 90도 회전
+                    new Vector3f(1, 1, 1),
+                    new AxisAngle4f(0, 0, 0, 1)));
+            entity.setBillboard(Display.Billboard.FIXED); // 회전 고정 (화살 따라감)
+        });
 
-        stand.getWorld().spawnParticle(Particle.CRIT, startLoc, 5);
+        // 화살에 태우기
+        arrow.addPassenger(visual);
 
-        // 디스폰 체크용 태스크 (화살 박히면 제거, 10초 제한 추가) + 위치 동기화
+        // 소리
+        startLoc.getWorld().playSound(startLoc, Sound.ITEM_TRIDENT_THROW, 1.0f, 2.0f);
+        startLoc.getWorld().playSound(startLoc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
+
+        // 디스폰 및 파티클 태스크
         new BukkitRunnable() {
-            int timer = 0; // [추가] 10초 자동 제거를 위한 타이머
+            int timer = 0;
 
             @Override
             public void run() {
-                // [Fix] 땅에 꽂혀도 바로 사라지지 않고 10초(200틱) 뒤에 사라짐
                 if (arrow.isDead() || !arrow.isValid() || timer >= 200) {
-                    stand.remove();
-                    List<ArmorStand> myFlying = flyingSwords.get(owner.getUniqueId());
-                    if (myFlying != null)
-                        myFlying.remove(stand);
-
-                    arrow.remove(); // [추가] 화살도 즉시 제거 (전장에 남지 않게)
+                    if (visual.isValid())
+                        visual.remove();
+                    if (!arrow.isDead())
+                        arrow.remove();
                     this.cancel();
                     return;
                 }
 
-                // [수정] 위치 동기화: 화살 위치를 따라가되, Y축을 낮춰서 화살이 칼(아머스탠드 손) 위치에 가려지도록 함
-                Location currentLoc = arrow.getLocation();
-                // 아머스탠드 높이(약 1.9m)와 손 위치(약 1.4m) 고려, -1.5m 정도 내리면 화살이 손 부근(칼)에 위치
-                Location standLoc = currentLoc.clone().add(0, -1.5, 0);
-                standLoc.setYaw(currentLoc.getYaw());
-                standLoc.setPitch(currentLoc.getPitch());
-                stand.teleport(standLoc);
-
-                // [추가] 10초 뒤 자동 제거를 위한 타이머 증가
-                timer++;
-
-                // [추가] 비행 중 파티클 (연한 푸른색)
+                // 파티클
                 Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(150, 255, 255), 0.5f);
                 arrow.getWorld().spawnParticle(Particle.DUST, arrow.getLocation(), 3, 0.1, 0.1, 0.1, dust);
+
+                timer++;
             }
-        }.runTaskTimer(plugin, 1L, 1L); // 1틱마다 실행 (부드럽게)
+        }.runTaskTimer(plugin, 1L, 1L);
     }
 
     // === 이벤트 처리 ===

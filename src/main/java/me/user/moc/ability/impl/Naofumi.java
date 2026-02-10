@@ -18,6 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
@@ -34,7 +35,6 @@ public class Naofumi extends Ability {
 
     public Naofumi(JavaPlugin plugin) {
         super(plugin);
-        startPassiveLoop();
     }
 
     @Override
@@ -78,6 +78,7 @@ public class Naofumi extends Ability {
         // 초기화
         blockCounts.put(p.getUniqueId(), 0);
         isIronMaidenReady.remove(p.getUniqueId());
+        startPassiveLoop();
     }
 
     // ... (skipped detailCheck and reset) ...
@@ -114,10 +115,33 @@ public class Naofumi extends Ability {
     /**
      * [패시브 루프] 1초마다 방패 들고 있는지 확인하여 버프/디버프 부여
      */
+    private BukkitTask passiveTask;
+
+    /**
+     * [패시브 루프] 1초마다 방패 들고 있는지 확인하여 버프/디버프 부여
+     */
     private void startPassiveLoop() {
-        new BukkitRunnable() {
+        if (passiveTask != null && !passiveTask.isCancelled())
+            return;
+
+        passiveTask = new BukkitRunnable() {
             @Override
             public void run() {
+                // Naofumi 플레이어 존재 여부 확인
+                boolean naofumiExists = false;
+                for (Player p : plugin.getServer().getOnlinePlayers()) {
+                    if (AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
+                        naofumiExists = true;
+                        break;
+                    }
+                }
+
+                if (!naofumiExists) {
+                    this.cancel();
+                    passiveTask = null;
+                    return;
+                }
+
                 for (Player p : plugin.getServer().getOnlinePlayers()) {
                     if (AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
                         checkShieldPassive(p);
@@ -193,6 +217,9 @@ public class Naofumi extends Ability {
             // 타겟팅 확인 (10칸)
             Entity target = getTargetEntity(p, 10);
             if (target instanceof LivingEntity livingTarget) {
+                if (livingTarget instanceof Player
+                        && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
                 // 발동!
                 useIronMaiden(p, livingTarget);
             }

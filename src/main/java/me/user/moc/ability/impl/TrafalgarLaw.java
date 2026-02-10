@@ -64,7 +64,9 @@ public class TrafalgarLaw extends Ability {
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
         ItemMeta meta = sword.getItemMeta();
         if (meta != null) {
+            meta.setDisplayName("§b키코쿠"); // Kikoku
             meta.setLore(Arrays.asList("§7웅크리기 + 우클릭 : ROOM 전개", "§7ROOM 안에서 우클릭 : 샴블즈 (위치 교환)"));
+            meta.setCustomModelData(11); // 리소스팩: trafalgarlaw
             sword.setItemMeta(meta);
         }
         p.getInventory().addItem(sword);
@@ -292,7 +294,8 @@ public class TrafalgarLaw extends Ability {
                     p.getEyeLocation(),
                     p.getEyeLocation().getDirection(),
                     ROOM_RADIUS, // 룸 반경까지만 탐색
-                    entity -> entity != p && entity instanceof LivingEntity);
+                    entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player
+                            && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR));
             if (result != null) {
                 target = result.getHitEntity();
             }

@@ -273,6 +273,8 @@ public class MuhammadAvdol extends Ability {
                         continue; // 주인 면역
                     if (e.equals(stand))
                         continue;
+                    if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                        continue;
 
                     // 히트!
                     le.damage(21.0, owner);

@@ -71,6 +71,7 @@ public class Mothership extends Ability {
                     "§7우클릭 시 모선을 소환합니다.",
                     "§7모선은 주변 적을 공격합니다.",
                     "§8(지속 12초, 쿨타임 20초)"));
+            meta.setCustomModelData(1); // 리소스팩: mothership
             item.setItemMeta(meta);
         }
         p.getInventory().addItem(item);

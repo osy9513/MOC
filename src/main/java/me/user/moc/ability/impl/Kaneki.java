@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -42,7 +43,6 @@ public class Kaneki extends Ability {
 
     public Kaneki(JavaPlugin plugin) {
         super(plugin);
-        startTickTask();
     }
 
     @Override
@@ -88,6 +88,7 @@ public class Kaneki extends Ability {
 
         // 4. 메시지
         Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
+        startTickTask();
     }
 
     @Override
@@ -176,7 +177,9 @@ public class Kaneki extends Ability {
         }
 
         Entity target = null;
-        var trace = p.getWorld().rayTraceEntities(start, dir, range, 0.5, e -> e != p && e instanceof LivingEntity);
+        var trace = p.getWorld().rayTraceEntities(start, dir, range, 0.5,
+                e -> e != p && e instanceof LivingEntity
+                        && !(e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR));
         if (trace != null && trace.getHitEntity() != null) {
             target = trace.getHitEntity();
         }
@@ -193,12 +196,33 @@ public class Kaneki extends Ability {
         }
     }
 
+    private BukkitTask tickTask;
+
     private void startTickTask() {
-        new BukkitRunnable() {
+        if (tickTask != null && !tickTask.isCancelled())
+            return;
+
+        tickTask = new BukkitRunnable() {
             private int tickCount = 0;
 
             @Override
             public void run() {
+                // Kaneki 플레이어 존재 여부 확인
+                boolean kanekiExists = false;
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p,
+                            getCode())) {
+                        kanekiExists = true;
+                        break;
+                    }
+                }
+
+                if (!kanekiExists) {
+                    this.cancel();
+                    tickTask = null;
+                    return;
+                }
+
                 // 2틱마다 실행 (0.1초)
                 tickCount += 2;
 

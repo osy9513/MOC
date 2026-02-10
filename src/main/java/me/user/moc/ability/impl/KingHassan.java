@@ -79,7 +79,7 @@ public class KingHassan extends Ability {
         meta.setDisplayName("§5산의 노인의 대검");
         meta.setLore(List.of("§7기본 공격 시 방어력을 무시합니다.", "§c방어력 무시 32 대미지"));
         meta.setUnbreakable(true);
-        meta.setCustomModelData(12345);
+        meta.setCustomModelData(2); // 리소스팩: kinghassan
         sword.setItemMeta(meta);
 
         // 첫 번째 칸에 지급 및 선택 강제
@@ -112,8 +112,9 @@ public class KingHassan extends Ability {
         super.cleanup(p);
         if (p.isOnline()) {
             p.removePotionEffect(PotionEffectType.INVISIBILITY);
-            p.removePotionEffect(PotionEffectType.SLOWNESS);
+            p.removePotionEffect(PotionEffectType.SLOWNESS); // @@@@@@@@@@@@@@@
             p.removePotionEffect(PotionEffectType.REGENERATION);
+            p.sendMessage("§c사망하여 산의 노인 버프가 해제되었습니다."); // 메시지 출력
             // 최대 체력 원상 복구는 AbilityManager에서 처리하므로 여기서는 제거
             // if (p.getAttribute(Attribute.MAX_HEALTH) != null) {
             // p.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);

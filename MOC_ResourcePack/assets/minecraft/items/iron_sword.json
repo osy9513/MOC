@@ -1,0 +1,89 @@
+{
+    "model": {
+        "type": "minecraft:range_dispatch",
+        "property": "minecraft:custom_model_data",
+        "entries": [
+            {
+                "threshold": 1,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/inuyasha"
+                }
+            },
+            {
+                "threshold": 2,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/rooki"
+                }
+            },
+            {
+                "threshold": 3,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/togahimiko"
+                }
+            },
+            {
+                "threshold": 4,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/nanayashiki"
+                }
+            },
+            {
+                "threshold": 5,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/aizensosuke"
+                }
+            },
+            {
+                "threshold": 6,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/kurosakiichigo"
+                }
+            },
+            {
+                "threshold": 7,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/byakuya"
+                }
+            },
+            {
+                "threshold": 8,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/meliodas"
+                }
+            },
+            {
+                "threshold": 9,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/zenitsu"
+                }
+            },
+            {
+                "threshold": 10,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/emiyashirou"
+                }
+            },
+            {
+                "threshold": 11,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/trafalgarlaw"
+                }
+            }
+        ],
+        "fallback": {
+            "type": "minecraft:model",
+            "model": "minecraft:item/iron_sword"
+        }
+    }
+}

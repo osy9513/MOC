@@ -56,7 +56,17 @@ public class Meliodas extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 지급 아이템 없음 (기본 검 사용)
+        p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
+
+        ItemStack sword = new ItemStack(org.bukkit.Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§e로스트베인");
+            meta.setLore(Arrays.asList("§7우클릭 시 §d풀 카운터§7를 사용합니다."));
+            meta.setCustomModelData(8); // 리소스팩: meliodas
+            sword.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sword);
     }
 
     @Override
@@ -69,8 +79,8 @@ public class Meliodas extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 30초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f추가 장비 : 로스트베인");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 
     @Override
@@ -98,6 +108,10 @@ public class Meliodas extends Ability {
 
         ItemStack hand = e.getItem();
         if (hand == null || !hand.getType().name().endsWith("_SWORD"))
+            return;
+
+        // [추가] 로스트베인 이름 체크
+        if (hand.getItemMeta() == null || !"§e로스트베인".equals(hand.getItemMeta().getDisplayName()))
             return;
 
         // 이미 준비 중이면 무시 (또는 조기 발동? 현재 기획은 3초 유지 or 떼기지만, 떼기 감지가 어려워 3초 고정으로 구현)
@@ -200,6 +214,8 @@ public class Meliodas extends Ability {
         if (finalDamage > 0) {
             for (Entity e : p.getNearbyEntities(5, 5, 5)) {
                 if (e instanceof LivingEntity target && e != p) {
+                    if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                        continue;
                     target.damage(finalDamage, p);
                     // 넉백 살짝
                     target.setVelocity(target.getLocation().toVector().subtract(p.getLocation().toVector()).normalize()
@@ -212,7 +228,7 @@ public class Meliodas extends Ability {
 
         // 패널티: 3초간 움직임 불가 (Self-Stun)
         // 구속(Slowness) 높은 레벨 + 점프 불가
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 255, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 60, 250, false, false)); // 250: 점프 불가
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 5, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 60, 255, false, false)); // 250: 점프 불가
     }
 }

@@ -60,6 +60,10 @@ public class TogaHimiko extends Ability {
     // [Fix] 변신 도중(능력 교체 중) cleanup에 의해 revertTask가 취소되는 것을 방지하기 위한 플래그
     private final Set<UUID> ignoringCleanup = new HashSet<>();
 
+    public boolean isTransformed(UUID uuid) {
+        return isTransformed.contains(uuid);
+    }
+
     public TogaHimiko(JavaPlugin plugin) {
         super(plugin);
     }
@@ -83,7 +87,17 @@ public class TogaHimiko extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 기본 지급 아이템 없음
+        // 기존 철 칼 제거 (지급받는 단검 사용 유도)
+        p.getInventory().remove(Material.IRON_SWORD);
+
+        ItemStack dagger = new ItemStack(Material.IRON_SWORD);
+        ItemMeta meta = dagger.getItemMeta();
+        meta.displayName(Component.text("§c토가의 단검"));
+        meta.lore(Arrays.asList(Component.text("§7공격 시 피를 빨아드리는 장치가 장착되어 있다.")));
+        meta.setCustomModelData(3); // 리소스팩: togahimiko
+        dagger.setItemMeta(meta);
+
+        p.getInventory().addItem(dagger);
     }
 
     @Override
@@ -91,18 +105,18 @@ public class TogaHimiko extends Ability {
         p.sendMessage("§d복합 ● 토가 히미코(나의 히어로 아카데미아)");
         p.sendMessage("§f개성 - 변신을 얻습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f토가 히미코가 다른 유저를 공격 시");
+        p.sendMessage("§f토가의 단검으로 다른 유저를 공격 시");
         p.sendMessage("§f인벤토리에 공격한 유저의 닉네임이 적힌 마실 수 있는 포션이 생긴다.");
         p.sendMessage("§f해당 포션을 우클릭 시 마시고 30초 동안 상대로 변신한다.");
-        p.sendMessage("§f상대의 능력을 사용할 수 있고 30후 다시 토가 히미코로 돌아온다.");
+        p.sendMessage("§f상대의 능력을 사용할 수 있고 30초 후 다시 토가 히미코로 돌아온다.");
         p.sendMessage(" ");
         p.sendMessage("§f유저 포션을 마실 때 체력 4칸을 회복한다.");
         // p.sendMessage("§f모든 포션을 80% 더 빨리 마신다."); // 삭제됨
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초.");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f추가 장비 : 토가의 단검");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 
     // [이벤트 1] 공격 시 피(포션) 뽑기
@@ -112,9 +126,31 @@ public class TogaHimiko extends Ability {
             return;
         }
 
+        // [Fix] 관전자는 대상에서 제외
+        if (victim.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
+
         // 공격자가 토가 히미코인지 확인 (변신 중에는 피를 뽑을 수 없음 - 원작 고증 혹은 밸런스)
         AbilityManager am = AbilityManager.getInstance((MocPlugin) plugin);
         if (!am.hasAbility(attacker, getCode()) || isTransformed.contains(attacker.getUniqueId())) {
+            return;
+        }
+
+        // [추가] 토가의 단검으로 공격했는지 확인
+        ItemStack weapon = attacker.getInventory().getItemInMainHand();
+        if (weapon.getType() != Material.IRON_SWORD || weapon.getItemMeta() == null)
+            return;
+
+        // 이름 체크 (색상 코드 제외하고 비교하거나 포함 여부 확인)
+        // Component 처리 필요하지만 일단 Legacy DisplayName으로 확인
+        // Paper 1.21.11에서는 displayName()을 권장하지만, 기존 코드 스타일 유지
+        // "§c토가의 단검"
+        Component dispName = weapon.getItemMeta().displayName();
+        String plainName = (dispName != null) ? ((net.kyori.adventure.text.TextComponent) dispName).content() : "";
+
+        // Legacy or Plain check
+        if (!plainName.contains("토가의 단검") &&
+                !(weapon.getItemMeta().hasDisplayName() && weapon.getItemMeta().getDisplayName().contains("토가의 단검"))) {
             return;
         }
 
@@ -135,7 +171,7 @@ public class TogaHimiko extends Ability {
             // [중요] 색상을 빨간색(RGB)으로 강제 설정
             meta.setColor(Color.RED);
             meta.displayName(Component.text("§c" + targetName + "의 혈액"));
-            meta.setLore(Arrays.asList("§7마시면 30초간 해당 플레이어로 변신합니다."));
+            meta.lore(Arrays.asList(Component.text("§7마시면 30초간 해당 플레이어로 변신합니다.")));
             potion.setItemMeta(meta);
         }
         p.getInventory().addItem(potion);

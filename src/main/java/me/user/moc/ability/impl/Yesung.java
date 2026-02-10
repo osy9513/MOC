@@ -15,6 +15,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
@@ -63,34 +64,44 @@ public class Yesung extends Ability {
 
     @Override
     public String getName() {
-        return "예성이";
+        return "루키";
     }
 
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§d히든 ● 예성이(바집소)",
+                "§d히든 ● 루키(바집소)",
                 "§f메이플 용사가 되.");
     }
 
     @Override
     public void giveItem(Player p) {
-        // 지급 아이템 없음
+        // 기존 철 칼 제거
+        p.getInventory().remove(Material.IRON_SWORD);
+
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        ItemMeta meta = sword.getItemMeta();
+        meta.displayName(Component.text("§f제네시스 두손검"));
+        meta.lore(Arrays.asList(Component.text("§7우클릭 시 소울 이클립스/솔루나 디바이드를 사용합니다.")));
+        meta.setCustomModelData(2); // 리소스팩: rooki
+        sword.setItemMeta(meta);
+
+        p.getInventory().addItem(sword);
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§d히든 ● 예성이(바집소)");
+        p.sendMessage("§d히든 ● 루키(바집소)");
         p.sendMessage("§f메이플 용사가 되어 소드마스터 5차 스킬를 사용합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f검을 들고 우클릭 시 공중으로 도약하여 거대한 달을 가릅니다.");
+        p.sendMessage("§f전용 검을 들고 우클릭 시 공중으로 도약하여 거대한 달을 가릅니다.");
         p.sendMessage("§f달이 갈라지면 월드 전체 적에게 13의 데미지를 줍니다.");
         p.sendMessage("§f(시전 중 낙하 데미지 무시)");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 40초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f추가 장비 : 제네시스 두손검");
+        p.sendMessage("§f장비 제거 : 철 칼");
     }
 
     @EventHandler
@@ -107,7 +118,10 @@ public class Yesung extends Ability {
         if (item == null)
             return;
 
-        if (!item.getType().name().contains("SWORD"))
+        // 전용 아이템 체크 (제네시스 두손검)
+        if (item.getType() != Material.IRON_SWORD)
+            return;
+        if (item.getItemMeta() == null || !"§f제네시스 두손검".equals(item.getItemMeta().getDisplayName()))
             return;
 
         if (!checkCooldown(p))
@@ -118,7 +132,7 @@ public class Yesung extends Ability {
     }
 
     private void activateSkill(Player p) {
-        Bukkit.broadcast(Component.text("§e예성이 : §f님들 메이플 하쉴?"));
+        Bukkit.broadcast(Component.text("§e루키 : §f님들 메이플 하쉴?"));
 
         // 1. 도약
         Vector jumpVel = p.getLocation().getDirection().multiply(0.5).setY(1.5);
@@ -325,6 +339,9 @@ public class Yesung extends Ability {
                 continue;
             // BlockDisplay 등은 제외
             if (e instanceof Display)
+                continue;
+
+            if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                 continue;
 
             // [추가] 무적 시간 무시 (True Damage 효과)

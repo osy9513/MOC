@@ -57,6 +57,7 @@ public class MisakaMikoto extends Ability {
         ItemMeta meta = coin.getItemMeta();
         meta.setDisplayName("§b코인");
         meta.setLore(Arrays.asList("§7우클릭하여 레일건을 발사합니다.", "§8(소모품, 쿨타임 3초)"));
+        meta.setCustomModelData(1); // 리소스팩: misakamikoto1
         coin.setItemMeta(meta);
         p.getInventory().addItem(coin);
     }
@@ -136,6 +137,7 @@ public class MisakaMikoto extends Ability {
                         ItemStack fullPower = new ItemStack(Material.NETHER_STAR);
                         ItemMeta meta = fullPower.getItemMeta();
                         meta.setDisplayName("§e전력");
+                        meta.setCustomModelData(1); // 리소스팩: misakamikoto2
                         fullPower.setItemMeta(meta);
                         p.getInventory().addItem(fullPower);
                         p.sendMessage("§e[MOC] §f전력(네더의 별)이 활성화되었습니다!");

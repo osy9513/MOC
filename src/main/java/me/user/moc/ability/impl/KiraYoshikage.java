@@ -15,6 +15,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 // import org.bukkit.attribute.Attribute; // FQN 사용을 위해 생략
 
@@ -32,7 +33,6 @@ public class KiraYoshikage extends Ability {
 
     public KiraYoshikage(MocPlugin plugin) {
         super(plugin);
-        startAITask();
     }
 
     @Override
@@ -55,6 +55,7 @@ public class KiraYoshikage extends Ability {
     @Override
     public void giveItem(Player p) {
         summonSheerHeartAttack(p);
+        startAITask();
     }
 
     private void summonSheerHeartAttack(Player owner) {
@@ -134,8 +135,13 @@ public class KiraYoshikage extends Ability {
         registerSummon(owner, text);
     }
 
+    private BukkitTask aiTask;
+
     private void startAITask() {
-        new BukkitRunnable() {
+        if (aiTask != null && !aiTask.isCancelled())
+            return;
+
+        aiTask = new BukkitRunnable() {
             int tick = 0;
 
             @Override
@@ -145,7 +151,36 @@ public class KiraYoshikage extends Ability {
                     if (!sheetHeartAttacks.isEmpty()) {
                         reset();
                     }
+                    if (sheetHeartAttacks.isEmpty()) {
+                        this.cancel();
+                        aiTask = null;
+                        return;
+                    }
                     return;
+                }
+
+                if (sheetHeartAttacks.isEmpty()) {
+                    // 확인: 소환된 SHA가 없으면 태스크 종료?
+                    // 하지만 SHA는 giveItem에서 소환됨.
+                    // 여기서는 "KiraYoshikage 능력자가 아예 없는지" 확인하는게 더 정확함.
+                    // 하지만 로직 상 SHA가 없으면 루프 돌 이유가 없음.
+                    // 다만, SHA가 죽었을 때 respawn 로직이 여기 있으므로...
+                    // "Kira 능력자가 한명이라도 있는지" 체크가 필요함.
+
+                    boolean kiraExists = false;
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p,
+                                getCode())) {
+                            kiraExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!kiraExists) {
+                        this.cancel();
+                        aiTask = null;
+                        return;
+                    }
                 }
 
                 for (UUID ownerUUID : new java.util.HashSet<>(sheetHeartAttacks.keySet())) {

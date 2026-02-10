@@ -267,6 +267,9 @@ public class Gintoki extends Ability {
 
             // [수정] 메타데이터에서 시전자 정보 가져오기
             if (e.getHitEntity() instanceof LivingEntity le) {
+                if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
+
                 Player shooter = null;
                 if (ball.hasMetadata("Shooter")) {
                     java.util.UUID shooterUuid = (java.util.UUID) ball.getMetadata("Shooter").get(0).value();

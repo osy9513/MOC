@@ -25,14 +25,15 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.inventory.EquipmentSlot;
+// import org.bukkit.inventory.EquipmentSlot; // unused
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.FoodComponent; // [중요] 1.21 데이터 컴포넌트
+// import org.bukkit.inventory.meta.components.FoodComponent; // [삭제] unused
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
@@ -45,7 +46,6 @@ public class PolarBearAbility extends Ability {
 
     public PolarBearAbility(JavaPlugin plugin) {
         super(plugin);
-        startTickTask();
     }
 
     @Override
@@ -77,34 +77,25 @@ public class PolarBearAbility extends Ability {
         p.getInventory().remove(Material.COOKED_BEEF);
         p.getInventory().addItem(new ItemStack(Material.BEEF, 32));
 
-        // [장비 지급] 곰 손톱 (염소 뿔 -> 데이터 조작으로 소리 제거)
-        ItemStack claw = new ItemStack(Material.GOAT_HORN);
+        // [장비 지급] 곰 손톱 (염소 뿔 -> 돌 칼로 변경 요청)
+        ItemStack claw = new ItemStack(Material.STONE_SWORD);
         ItemMeta meta = claw.getItemMeta();
         if (meta != null) {
+            meta.setCustomModelData(1);
             meta.setDisplayName("§f곰 손톱");
             meta.setLore(Arrays.asList("§7북극곰의 날카로운 손톱입니다."));
-
-            // 1. 데미지 설정 (4.0 추가 = 총 5.0)
+            // 1. 데미지 설정 (기존 유지)
+            // 주의: 아이템에 AttributeModifier를 추가하면 기본 스탯(돌칼 5데미지)은 사라지고 이것만 남습니다.
+            // 따라서 기존 염소뿔때와 동일한 데미지가 적용됩니다.
             AttributeModifier damageMod = new AttributeModifier(
-                    UUID.randomUUID(),
-                    "generic.attackDamage",
+                    new org.bukkit.NamespacedKey(plugin, "polar_bear_damage"),
                     3.0,
                     AttributeModifier.Operation.ADD_NUMBER,
-                    EquipmentSlot.HAND // 주손에 들었을 때만
+                    org.bukkit.inventory.EquipmentSlotGroup.HAND // [1.21 변경] EquipmentSlot -> EquipmentSlotGroup 권장
             );
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, damageMod);
 
-            // [▼▼▼ 핵심: Data Component로 소리 죽이기 ▼▼▼]
-            // 염소 뿔을 '음식'으로 설정합니다.
-            // 우클릭 시 '나팔 불기' 대신 '먹기' 액션이 나가게 되어 소리가 안 납니다.
-            FoodComponent food = meta.getFood();
-            food.setNutrition(0);
-            food.setSaturation(0);
-            food.setCanAlwaysEat(true); // 배불러도 먹는 시늉 가능
-            // food.setEatSeconds(1000000); // [Fix] API 호환성 문제로 삭제 (기본 속도로 섭취 모션 재생 후 취소됨)
-
-            meta.setFood(food); // 설정 적용
-            // [▲▲▲ 여기까지 추가됨 ▲▲▲]
+            // [삭제] 염소뿔 소리 제거용 FoodComponent 로직 삭제 (돌칼은 소리가 안나므로)
 
             claw.setItemMeta(meta);
         }
@@ -122,6 +113,7 @@ public class PolarBearAbility extends Ability {
 
         // [추가] 갑옷 제거
         p.getInventory().setArmorContents(null);
+        startTickTask();
     }
 
     @Override
@@ -130,12 +122,12 @@ public class PolarBearAbility extends Ability {
         p.sendMessage("§f체력 3줄 5반(71칸)의 북극곰으로 변신합니다.");
         p.sendMessage("§f[배부름] 배고픔 5칸 초과 : 신속 2, 힘 2");
         p.sendMessage("§f[배고픔] 배고픔 5칸 이하 : 힘 4 (신속 없음)");
-        p.sendMessage("§f생명체를 죽이면 생소고기를 2개 얻습니다.");
+        p.sendMessage("§f생명체를 죽이면 생소고기 2개를 얻습니다.");
         p.sendMessage("§c생소고기 이외엔 음식을 섭취할 수 없습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 곰 손톱, 생소고기 32개");
+        p.sendMessage("§f추가 장비 : 곰 앞발, 생소고기 32개");
         p.sendMessage("§f장비 제거 : 철 칼, 철 흉갑, 구운 소고기 64개");
     }
 
@@ -167,11 +159,8 @@ public class PolarBearAbility extends Ability {
 
         Material type = e.getItem().getType();
 
-        // [추가] 곰 손톱(염소 뿔)은 절대 먹으면 안 됨 (100만초라 불가능하지만 혹시 몰라 차단)
-        if (type == Material.GOAT_HORN) {
-            e.setCancelled(true);
-            return;
-        }
+        // [수정] 돌 칼은 섭취 불가능하므로 체크 불필요하지만 안전하게 놔둬도 무관.
+        // 다만 GOAT_HORN 체크는 삭제.
 
         if (type != Material.BEEF) {
             e.setCancelled(true);
@@ -197,15 +186,15 @@ public class PolarBearAbility extends Ability {
         Player p = e.getPlayer();
 
         ItemStack item = e.getItem();
-        if (item == null || item.getType() != Material.GOAT_HORN)
+        // [수정] 염소 뿔 -> 돌 칼
+        if (item == null || item.getType() != Material.STONE_SWORD)
             return;
 
         if (!activeEntities.containsKey(p.getUniqueId()))
             return;
 
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            // 이미 Food Component로 소리는 막혔지만, 먹는 동작(손 흔들기)도 취소하고 싶다면 유지
-            e.setCancelled(false); // [수정] 먹는 모션(손 흔들기)을 보여주기 위해 캔슬 해제 (FoodComponent 덕분에 소모되진 않음)
+            // [수정] 먹는 모션 취소 로직은 필요 없지만, 소리 재생을 위해 이벤트 감지
 
             // [추가] 곰 울음 소리 재생
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_POLAR_BEAR_AMBIENT, 1f, 1f);
@@ -317,10 +306,21 @@ public class PolarBearAbility extends Ability {
         return result;
     }
 
+    private BukkitTask tickTask;
+
     private void startTickTask() {
-        new BukkitRunnable() {
+        if (tickTask != null && !tickTask.isCancelled())
+            return;
+
+        tickTask = new BukkitRunnable() {
             @Override
             public void run() {
+                if (activeEntities.isEmpty()) {
+                    this.cancel();
+                    tickTask = null;
+                    return;
+                }
+
                 for (UUID uuid : new ArrayList<>(activeEntities.keySet())) {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null || !p.isOnline())

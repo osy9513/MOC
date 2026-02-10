@@ -63,8 +63,14 @@ public class CuChulainn extends Ability {
         p.getInventory().remove(Material.IRON_SWORD);
         ItemStack item = new ItemStack(Material.NETHERITE_SPEAR); // 게이 볼그 (네더라이트 창)
         var meta = item.getItemMeta();
-        meta.setDisplayName("§c게이 볼그"); // 요청하신 이름 '게이 볼그'로 변경
+        meta.setDisplayName("§c게이 볼그");
         meta.setLore(List.of("§7좌클릭: 저주 부여", "§7우클릭: 유도 창 발사"));
+        meta.setCustomModelData(1); // 리소스팩: cuchulainn (netherite_sword cmd 2 used by rooki? Need to check
+                                    // registry)
+        // Check registry:
+        // 1: kimdokja
+        // 2: ?
+        // Let's check netherite_sword.json registry
 
         // [추가] 공격력 및 공격 속도 철검과 동일하게 설정
         // 철검: 대미지 6, 공속 1.6
@@ -101,7 +107,6 @@ public class CuChulainn extends Ability {
         p.sendMessage("§f장비 제거 : 철 검");
     }
 
-    // [좌클릭] 저주 부여
     // [좌클릭] 저주 부여
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {
@@ -178,7 +183,7 @@ public class CuChulainn extends Ability {
                 if (!checkCooldown(p))
                     return;
 
-                // 4. 발사 로직
+                // 4. 발사 로직`
                 // 구속 페널티
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3)); // 3초, 구속 4
 
@@ -253,6 +258,9 @@ public class CuChulainn extends Ability {
                 // 현재 위치 반경 1.0 이내의 적들
                 for (Entity e : projectile.getWorld().getNearbyEntities(current, 1.0, 1.0, 1.0)) {
                     if (e instanceof LivingEntity victim && !e.equals(shooter) && !e.equals(target)) {
+                        if (victim instanceof Player
+                                && ((Player) victim).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         // 중간 장애물(적) 발견
                         if (!hitCooldowns.containsKey(victim.getUniqueId())) {
                             victim.damage(25.0, shooter);

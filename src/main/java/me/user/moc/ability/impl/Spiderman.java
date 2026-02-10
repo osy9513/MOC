@@ -128,6 +128,7 @@ public class Spiderman extends Ability {
         if (shooterMeta != null) {
             shooterMeta.displayName(Component.text("§f웹 슈터"));
             shooterMeta.setLore(Arrays.asList("§7좌클릭 시 거미줄을 발사하여 적을 묶거나 벽에 설치합니다.", "§7우클릭 시 설치된 거미줄로 빠르게 이동합니다."));
+            shooterMeta.setCustomModelData(1); // 리소스팩: spiderman
             webShooter.setItemMeta(shooterMeta);
         }
         p.getInventory().addItem(webShooter);
@@ -174,6 +175,9 @@ public class Spiderman extends Ability {
     public void onPlayerMove(PlayerMoveEvent e) {
         Player p = e.getPlayer();
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+            return;
+
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         // 1. 거미줄 감속 무시
@@ -274,7 +278,8 @@ public class Spiderman extends Ability {
 
         RayTraceResult result = world.rayTrace(startLoc, direction, 80,
                 org.bukkit.FluidCollisionMode.NEVER, true, 1.0,
-                entity -> entity != p && entity instanceof LivingEntity);
+                entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player
+                        && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR));
 
         Location targetLoc = null;
         boolean hitEntity = false;
@@ -289,6 +294,9 @@ public class Spiderman extends Ability {
                 endPointForParticle = result.getHitEntity().getLocation().add(0, 1, 0); // 몸통 쪽으로
 
                 LivingEntity victim = (LivingEntity) result.getHitEntity();
+                // [추가] 데미지 10 적용
+                victim.damage(10.0, p);
+
                 // 거미줄 함정 효과 적용
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3)); // 3초간 구속 IV
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 60, 0)); // 3초간 나약함 I

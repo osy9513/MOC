@@ -75,6 +75,7 @@ public class Yugi extends Ability {
         if (meta != null) {
             meta.setDisplayName("§6카드 덱");
             meta.setLore(Arrays.asList("§7우클릭하여 카드를 뽑습니다.", "§7뽑은 카드를 우클릭하여 능력을 사용합니다."));
+            meta.setCustomModelData(1); // 리소스팩: yugi0
             deck.setItemMeta(meta);
         }
         p.getInventory().addItem(deck);
@@ -174,6 +175,33 @@ public class Yugi extends Ability {
         ItemMeta meta = card.getItemMeta();
         meta.setDisplayName("§b" + cardName);
         meta.setLore(Arrays.asList("§7우클릭하여 능력을 발동합니다."));
+
+        // [추가] 리소스팩 데이터 설정
+        int cmd = 0;
+        switch (cardName) {
+            case "빛의 봉인 검":
+                cmd = 1;
+                break; // yugi1
+            case "번개":
+                cmd = 2;
+                break; // yugi2
+            case "죽은 자의 소생":
+                cmd = 3;
+                break; // yugi3
+            case "크리보":
+                cmd = 4;
+                break; // yugi4
+            case "빅 실드 가드너":
+                cmd = 5;
+                break; // yugi5
+            case "엑조디아":
+                cmd = 6;
+                break; // yugi6
+        }
+        if (cmd > 0) {
+            meta.setCustomModelData(cmd);
+        }
+
         card.setItemMeta(meta);
         p.getInventory().addItem(card);
 
@@ -437,6 +465,9 @@ public class Yugi extends Ability {
                     if (duration % 3 == 0) {
                         for (Entity e : p.getWorld().getNearbyEntities(point, 2.5, 2.5, 2.5)) {
                             if (e instanceof LivingEntity le && e != p && !isAlly(p, e)) {
+                                if (le instanceof Player
+                                        && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                    continue;
                                 le.damage(6.0, p); // 3칸 = 6 대미지
                                 le.setNoDamageTicks(0);
                             }

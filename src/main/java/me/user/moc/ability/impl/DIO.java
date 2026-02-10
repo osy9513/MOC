@@ -89,6 +89,7 @@ public class DIO extends Ability {
         ItemStack clock = new ItemStack(Material.CLOCK);
         org.bukkit.inventory.meta.ItemMeta meta = clock.getItemMeta();
         meta.setDisplayName("§e§l[ 더 월드 ]");
+        meta.setCustomModelData(1); // 리소스팩: dio
         clock.setItemMeta(meta);
 
         // 시계 지급
@@ -281,8 +282,8 @@ public class DIO extends Ability {
                         // [▲▲▲ 여기까지 수정됨 ▲▲▲]
 
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 128, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 128, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 5, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 255, false, false));
                     }
 
                 }

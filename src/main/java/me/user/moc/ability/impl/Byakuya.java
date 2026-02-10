@@ -36,7 +36,7 @@ public class Byakuya extends Ability {
 
     @Override
     public String getName() {
-        return "쿠치키 뱌쿠야";
+        return "쿠치키 뱌쿠야"; // 바쿠야
     }
 
     @Override
@@ -56,6 +56,7 @@ public class Byakuya extends Ability {
         if (meta != null) {
             meta.setDisplayName("§d천본앵");
             meta.setLore(Arrays.asList("§7우클릭 시 만해를 시전합니다.", "§8(쿨타임 50초)"));
+            meta.setCustomModelData(7); // 리소스팩: byakuya
             sword.setItemMeta(meta);
         }
         p.getInventory().addItem(sword);
@@ -148,7 +149,7 @@ public class Byakuya extends Ability {
 
         // 3. 스킬 발동
         p.getServer().broadcast(
-                Component.text("쿠치키 바쿠야 : 흩날려라, 천본앵경엄.")
+                Component.text("쿠치키 뱌쿠야 : 흩날려라, 천본앵경엄.")
                         .color(TextColor.color(0xFFB6C1)));
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1.0f, 2.0f); // 칭!
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1.0f, 0.5f); // 웅장한 바람 소리
@@ -212,6 +213,9 @@ public class Byakuya extends Ability {
 
                     for (Entity target : nearby) {
                         if (target instanceof LivingEntity && !target.getUniqueId().equals(p.getUniqueId())) {
+                            if (target instanceof Player
+                                    && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                continue;
                             // 거리 정밀 체크 (구 형태)
                             if (target.getLocation().distance(center) <= radius) {
                                 LivingEntity le = (LivingEntity) target;

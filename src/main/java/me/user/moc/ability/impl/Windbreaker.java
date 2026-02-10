@@ -67,6 +67,7 @@ public class Windbreaker extends Ability {
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta.setCustomModelData(1); // 리소스팩: windbreaker
             bow.setItemMeta(meta);
         }
         // 무한 인챈트 부여 (화살 1개 필요)
@@ -111,6 +112,9 @@ public class Windbreaker extends Ability {
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
         if (!e.isSneaking())
+            return;
+
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         if (!me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {

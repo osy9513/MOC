@@ -1,0 +1,44 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "item/netherite_upgrade_smithing_template"
+    },
+    "overrides": [
+        {
+            "predicate": {
+                "custom_model_data": 1
+            },
+            "model": "item/yugi1"
+        },
+        {
+            "predicate": {
+                "custom_model_data": 2
+            },
+            "model": "item/yugi2"
+        },
+        {
+            "predicate": {
+                "custom_model_data": 3
+            },
+            "model": "item/yugi3"
+        },
+        {
+            "predicate": {
+                "custom_model_data": 4
+            },
+            "model": "item/yugi4"
+        },
+        {
+            "predicate": {
+                "custom_model_data": 5
+            },
+            "model": "item/yugi5"
+        },
+        {
+            "predicate": {
+                "custom_model_data": 6
+            },
+            "model": "item/yugi6"
+        }
+    ]
+}
