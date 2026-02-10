@@ -20,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
@@ -47,7 +48,6 @@ public class Rimuru extends Ability {
 
     public Rimuru(JavaPlugin plugin) {
         super(plugin);
-        startTickTask();
     }
 
     @Override
@@ -102,6 +102,7 @@ public class Rimuru extends Ability {
         createVisualSlime(p);
 
         Bukkit.broadcastMessage("§b리무루 템페스트 : §f나쁜 슬라임이 아니야!");
+        startTickTask();
     }
 
     @Override
@@ -349,10 +350,21 @@ public class Rimuru extends Ability {
         return result;
     }
 
+    private BukkitTask tickTask;
+
     private void startTickTask() {
-        new BukkitRunnable() {
+        if (tickTask != null && !tickTask.isCancelled())
+            return;
+
+        tickTask = new BukkitRunnable() {
             @Override
             public void run() {
+                if (activeEntities.isEmpty()) {
+                    this.cancel();
+                    tickTask = null;
+                    return;
+                }
+
                 // [Fix] ConcurrentModificationException 방지를 위해 키셋 사본 사용
                 for (UUID uuid : new ArrayList<>(activeEntities.keySet())) {
                     Player p = Bukkit.getPlayer(uuid);

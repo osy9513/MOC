@@ -30,3 +30,6 @@ Thumbs.db
 .vscode/
 .minecraft/
 .minecraft-server/
+
+# [추가] 텍스처팩 압축파일은 무시.
+MOC_ResourcePack.zip

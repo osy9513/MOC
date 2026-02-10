@@ -32,6 +32,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
@@ -48,7 +49,6 @@ public class Gaara extends Ability {
         super(plugin);
         // 리스너 등록은 Ability 상위 클래스에서 처리한다고 가정하거나, 필요 시 여기서 등록
         // plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        startTickTask();
     }
 
     @Override
@@ -93,6 +93,7 @@ public class Gaara extends Ability {
         }
         p.getInventory().addItem(potItem);
         createVisualSand(p);
+        startTickTask();
     }
 
     private void startTickTask() {
