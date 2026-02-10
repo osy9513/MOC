@@ -63,8 +63,14 @@ public class CuChulainn extends Ability {
         p.getInventory().remove(Material.IRON_SWORD);
         ItemStack item = new ItemStack(Material.NETHERITE_SPEAR); // 게이 볼그 (네더라이트 창)
         var meta = item.getItemMeta();
-        meta.setDisplayName("§c게이 볼그"); // 요청하신 이름 '게이 볼그'로 변경
+        meta.setDisplayName("§c게이 볼그");
         meta.setLore(List.of("§7좌클릭: 저주 부여", "§7우클릭: 유도 창 발사"));
+        meta.setCustomModelData(1); // 리소스팩: cuchulainn (netherite_sword cmd 2 used by rooki? Need to check
+                                    // registry)
+        // Check registry:
+        // 1: kimdokja
+        // 2: ?
+        // Let's check netherite_sword.json registry
 
         // [추가] 공격력 및 공격 속도 철검과 동일하게 설정
         // 철검: 대미지 6, 공속 1.6
@@ -101,7 +107,6 @@ public class CuChulainn extends Ability {
         p.sendMessage("§f장비 제거 : 철 검");
     }
 
-    // [좌클릭] 저주 부여
     // [좌클릭] 저주 부여
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {

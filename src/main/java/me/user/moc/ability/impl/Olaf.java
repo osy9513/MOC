@@ -71,6 +71,7 @@ public class Olaf extends Ability {
         if (meta != null) {
             meta.setDisplayName("§b올라프의 도끼");
             meta.setLore(List.of("§7우클릭 시 도끼를 던져 피해를 입히고 구속을 겁니다.", "§7던진 도끼를 직접 회수하면 쿨타임이 초기화됩니다.", "§8(쿨타임 5초)"));
+            meta.setCustomModelData(1); // 리소스팩: olaf
             axe.setItemMeta(meta);
         }
         p.getInventory().addItem(axe);
@@ -116,7 +117,13 @@ public class Olaf extends Ability {
 
         // 1. 시각적 투사체 (ItemDisplay) 생성
         ItemDisplay display = p.getWorld().spawn(startLoc, ItemDisplay.class);
-        display.setItemStack(new ItemStack(Material.IRON_AXE));
+
+        ItemStack axe = new ItemStack(Material.IRON_AXE);
+        ItemMeta meta = axe.getItemMeta();
+        meta.setCustomModelData(1); // 리소스팩: olaf
+        axe.setItemMeta(meta);
+        display.setItemStack(axe);
+
         // 초기 변환 설정 (회전을 위해 FIXED 모드 사용 권장되나, 기본 모드도 무방. 여기선 돌려야 하므로 기본값 사용 후 transform
         // 조작)
         display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED); // 제어하기 편하게 FIXED
@@ -173,7 +180,7 @@ public class Olaf extends Ability {
                         } else {
                             // 일반 블록: 벽에 꽝 -> 멈춤
                             currentLoc.getWorld().spawnParticle(Particle.ITEM, currentLoc, 10, 0.2, 0.2, 0.2, 0.1,
-                                    new ItemStack(Material.IRON_AXE));
+                                    axe); // 커스텀 아이템 사용
                             currentLoc.getWorld().playSound(currentLoc, Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
 
                             dropAxe(currentLoc, p); // 드랍
@@ -195,7 +202,7 @@ public class Olaf extends Ability {
 
                         // 이펙트
                         currentLoc.getWorld().spawnParticle(Particle.ITEM, currentLoc, 10, 0.2, 0.2, 0.2, 0.1,
-                                new ItemStack(Material.IRON_AXE));
+                                axe); // 커스텀 아이템 사용
                         currentLoc.getWorld().playSound(currentLoc, Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
 
                         // 드랍
@@ -238,7 +245,12 @@ public class Olaf extends Ability {
     // 도끼 드랍 (아이템 엔티티 생성)
     private void dropAxe(Location loc, Player owner) {
         // 실제 아이템 드랍
-        Item item = loc.getWorld().dropItem(loc, new ItemStack(Material.IRON_AXE));
+        ItemStack droppedAxe = new ItemStack(Material.IRON_AXE);
+        ItemMeta meta = droppedAxe.getItemMeta();
+        meta.setCustomModelData(1);
+        droppedAxe.setItemMeta(meta);
+
+        Item item = loc.getWorld().dropItem(loc, droppedAxe);
         // 못 줍게 막기 (일단 줍기 딜레이를 무한으로? 아니면 메타데이터)
         item.setPickupDelay(20); // 1초 후 줍기 가능 (바로 주워지는 거 방지)
         item.setOwner(owner.getUniqueId()); // (Paper API) 소유자 설정 시 타인이 줍기 어려움(설정에 따라 다름)

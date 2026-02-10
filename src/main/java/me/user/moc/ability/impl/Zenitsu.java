@@ -51,6 +51,16 @@ public class Zenitsu extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
+        ItemStack sword = new ItemStack(org.bukkit.Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§e일륜도");
+            meta.setLore(List.of("§7우클릭 시 벽력일섬을 사용합니다.", "§7웅크리고 우클릭 시 벽력일섬 육연을 사용합니다."));
+            meta.setCustomModelData(9); // 리소스팩: zenitsu
+            sword.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sword);
     }
 
     @Override

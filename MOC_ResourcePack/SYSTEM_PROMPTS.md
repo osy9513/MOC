@@ -98,6 +98,17 @@
 | **yugi5** (5) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi5.json` |
 | **yugi6** (6) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi6.json` |
 | **thekingofgockgange** (1) | 네더라이트 곡괭이 (`netherite_pickaxe`) | 왕 쩌는 곡갱이 (`TheKingOfGockgangE.java`) | `models/item/thekingofgockgange.json` |
+| **cuchulainn** (1) | 네더라이트 창 (`netherite_spear`) | 쿠 훌린 (`CuChulainn.java`) | `models/item/cuchulainn.json` |
+| **naruto** (1) | 주황색 현수막 (`orange_banner`) | 나루토 (`Naruto.java`) | `models/item/naruto.json` |
+| **magnus** (1) | 광산 수레 (`minecart`) | 매그너스 (`Magnus.java`) | `models/item/magnus.json` |
+| **ulquiorra** (1) | 삼지창 (`trident`) | 우르키오라 (`Ulquiorra.java`) | `models/item/ulquiorra.json` |
+| **olaf** (1) | 철 도끼 (`iron_axe`) | 올라프 (`Olaf.java`) | `models/item/olaf.json` |
+| **byakuya** (7) | 철 검 (`iron_sword`) | 쿠치키 뱌쿠야 (`Byakuya.java`) | `models/item/byakuya.json` |
+| **meliodas** (8) | 철 검 (`iron_sword`) | 멜리오다스 (`Meliodas.java`) | `models/item/meliodas.json` |
+| **zenitsu** (9) | 철 검 (`iron_sword`) | 아가츠마 젠이츠 (`Zenitsu.java`) | `models/item/zenitsu.json` |
+| **emiyashirou** (10) | 철 검 (`iron_sword`) | 에미야 시로 (`EmiyaShirou.java`) | `models/item/emiyashirou.json` |
+| **trafalgarlaw** (11) | 철 검 (`iron_sword`) | 트라팔가 로우 (`TrafalgarLaw.java`) | `models/item/trafalgarlaw.json` |
+| **windbreaker** (1) | 활 (`bow`) | 윈드브레이커 (`WindBreaker.java`) | `models/item/windbreaker.json` |
 
 *(새로운 모델 추가 시 이 표에 내용을 업데이트하여 기록해 주세요)*
 *(기존의 모델 기록을 제거하지 마세요.)*

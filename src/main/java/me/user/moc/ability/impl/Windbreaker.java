@@ -67,6 +67,7 @@ public class Windbreaker extends Ability {
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            meta.setCustomModelData(1); // 리소스팩: windbreaker
             bow.setItemMeta(meta);
         }
         // 무한 인챈트 부여 (화살 1개 필요)

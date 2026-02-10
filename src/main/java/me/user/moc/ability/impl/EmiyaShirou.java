@@ -77,6 +77,17 @@ public class EmiyaShirou extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        p.getInventory().remove(Material.IRON_SWORD);
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§c막야");
+            meta.setLore(List.of("§7라운드 시작 15초 후 무한의 검제를 전개합니다."));
+            meta.setCustomModelData(10); // 리소스팩: emiyashirou
+            sword.setItemMeta(meta);
+        }
+        p.getInventory().addItem(sword);
+
         startAutoTriggerCheck();
     }
 

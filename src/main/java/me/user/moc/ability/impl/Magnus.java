@@ -47,6 +47,7 @@ public class Magnus extends Ability {
         var meta = item.getItemMeta();
         meta.setDisplayName("§c오토바이");
         meta.setLore(List.of("§7우클릭 시 탑승하여 전방으로 질주합니다.", "§7하차하거나 충돌 시 폭발합니다.", "§8(쿨타임 20초)"));
+        meta.setCustomModelData(1); // 리소스팩: magnus
         item.setItemMeta(meta);
         p.getInventory().addItem(item);
     }

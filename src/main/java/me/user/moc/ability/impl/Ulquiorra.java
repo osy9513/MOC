@@ -59,6 +59,7 @@ public class Ulquiorra extends Ability {
             meta.displayName(Component.text("§a란사 델 렐람파고"));
             meta.setLore(List.of("§7우클릭 시 2초간 기를 모아 강력한 창을 던집니다.", "§7적중 시 대상을 끌고 가며 큰 피해를 입힙니다.", "§8(쿨타임 20초)"));
             meta.setUnbreakable(true); // 부서지지 않음
+            meta.setCustomModelData(1); // 리소스팩: ulquiorra
             lanza.setItemMeta(meta);
         }
         p.getInventory().addItem(lanza);
@@ -164,7 +165,11 @@ public class Ulquiorra extends Ability {
 
         // 거대한 삼지창 생성 (ItemDisplay)
         ItemDisplay projectile = p.getWorld().spawn(startLoc, ItemDisplay.class);
-        projectile.setItemStack(new ItemStack(Material.TRIDENT));
+        ItemStack trident = new ItemStack(Material.TRIDENT);
+        ItemMeta tMeta = trident.getItemMeta();
+        tMeta.setCustomModelData(1); // 리소스팩: ulquiorra
+        trident.setItemMeta(tMeta);
+        projectile.setItemStack(trident);
 
         // [중요] 라운드 종료 시 삭제되도록 등록
         registerSummon(p, projectile);
