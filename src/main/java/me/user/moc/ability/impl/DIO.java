@@ -282,8 +282,8 @@ public class DIO extends Ability {
                         // [▲▲▲ 여기까지 수정됨 ▲▲▲]
 
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 128, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 128, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 5, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 255, false, false));
                     }
 
                 }

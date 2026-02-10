@@ -213,6 +213,9 @@ public class Byakuya extends Ability {
 
                     for (Entity target : nearby) {
                         if (target instanceof LivingEntity && !target.getUniqueId().equals(p.getUniqueId())) {
+                            if (target instanceof Player
+                                    && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                                continue;
                             // 거리 정밀 체크 (구 형태)
                             if (target.getLocation().distance(center) <= radius) {
                                 LivingEntity le = (LivingEntity) target;

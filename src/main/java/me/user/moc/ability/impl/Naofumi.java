@@ -193,6 +193,9 @@ public class Naofumi extends Ability {
             // 타겟팅 확인 (10칸)
             Entity target = getTargetEntity(p, 10);
             if (target instanceof LivingEntity livingTarget) {
+                if (livingTarget instanceof Player
+                        && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
                 // 발동!
                 useIronMaiden(p, livingTarget);
             }

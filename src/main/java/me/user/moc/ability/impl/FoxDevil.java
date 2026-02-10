@@ -167,6 +167,8 @@ public class FoxDevil extends Ability {
                     if (ent instanceof LivingEntity le) {
                         if (le == fox)
                             continue;
+                        if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         try {
                             le.damage(13.0, p);
                         } catch (Exception e) {

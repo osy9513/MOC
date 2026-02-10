@@ -182,6 +182,9 @@ public class Midas extends Ability {
 
             // 대미지 1 주기
             if (target instanceof LivingEntity livingTarget) {
+                if (livingTarget instanceof Player
+                        && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
                 livingTarget.damage(1.0, p);
             }
 

@@ -234,7 +234,8 @@ public class AsuiTsuyu extends Ability {
         // 레이트레이싱
         var trace = p.getWorld().rayTrace(start, dir, maxDistance,
                 org.bukkit.FluidCollisionMode.NEVER, true, 0.5,
-                entity -> entity != p && entity instanceof LivingEntity);
+                entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player
+                        && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR));
 
         if (trace != null) {
             hitLoc = trace.getHitPosition().toLocation(p.getWorld());

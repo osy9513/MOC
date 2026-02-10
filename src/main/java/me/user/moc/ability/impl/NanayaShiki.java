@@ -105,7 +105,13 @@ public class NanayaShiki extends Ability {
 
         // 시각 효과: 칼(ItemDisplay)이 화살을 타고 날아감
         ItemDisplay visual = (ItemDisplay) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ITEM_DISPLAY);
-        visual.setItemStack(new ItemStack(Material.IRON_SWORD));
+        ItemStack thrownKnife = new ItemStack(Material.IRON_SWORD);
+        ItemMeta meta = thrownKnife.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(4); // 리소스팩: nanayashiki
+            thrownKnife.setItemMeta(meta);
+        }
+        visual.setItemStack(thrownKnife);
 
         arrow.addPassenger(visual);
         p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 1f);
@@ -198,6 +204,9 @@ public class NanayaShiki extends Ability {
             return;
 
         if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+
+        if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
         // 25% 확률로 나나야 체술 발동

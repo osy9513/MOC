@@ -176,7 +176,9 @@ public class Kaneki extends Ability {
         }
 
         Entity target = null;
-        var trace = p.getWorld().rayTraceEntities(start, dir, range, 0.5, e -> e != p && e instanceof LivingEntity);
+        var trace = p.getWorld().rayTraceEntities(start, dir, range, 0.5,
+                e -> e != p && e instanceof LivingEntity
+                        && !(e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR));
         if (trace != null && trace.getHitEntity() != null) {
             target = trace.getHitEntity();
         }

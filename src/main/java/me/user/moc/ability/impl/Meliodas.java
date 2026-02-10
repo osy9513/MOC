@@ -214,6 +214,8 @@ public class Meliodas extends Ability {
         if (finalDamage > 0) {
             for (Entity e : p.getNearbyEntities(5, 5, 5)) {
                 if (e instanceof LivingEntity target && e != p) {
+                    if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                        continue;
                     target.damage(finalDamage, p);
                     // 넉백 살짝
                     target.setVelocity(target.getLocation().toVector().subtract(p.getLocation().toVector()).normalize()
@@ -226,7 +228,7 @@ public class Meliodas extends Ability {
 
         // 패널티: 3초간 움직임 불가 (Self-Stun)
         // 구속(Slowness) 높은 레벨 + 점프 불가
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 255, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 60, 250, false, false)); // 250: 점프 불가
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 5, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 60, 255, false, false)); // 250: 점프 불가
     }
 }

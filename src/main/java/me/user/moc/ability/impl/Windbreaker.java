@@ -114,6 +114,9 @@ public class Windbreaker extends Ability {
         if (!e.isSneaking())
             return;
 
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
+
         if (!me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
             return;
         }

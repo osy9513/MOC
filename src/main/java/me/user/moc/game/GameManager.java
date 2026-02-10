@@ -623,8 +623,6 @@ public class GameManager implements Listener {
 
         // 1. 철 칼
         p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
-        // 2. 구운 소고기 64개
-        p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
         // 3. 물 양동이
         p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
         // 4. 유리 5개

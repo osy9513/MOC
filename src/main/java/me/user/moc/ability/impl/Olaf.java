@@ -197,6 +197,9 @@ public class Olaf extends Ability {
                     if (e.equals(p))
                         continue; // 본인은 맞지 않음
                     if (e instanceof LivingEntity target) {
+                        if (target instanceof Player
+                                && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         // 적중!
                         hitTarget(target, p);
 

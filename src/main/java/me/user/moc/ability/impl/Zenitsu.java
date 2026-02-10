@@ -154,6 +154,9 @@ public class Zenitsu extends Ability {
             if (!(entity instanceof LivingEntity))
                 continue;
 
+            if (entity instanceof Player && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                continue;
+
             LivingEntity target = (LivingEntity) entity;
             target.damage(8.0, p);
             p.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10);
@@ -213,6 +216,8 @@ public class Zenitsu extends Ability {
                     if (e == p)
                         continue;
                     if (e instanceof LivingEntity le) {
+                        if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         le.damage(3.0, p);
                         le.setNoDamageTicks(0); // 연속 타격 가능하게
                     }
@@ -231,6 +236,8 @@ public class Zenitsu extends Ability {
             // 피니시 광역 데미지 (자신 제외)
             for (Entity e : p.getNearbyEntities(4, 4, 4)) {
                 if (e instanceof LivingEntity le && e != p) {
+                    if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                        continue;
                     le.damage(5.0, p); // 마무리 5뎀
                     le.getWorld().spawnParticle(Particle.EXPLOSION, le.getLocation().add(0, 1, 0), 1);
                 }

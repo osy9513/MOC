@@ -341,6 +341,9 @@ public class Yesung extends Ability {
             if (e instanceof Display)
                 continue;
 
+            if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                continue;
+
             // [추가] 무적 시간 무시 (True Damage 효과)
             target.setNoDamageTicks(0);
             target.damage(13.0, attacker);

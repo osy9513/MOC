@@ -173,6 +173,8 @@ public class Magnus extends Ability {
                 // 엔티티 충돌은 Bukkit Event로 잡기 어렵거나 느리므로, 근처 엔티티 직접 검사
                 for (org.bukkit.entity.Entity e : bike.getNearbyEntities(0.8, 0.8, 0.8)) {
                     if (e != p && e instanceof org.bukkit.entity.LivingEntity) {
+                        if (e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         bike.removePassenger(p);
                         explode(p, bike);
                         this.cancel();
@@ -246,6 +248,9 @@ public class Magnus extends Ability {
             if (e instanceof org.bukkit.entity.LivingEntity living) {
                 // 본인은 대미지 안 받음
                 if (e.equals(p))
+                    continue;
+
+                if (e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     continue;
 
                 living.damage(36.0, p); // 18칸 = 36 대미지

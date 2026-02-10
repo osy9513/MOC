@@ -478,6 +478,13 @@ public class Jigsaw extends Ability {
                     return;
                 }
 
+                if (info.target instanceof Player
+                        && ((Player) info.target).getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                    cleanupGame(info);
+                    this.cancel();
+                    return;
+                }
+
                 // [갈아버리기 단계]
                 ticks++;
                 if (ticks > 200) { // 10초로 단축 (너무 김) 또는 30초 유지

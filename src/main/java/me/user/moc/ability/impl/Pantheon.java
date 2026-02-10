@@ -146,6 +146,8 @@ public class Pantheon extends Ability {
 
             // 맞은 대상 처리
             if (e.getEntity() instanceof Player victim) {
+                if (victim.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                    return;
                 // 발사한 사람이 맞았는지 확인 (자가 적중)
                 if (snowball.getShooter() instanceof Player shooter
                         && shooter.getUniqueId().equals(victim.getUniqueId())) {

@@ -70,7 +70,7 @@ public class Bajje extends Ability {
         p.sendMessage("§f잼미니는 물에 들어간 플레이어를 최우선으로 공격합니다.");
         p.sendMessage("§f베째 본인과 다른 잼미니들은 공격받지 않습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 3초 (피해자별 개별 적용)");
+        p.sendMessage("§f쿨타임 : 3초 (플레이어별 개별 적용)");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
@@ -80,6 +80,8 @@ public class Bajje extends Ability {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e) {
         Player victim = e.getPlayer();
+        if (victim.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
 
         // 1. 최적화: 블록 이동 없으면 패스
         if (e.getFrom().getBlockX() == e.getTo().getBlockX() &&

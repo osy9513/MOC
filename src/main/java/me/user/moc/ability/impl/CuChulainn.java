@@ -183,7 +183,7 @@ public class CuChulainn extends Ability {
                 if (!checkCooldown(p))
                     return;
 
-                // 4. 발사 로직
+                // 4. 발사 로직`
                 // 구속 페널티
                 p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3)); // 3초, 구속 4
 
@@ -258,6 +258,9 @@ public class CuChulainn extends Ability {
                 // 현재 위치 반경 1.0 이내의 적들
                 for (Entity e : projectile.getWorld().getNearbyEntities(current, 1.0, 1.0, 1.0)) {
                     if (e instanceof LivingEntity victim && !e.equals(shooter) && !e.equals(target)) {
+                        if (victim instanceof Player
+                                && ((Player) victim).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         // 중간 장애물(적) 발견
                         if (!hitCooldowns.containsKey(victim.getUniqueId())) {
                             victim.damage(25.0, shooter);

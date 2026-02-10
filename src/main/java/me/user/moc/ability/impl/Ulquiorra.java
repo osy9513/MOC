@@ -84,6 +84,10 @@ public class Ulquiorra extends Ability {
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
+        // [Fix] 관전자는 능력 발동 불가
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
+
         ItemStack item = e.getItem();
 
         // 1. 아이템 체크 (삼지창이고 이름이 포함되어야 함)
@@ -111,8 +115,9 @@ public class Ulquiorra extends Ability {
             setCooldown(p, 20); // 테스트 용
 
             // === [1단계: 시전 준비] ===
-            // 2. 구속 5 (Amplifier 4) 2초 -> 3초 (60 ticks)
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 4));
+            // 2. 구속 255 + 점프 불가 (안전하게 70틱 부여 후 발사 시 해제)
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 70, 5, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 70, 255, false, false, false));
 
             // 3. 메시지 출력
             p.getServer().broadcastMessage("우르키오라 쉬퍼 : §2닫아라, 무르시엘라고");
@@ -149,6 +154,11 @@ public class Ulquiorra extends Ability {
             org.bukkit.scheduler.BukkitTask launchTask = new BukkitRunnable() {
                 @Override
                 public void run() {
+                    // 발사 시 구속 해제
+                    if (p.isOnline()) {
+                        p.removePotionEffect(PotionEffectType.SLOWNESS);
+                        p.removePotionEffect(PotionEffectType.JUMP_BOOST);
+                    }
                     fireLanza(p);
                 }
             }.runTaskLater(plugin, 60L); // 60 ticks = 3 sec
@@ -274,6 +284,9 @@ public class Ulquiorra extends Ability {
                     if (entity.equals(projectile))
                         continue; // 투사체 자체 제외
                     if (entity instanceof LivingEntity) {
+                        if (entity instanceof Player
+                                && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
                         draggedEntities.add(entity);
                     }
                 }

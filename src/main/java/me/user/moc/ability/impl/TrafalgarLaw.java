@@ -294,7 +294,8 @@ public class TrafalgarLaw extends Ability {
                     p.getEyeLocation(),
                     p.getEyeLocation().getDirection(),
                     ROOM_RADIUS, // 룸 반경까지만 탐색
-                    entity -> entity != p && entity instanceof LivingEntity);
+                    entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player
+                            && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR));
             if (result != null) {
                 target = result.getHitEntity();
             }

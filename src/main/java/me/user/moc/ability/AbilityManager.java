@@ -105,6 +105,8 @@ public class AbilityManager {
         addAbility(new Jumptaengi(plugin)); // H03 점탱이
         addAbility(new MuhammadAvdol(plugin)); // 046 무함마드 압둘
         addAbility(new Ddangkong(plugin)); // H04 땅콩
+        addAbility(new SpongeBob(plugin)); // 051 스펀지밥
+        addAbility(new GojoSatoru(plugin)); // 059 고죠 사토루
     }
 
     private void addAbility(Ability ability) {
