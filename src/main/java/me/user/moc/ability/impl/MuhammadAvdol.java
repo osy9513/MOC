@@ -93,7 +93,14 @@ public class MuhammadAvdol extends Ability {
         chicken.setGravity(false);
         chicken.setInvulnerable(true);
         chicken.setVisualFire(true); // 항상 불탐
-        chicken.setCustomName("§c매지션즈 레드");
+
+        // [수정] 토가 히미코 변신 시 이름 변경
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            chicken.setCustomName("§d토가의 매지션즈 레드");
+        } else {
+            chicken.setCustomName("§c매지션즈 레드");
+        }
+
         chicken.setCustomNameVisible(true);
         // 더운지방 닭.
         chicken.setVariant(Chicken.Variant.WARM);

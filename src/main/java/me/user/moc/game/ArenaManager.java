@@ -138,6 +138,10 @@ public class ArenaManager implements Listener {
 
         // 그냥 new BukkitRunnable() 하지 않고, generateTask 변수에 담습니다.
         // 그래야 stopTasks()가 얘를 멈출 수 있습니다.
+
+        // [수정] 라운드마다 다른 지형을 위해 동적 시드 생성
+        final long mapSeed = System.nanoTime();
+
         generateTask = new BukkitRunnable() {
             // 시작 지점: 중심에서 -halfSize 만큼 떨어진 곳
             int x = cx - halfSize;
@@ -164,7 +168,9 @@ public class ArenaManager implements Listener {
                         }
 
                         // [추가] 맵 생성 완료 후 중앙 마커 생성 (텍스트 디스플레이 빛 기둥)
-                        createCenterMarker(center.clone().add(0.5, 3.0, 0.5)); // 바닥보다 좀 더 위에
+                        // [수정] center가 소수점 좌표일 수 있으므로, 정확히 블록 중앙(0.5)에 오도록 cx, cz 정수 좌표를 사용합니다.
+                        Location markerLoc = new Location(world, cx + 0.5, center.getBlockY() + 3.0, cz + 0.5);
+                        createCenterMarker(markerLoc); // 바닥보다 좀 더 위에
 
                         this.cancel();
                         return;
@@ -185,8 +191,10 @@ public class ArenaManager implements Listener {
                                 // 웅덩이는 흐름 방지를 위해 16x16 격자 기반 유지 권장
                                 int gridX = x >> 4;
                                 int gridZ = z >> 4;
+
+                                // [수정] 동적 시드(mapSeed)를 추가하여 매번 다른 웅덩이 생성
                                 java.util.Random cellRand = new java.util.Random(
-                                        gridX * 341873128712L + gridZ * 132897987541L + world.getSeed());
+                                        gridX * 341873128712L + gridZ * 132897987541L + world.getSeed() + mapSeed);
 
                                 double poolProb = cellRand.nextDouble();
                                 boolean isPartOfPool = false;

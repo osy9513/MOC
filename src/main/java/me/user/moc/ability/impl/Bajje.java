@@ -56,7 +56,7 @@ public class Bajje extends Ability {
     @Override
     public void giveItem(Player p) {
         // 패시브라 아이템 없음 (기본 무기 제공 필요하면 여기에)
-        p.getInventory().remove(Material.IRON_SWORD); // 다른 능력과 일관성 유지 (보통 기본칼 제거시)
+        // p.getInventory().remove(Material.IRON_SWORD); // 다른 능력과 일관성 유지 (보통 기본칼 제거시)
         // 하지만 요청사항 "추가 장비: 없음, 장비 제거: 없음" 이므로 건드리지 않음?
         // 기존 코드들이 reset시 칼을 주는지, 아니면 giveItem에서 주는지 봐야 함.
         // PolarBear에서는 IRON_SWORD 제거했음.

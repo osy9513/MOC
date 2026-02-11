@@ -114,7 +114,13 @@ public class KiraYoshikage extends Ability {
         // 3. 이름표 (TextDisplay)
         org.bukkit.entity.TextDisplay text = (org.bukkit.entity.TextDisplay) owner.getWorld().spawnEntity(loc,
                 EntityType.TEXT_DISPLAY);
-        text.setText("§2시어하트 어택"); // 진한 초록색
+
+        // [수정] 토가 히미코 변신 시 이름 변경
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(owner)) {
+            text.setText("§d토가의 시어하트 어택");
+        } else {
+            text.setText("§2시어하트 어택"); // 진한 초록색
+        }
         text.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
 
         // 이름표 위치를 TNT 위로 띄움

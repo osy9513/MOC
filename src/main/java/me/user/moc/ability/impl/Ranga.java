@@ -94,7 +94,13 @@ public class Ranga extends Ability {
         ranga.setOwner(p);
         ranga.setTamed(true);
         ranga.setAdult();
-        ranga.customName(Component.text("란가").color(NamedTextColor.RED));
+
+        // [수정] 토가 히미코 전용 이름
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            ranga.customName(Component.text("토가의 란가").color(NamedTextColor.LIGHT_PURPLE)); // §d
+        } else {
+            ranga.customName(Component.text("란가").color(NamedTextColor.RED));
+        }
         ranga.setVariant(org.bukkit.entity.Wolf.Variant.BLACK);
         ranga.setCustomNameVisible(true);
         // ranga.setInterested(true); // 고개를 갸웃거리는 상태 (선택)

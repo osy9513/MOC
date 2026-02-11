@@ -795,7 +795,36 @@ public class GameManager implements Listener {
             if (maxHealth != null)
                 maxHealth.setBaseValue(20.0);
             p.setHealth(20.0);
+
+            // [추가] 방어 속성 초기화 (토가 히미코 버그 방지)
+            // 1.21.11 대응: Registry 사용
+            Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
+            Attribute toughnessAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
+            Attribute knockbackAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.knockback_resistance"));
+
+            if (armorAttr != null) {
+                AttributeInstance armor = p.getAttribute(armorAttr);
+                if (armor != null)
+                    armor.setBaseValue(0.0);
+            }
+            if (toughnessAttr != null) {
+                AttributeInstance toughness = p.getAttribute(toughnessAttr);
+                if (toughness != null)
+                    toughness.setBaseValue(0.0);
+            }
+            if (knockbackAttr != null) {
+                AttributeInstance knockback = p.getAttribute(knockbackAttr);
+                if (knockback != null)
+                    knockback.setBaseValue(0.0);
+            }
         }
+
+        // [강화] 게임 데이터 초기화
+        scores.clear();
+        afkPlayers.clear();
+        readyPlayers.clear();
+        players.clear();
+        livePlayers.clear();
 
         isRunning = false;
         configManager.spawn_point = null;
@@ -1091,18 +1120,26 @@ public class GameManager implements Listener {
             return Integer.compare(b.score, a.score);
         });
 
-        // 단순히 출력
-        Bukkit.broadcastMessage("§7플레이어         | 능력명         | 능력나온횟수");
+        // 라운드 정보 출력.
+        // [수정] 픽셀 기반 정렬로 변경
+        // 1. 헤더 출력
+        String header = String.format("§7%s | %s | %s",
+                padRightPixel("플레이어", 100),
+                padRightPixel("능력명", 130),
+                "횟수");
+        Bukkit.broadcastMessage(header);
+
         for (ResultEntry e : results) {
             // 승자는 노란색(§e), 나머지는 흰색(§f)
             String color = e.isWinner ? "§e" : "§f";
 
-            // [수정] 패딩을 추가하여 가로 길이를 맞춥니다.
-            String paddedName = padRight(e.name, 16);
-            String paddedAbility = padRight(e.abilityName, 14);
+            String paddedName = padRightPixel(e.name, 100);
+            String paddedAbility = padRightPixel(e.abilityName, 130);
 
-            String line = String.format("%s%s | %s | %d",
-                    color, paddedName, paddedAbility, e.usage);
+            String line = String.format("%s%s §7| %s%s §7| %s%s",
+                    color, paddedName,
+                    color, paddedAbility,
+                    color, e.usage + "회");
             Bukkit.broadcastMessage(line);
         }
     }
@@ -1343,36 +1380,53 @@ public class GameManager implements Listener {
     // [유틸리티] 채팅창 줄맞춤을 위한 도우미 메서드들
 
     /**
-     * 문자열의 '한글 기준' 길이를 계산합니다. (채팅창 정렬용)
-     * - 한글/특수문자: 2칸 취급
-     * - 영문/숫자/공백: 1칸 취급
+     * 문자열의 픽셀 너비를 계산합니다. (마인크래프트 기본 폰트 기준 근사치)
      */
-    private int getDisplayWidth(String s) {
+    private int getPixelWidth(String s) {
         if (s == null)
             return 0;
-        int length = 0;
+        int width = 0;
         for (char c : s.toCharArray()) {
-            // 한글 범위 (가~힣) 또는 기타 2바이트 문자
-            if ((c >= 0xAC00 && c <= 0xD7A3) || Character.getType(c) == Character.OTHER_LETTER) {
-                length += 2;
+            if (c >= 0xAC00 && c <= 0xD7A3) { // 한글
+                width += 9; // 한글은 보통 9~10px
+            } else if (c == 'f' || c == 'k' || c == '{' || c == '}' || c == '<' || c == '>') {
+                width += 5;
+            } else if (c == 'i' || c == ':' || c == ';' || c == '.' || c == ',' || c == '!' || c == '|') {
+                width += 2;
+            } else if (c == 'l' || c == '\'') {
+                width += 3;
+            } else if (c == 't' || c == 'I' || c == '[' || c == ']') {
+                width += 4;
+            } else if (c == ' ') {
+                width += 4;
+            } else if (c >= 'A' && c <= 'Z') {
+                width += 6; // 대문자 평균
+            } else if (c >= 'a' && c <= 'z') {
+                width += 6; // 소문자 평균
+            } else if (c >= '0' && c <= '9') {
+                width += 6; // 숫자
             } else {
-                length += 1;
+                // 기타 특수문자 or CJK
+                if (Character.isIdeographic(c))
+                    width += 9;
+                else
+                    width += 6;
             }
         }
-        return length;
+        return width;
     }
 
     /**
-     * 목표 길이(targetWidth)가 될 때까지 문자열 뒤에 공백을 채웁니다.
-     * 한글이 포함된 문자열의 시각적 길이를 고려하여 정렬합니다.
+     * 목표 픽셀 너비(targetPixelWidth)가 될 때까지 공백(4px)을 추가합니다.
      */
-    private String padRight(String s, int targetWidth) {
-        int currentWidth = getDisplayWidth(s);
-        if (currentWidth >= targetWidth)
+    private String padRightPixel(String s, int targetPixelWidth) {
+        int currentWidth = getPixelWidth(s);
+        if (currentWidth >= targetPixelWidth) {
             return s;
+        }
 
         StringBuilder sb = new StringBuilder(s);
-        while (getDisplayWidth(sb.toString()) < targetWidth) {
+        while (getPixelWidth(sb.toString()) < targetPixelWidth) {
             sb.append(" ");
         }
         return sb.toString();

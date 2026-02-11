@@ -174,6 +174,10 @@ public class AbilityManager {
     /**
      * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
      */
+    /**
+     * 새로운 라운드가 시작될 때 기존 데이터(배정된 능력, 리롤 횟수)를 싹 비웁니다.
+     * 라운드 종료 시에도 호출되어야 합니다.
+     */
     public void resetAbilities() {
         // [수정] 1. 개별 플레이어에 대한 cleanup (기존 유지)
         for (Map.Entry<UUID, String> entry : playerAbilities.entrySet()) {
@@ -189,14 +193,17 @@ public class AbilityManager {
         }
 
         // [추가] 2. 모든 능력의 전역 상태(쿨타임, 관리 중인 늑대 등) 초기화
+        // 특히 토가 히미코의 경우 reset()에서 변신 해제를 수행하므로 필수입니다.
         for (Ability ability : abilities.values()) {
             ability.reset();
         }
 
+        // [강화] 모든 데이터 초기화
         playerAbilities.clear();
         rerollCounts.clear();
-        silencedPlayers.clear(); // [추가] 봉인 상태도 라운드 시작 시 초기화
+        silencedPlayers.clear(); // [추가] 봉인 상태도 초기화
         jumpSilenceExpirations.clear(); // [추가] 점프 봉인 상태도 초기화
+        gameUsageCounts.clear(); // [추가] 통계 초기화 (필요 시 유지할 수도 있지만 일단 초기화)
     }
 
     /**
