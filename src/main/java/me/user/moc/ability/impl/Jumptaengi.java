@@ -76,6 +76,7 @@ public class Jumptaengi extends Ability {
             meta.setLore(Arrays.asList(
                     "§f우클릭 시 요술 볼을 날립니다.",
                     "§f맞은 상대는 고양이가 됩니다."));
+            meta.setCustomModelData(1); // 리소스팩: jumptaengi
             item.setItemMeta(meta);
         }
         p.getInventory().addItem(item);
@@ -88,14 +89,13 @@ public class Jumptaengi extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f고양이 요술장갑을 우클릭 시 요술 볼을 날립니다.");
         p.sendMessage("§f맞은 상대는 15초 동안 고양이가 됩니다.");
-        p.sendMessage(" ");
         p.sendMessage("§f고양이가 될 경우 체력이 1.5줄이 되며 인벤토리가 초기화됩니다.");
         p.sendMessage("§f(15초 후 아이템과 체력이 원래대로 돌아옵니다)");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 10초.");
+        p.sendMessage("§f쿨타임 : 10초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 고양이 요술장갑.");
-        p.sendMessage("§f장비 제거 : 철칼.");
+        p.sendMessage("§f추가 장비 : 고양이 요술장갑");
+        p.sendMessage("§f장비 제거 : 철칼");
     }
 
     @EventHandler
@@ -103,7 +103,7 @@ public class Jumptaengi extends Ability {
         Player p = e.getPlayer();
 
         // 1. 능력자 체크
-        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
 
         // 2. 아이템 체크 (고양이 요술장갑 = Pink Dye)
@@ -127,7 +127,14 @@ public class Jumptaengi extends Ability {
 
     private void launchProjectile(Player p) {
         Snowball projectile = p.launchProjectile(Snowball.class);
-        projectile.setItem(new ItemStack(Material.PINK_DYE)); // 눈덩이 모양을 핑크 염료로 변경
+
+        // 발사체 아이템 설정 (리소스팩 적용)
+        ItemStack projItem = new ItemStack(Material.PINK_DYE);
+        ItemMeta projMeta = projItem.getItemMeta();
+        projMeta.setCustomModelData(1); // 리소스팩: jumptaengi
+        projItem.setItemMeta(projMeta);
+
+        projectile.setItem(projItem);
         projectile.setShooter(p);
         projectile.setMetadata("JumptaengiBall", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
 
@@ -164,8 +171,11 @@ public class Jumptaengi extends Ability {
         projectile.getWorld().spawnParticle(org.bukkit.Particle.HEART, projectile.getLocation(), 10, 0.5, 0.5, 0.5);
         projectile.getWorld().playSound(projectile.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 2.0f);
 
-        if (!(e.getHitEntity() instanceof Player victim))
+        // [Change] Player -> LivingEntity로 타겟 확장
+        if (!(e.getHitEntity() instanceof org.bukkit.entity.LivingEntity victim))
             return;
+
+        // 발사자 본인이 맞은 경우 무시 (발사자가 플레이어일 때만 체크)
         if (projectile.getShooter() instanceof Player shooter && shooter.equals(victim))
             return;
 
@@ -173,15 +183,11 @@ public class Jumptaengi extends Ability {
         transformToCat(victim);
     }
 
-    private void transformToCat(Player victim) {
+    private void transformToCat(org.bukkit.entity.LivingEntity victim) {
         UUID uuid = victim.getUniqueId();
 
         // 중복 변신 방지 -> 기존 변신을 완전히 취소하고 새로 적용
-        // (즉, 타이머 초기화됨)
-        revertTransformation(uuid, false); // false = don't restore items immediately if we are re-transforming?
-        // -> 사실 덮어쓰기면 이미 저장된 인벤토리를 유지해야 할 수도 있지만,
-        // 여기선 깔끔하게 '해제 후 재변신'으로 처리하되,
-        // 만약 해제 시 아이템이 복구되면 -> 다시 저장 -> OK. (잠깐 복구되었다가 다시 사라짐)
+        revertTransformation(uuid, false);
 
         // 1. 체력 저장 & 변경
         if (!originalMaxHealth.containsKey(uuid)) {
@@ -212,7 +218,7 @@ public class Jumptaengi extends Ability {
         BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!victim.isOnline() || victim.isDead() || !cat.isValid()) {
+                if (!victim.isValid() || victim.isDead() || !cat.isValid()) {
                     // 비정상 상황 시 정리
                     revertTransformation(uuid, true);
                     this.cancel();
@@ -223,38 +229,43 @@ public class Jumptaengi extends Ability {
         }.runTaskTimer(plugin, 0L, 1L);
         disguiseTasks.put(uuid, task);
 
-        // 3. 이펙트 및 메시지
+        // 3. 이펙트
         victim.getWorld().spawnParticle(org.bukkit.Particle.EXPLOSION_EMITTER, victim.getLocation().add(0, 1, 0), 3,
                 0.5, 0.5, 0.5);
         victim.getWorld().spawnParticle(org.bukkit.Particle.HEART, victim.getLocation().add(0, 2, 0), 20, 0.5, 0.5, 0.5,
                 0.1);
         victim.getWorld().spawnParticle(org.bukkit.Particle.ITEM, victim.getLocation().add(0, 1.5, 0), 30, 0.5, 0.5,
                 0.5, 0.1, new ItemStack(Material.PINK_DYE));
-        victim.playSound(victim.getLocation(), Sound.ENTITY_CAT_AMBIENT, 1f, 1f);
-        victim.playSound(victim.getLocation(), Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 1f, 1f);
 
-        victim.sendMessage("§d당신은 고양이가 되었습니다! (15초간 지속)");
+        // 소리는 공통
+        victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_CAT_AMBIENT, 1f, 1f);
+        victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_GENERIC_EXTINGUISH_FIRE, 1f, 1f);
 
-        // 4. 인벤토리 저장 및 초기화 (1초 딜레이)
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (victim.isOnline() && disguisedCats.containsKey(uuid)) {
-                    // 저장 (이미 저장된 게 있다면 덮어쓰지 않음 - 최초의 원본 보존?
-                    // -> 아니요, 재변신 시에는 '잠깐 복구된' 상태를 다시 저장해야 함.
-                    // 하지만 위에서 revertTransformation을 호출했으므로 맵은 비워져 있음.
-                    savedInventories.put(uuid, victim.getInventory().getContents());
-                    savedArmors.put(uuid, victim.getInventory().getArmorContents());
+        // [Target Specific Logic]
+        if (victim instanceof Player p) {
+            p.sendMessage("§d당신은 고양이가 되었습니다! (15초간 지속)");
 
-                    victim.getInventory().clear();
+            // 인벤토리 저장 및 초기화 (1초 딜레이)
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (p.isOnline() && disguisedCats.containsKey(uuid)) {
+                        savedInventories.put(uuid, p.getInventory().getContents());
+                        savedArmors.put(uuid, p.getInventory().getArmorContents());
 
-                    victim.sendMessage("§c인벤토리가 초기화되었습니다.");
-                    victim.playSound(victim.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
-                    victim.getWorld().spawnParticle(org.bukkit.Particle.LARGE_SMOKE, victim.getLocation(), 10, 0.2, 0.5,
-                            0.2, 0.05);
+                        p.getInventory().clear();
+
+                        p.sendMessage("§c인벤토리가 초기화되었습니다.");
+                        p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
+                        p.getWorld().spawnParticle(org.bukkit.Particle.LARGE_SMOKE, p.getLocation(), 10, 0.2, 0.5, 0.2,
+                                0.05);
+                    }
                 }
-            }
-        }.runTaskLater(plugin, 20L);
+            }.runTaskLater(plugin, 20L);
+        } else if (victim instanceof org.bukkit.entity.Mob mob) {
+            // 몹인 경우 AI 비활성화 (샌드백 상태)
+            mob.setAI(false);
+        }
 
         // 5. 15초 후 복구 타이머
         BukkitTask revertTask = new BukkitRunnable() {
@@ -283,39 +294,47 @@ public class Jumptaengi extends Ability {
         if (cat != null && cat.isValid())
             cat.remove();
 
-        Player p = plugin.getServer().getPlayer(uuid);
-        if (p != null) {
+        // [Change] getPlayer -> getEntity로 변경하여 모든 엔티티 검색
+        org.bukkit.entity.Entity entity = plugin.getServer().getEntity(uuid);
+
+        if (entity instanceof org.bukkit.entity.LivingEntity target) {
             // 투명화 해제
-            p.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
+            target.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
 
             // 체력 복구
             if (originalMaxHealth.containsKey(uuid)) {
                 double oldMax = originalMaxHealth.remove(uuid);
-                if (p.getAttribute(Attribute.MAX_HEALTH) != null) {
-                    p.getAttribute(Attribute.MAX_HEALTH).setBaseValue(oldMax);
+                if (target.getAttribute(Attribute.MAX_HEALTH) != null) {
+                    target.getAttribute(Attribute.MAX_HEALTH).setBaseValue(oldMax);
                 }
             }
 
-            // 아이템 복구
-            if (restoreItems) {
-                if (savedInventories.containsKey(uuid)) {
-                    p.getInventory().setContents(savedInventories.remove(uuid));
+            // [Target Specific Revert]
+            if (target instanceof Player p) {
+                // 아이템 복구
+                if (restoreItems) {
+                    if (savedInventories.containsKey(uuid)) {
+                        p.getInventory().setContents(savedInventories.remove(uuid));
+                    }
+                    if (savedArmors.containsKey(uuid)) {
+                        p.getInventory().setArmorContents(savedArmors.remove(uuid));
+                    }
+                    // 복구 메시지
+                    if (p.isOnline()) {
+                        p.sendMessage("§a변신이 해제되어 원래 모습으로 돌아왔습니다.");
+                        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+                    }
+                } else {
+                    // 아이템 복구 안함 (재변신 등을 위해) -> 맵에서만 제거
+                    savedInventories.remove(uuid);
+                    savedArmors.remove(uuid);
                 }
-                if (savedArmors.containsKey(uuid)) {
-                    p.getInventory().setArmorContents(savedArmors.remove(uuid));
-                }
-                // 복구 메시지
-                if (p.isOnline()) {
-                    p.sendMessage("§a변신이 해제되어 원래 모습으로 돌아왔습니다.");
-                    p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-                }
-            } else {
-                // 아이템 복구 안함 (재변신 등을 위해) -> 맵에서만 제거
-                savedInventories.remove(uuid);
-                savedArmors.remove(uuid);
+            } else if (target instanceof org.bukkit.entity.Mob mob) {
+                // 몹인 경우 AI 복구
+                mob.setAI(true);
             }
         } else {
-            // 플레이어가 없다면 맵 정리만
+            // 엔티티가 사라졌다면(죽거나 디스폰) 맵 정리만 수행
             originalMaxHealth.remove(uuid);
             savedInventories.remove(uuid);
             savedArmors.remove(uuid);

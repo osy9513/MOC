@@ -22,11 +22,11 @@ public class AmanoHina extends Ability {
 
     private final Random random = new Random();
 
-    private final org.bukkit.NamespacedKey tearKey;
+    private final NamespacedKey tearKey;
 
     public AmanoHina(JavaPlugin plugin) {
         super(plugin);
-        this.tearKey = new org.bukkit.NamespacedKey(plugin, "amano_tear");
+        this.tearKey = new NamespacedKey(plugin, "amano_tear");
     }
 
     @Override
@@ -54,17 +54,15 @@ public class AmanoHina extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 아마노 히나(날씨의 아이)");
-        p.sendMessage("맨손 쉬프트 좌클릭 시");
-        p.sendMessage("비가 오면서 본인을 제외한 모든 플레이어 머리에 비를 떨어트립니다.");
-        p.sendMessage("8초 뒤 날씨가 맑아집니다.");
-        p.sendMessage("날씨가 맑아진 뒤 1초간 몸이 투명해집니다.");
+        p.sendMessage("§f맨손 쉬프트 좌클릭 시");
+        p.sendMessage("§f비가 오면서 본인을 제외한 모든 플레이어 머리에 비를 떨어트립니다.");
+        p.sendMessage("§f8초 뒤 날씨가 맑아집니다.");
+        p.sendMessage("§f날씨가 맑아진 뒤 1초간 몸이 투명해집니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
-
-        giveItem(p);
     }
 
     @EventHandler
@@ -98,10 +96,7 @@ public class AmanoHina extends Ability {
         world.setStorm(true);
         world.setWeatherDuration(200); // 넉넉하게 설정 (어차피 8초 뒤에 맑게 함)
 
-        p.sendMessage("§b아마노 히나 : 이제부터 맑아질 거야."); // 발동 대사? 기획안엔 "8초 뒤 날씨가 맑아질 때 ... 출력"이라고 되어있지만,
-                                                  // 보통 스킬 쓸 때 대사를 치는 게 자연스러움.
-                                                  // 하지만 기획안 준수: "8초 뒤 날씨가 맑아질 때 ... 출력" 이라 명시됨.
-                                                  // 따라서 여기선 생략하거나 짧은 효과음만.
+        p.sendMessage("§b아마노 히나 : 비가 오려나?");
         p.playSound(p.getLocation(), Sound.WEATHER_RAIN_ABOVE, 1f, 1f);
         p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 1f); // 천둥 소리 추가
 
@@ -150,37 +145,41 @@ public class AmanoHina extends Ability {
             if (target instanceof ArmorStand)
                 continue;
 
-            // 30블럭 위에서 3*3 범위 랜덤
-            Location targetLoc = target.getLocation();
-            double offsetX = (random.nextDouble() * 3) - 1.5; // -1.5 ~ 1.5
-            double offsetZ = (random.nextDouble() * 3) - 1.5; // -1.5 ~ 1.5
+            // [요청 반영] 한 번에 2개씩 랜덤한 위치에 투하
+            for (int i = 0; i < 2; i++) {
+                // 30블럭 위에서 3*3 범위 랜덤
+                Location targetLoc = target.getLocation();
+                double offsetX = (random.nextDouble() * 4) - 2.0; // -2.0 ~ 2.0 (범위 소폭 증가)
+                double offsetZ = (random.nextDouble() * 4) - 2.0; // -2.0 ~ 2.0
 
-            Location spawnLoc = targetLoc.add(offsetX, 30, offsetZ);
+                Location spawnLoc = targetLoc.add(offsetX, 30, offsetZ);
 
-            // 가스트 눈물(눈덩이로 위장) 소환
-            Snowball tear = world.spawn(spawnLoc, Snowball.class);
-            tear.setItem(new ItemStack(Material.GHAST_TEAR));
-            tear.setShooter(shooter);
-            tear.getPersistentDataContainer().set(tearKey, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
-            // 아래로 가속
-            tear.setVelocity(new Vector(0, -1.5, 0));
+                // 가스트 눈물(눈덩이로 위장) 소환
+                Snowball tear = world.spawn(spawnLoc, Snowball.class);
+                tear.setItem(new ItemStack(Material.GHAST_TEAR));
+                tear.setShooter(shooter);
+                tear.getPersistentDataContainer().set(tearKey, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
 
-            // 소환된 엔티티 관리 (Projectiles usually clean themselves up, but good to track)
-            registerSummon(shooter, tear);
+                // [요청 반영] 랜덤성 추가: 떨어지는 속도를 약간 다르게 하여 자연스럽게
+                double randomSpeed = -1.5 - (random.nextDouble() * 0.5); // -1.5 ~ -2.0
+                tear.setVelocity(new Vector(0, randomSpeed, 0));
 
-            // [추가] 궤적 파티클
-            BukkitTask trailTask = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (tear.isDead() || !tear.isValid() || tear.isOnGround()) {
-                        this.cancel();
-                        return;
+                // 소환된 엔티티 관리
+                registerSummon(shooter, tear);
+
+                // [추가] 궤적 파티클
+                BukkitTask trailTask = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (tear.isDead() || !tear.isValid() || tear.isOnGround()) {
+                            this.cancel();
+                            return;
+                        }
+                        world.spawnParticle(Particle.FALLING_WATER, tear.getLocation(), 1, 0, 0, 0, 0);
                     }
-                    world.spawnParticle(Particle.FALLING_WATER, tear.getLocation(), 1, 0, 0, 0, 0);
-                    world.spawnParticle(Particle.END_ROD, tear.getLocation(), 1, 0, 0, 0, 0.01);
-                }
-            }.runTaskTimer(plugin, 0L, 1L);
-            registerTask(shooter, trailTask); // 태스크 관리로 등록하여 안전하게 취소되도록 함
+                }.runTaskTimer(plugin, 0L, 1L);
+                registerTask(shooter, trailTask); // 태스크 관리로 등록하여 안전하게 취소되도록 함
+            }
         }
     }
 
@@ -208,12 +207,6 @@ public class AmanoHina extends Ability {
 
         // 쿨타임 적용 (8초 지속 끝난 여기 시점부터 20초)
         setCooldown(p, 20);
-
-        // 작업 목록에서 제거는 자동으로 됨 (task cancel)
-        // clean up activeTasks map entry potentially if strictly managed, but cleanup()
-        // handles bulk removal.
-        // Single task removal isn't strictly necessary for logic correctness as long as
-        // it cancels itself.
     }
 
     @EventHandler
@@ -254,9 +247,8 @@ public class AmanoHina extends Ability {
                     world.spawnParticle(Particle.WAX_ON, particleLoc, 0, 0, -0.5, 0, 0.2);
                 }
 
-                // 2. 바닥에서 빛이 올라오는/퍼지는 효과 (Particle.FLASH - 가끔)
+                // 2. 바닥에서 빛이 올라오는/퍼지는 효과
                 if (step % 5 == 0) {
-                    // FLASH 파티클이 서버에서 크래시를 유발하므로 END_ROD로 대체
                     world.spawnParticle(Particle.END_ROD, location.clone().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.1);
                 }
 

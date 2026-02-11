@@ -37,6 +37,23 @@ public class GameManager implements Listener {
     private final Set<UUID> livePlayers = new HashSet<>();
     private ConfigManager configManager;
     private AbilityManager abilityManager; // 의존성 주입
+
+    // [Scoreboard 전용 Getter]
+    public int getScore(UUID uuid) {
+        return scores.getOrDefault(uuid, 0);
+    }
+
+    public List<Map.Entry<UUID, Integer>> getTopScores() {
+        List<Map.Entry<UUID, Integer>> list = new ArrayList<>(scores.entrySet());
+        list.sort(Map.Entry.<UUID, Integer>comparingByValue().reversed());
+        return list;
+    }
+
+    public int getRound() {
+        return round;
+    }
+
+    // [Scoreboard 전용 Getter 끝]
     // 게임 상태 변수
     private boolean isRunning = false;
     private boolean isInvincible = false;
@@ -424,6 +441,7 @@ public class GameManager implements Listener {
                 }
                 timeLeft--;
             }
+
         }.runTaskTimer(plugin, 0, 20L);
     }
 
@@ -642,6 +660,18 @@ public class GameManager implements Listener {
 
         // 6. 철 흉갑 자동으로 입혀주기
         p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+        // 1-2. 2초 뒤 라운드 시작
+        startGameTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                startRound();
+            }
+        }.runTaskLater(plugin, 40L); // 40 ticks = 2 seconds
+
+        // [추가] 점수판 가동
+        if (plugin.getScoreboardManager() != null) {
+            plugin.getScoreboardManager().start();
+        }
         // // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 
         // 인벤토리 새로고침 (아이템이 바뀐 걸 유저 화면에 즉시 적용)
@@ -662,6 +692,11 @@ public class GameManager implements Listener {
         if (!isRunning) {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
             return;
+        }
+
+        // [추가] 점수판 중지 (동기화 이슈 방지 위해 가장 먼저 끔)
+        if (plugin.getScoreboardManager() != null) {
+            plugin.getScoreboardManager().stop();
         }
 
         // [버그 수정] 예약된 시작 태스크가 있다면 취소
@@ -774,13 +809,23 @@ public class GameManager implements Listener {
                         .collect(Collectors.toList());
 
                 // 최후의 1인 확인
-                if (survivors.size() <= 1) {
-                    Player winner = survivors.isEmpty() ? killer : survivors.get(0);
-                    if (winner != null) {
-                        endRound(java.util.Collections.singletonList(winner));
-                    } else {
-                        Bukkit.broadcastMessage("§7생존자가 없어 라운드를 종료합니다.");
-                        startRoundAfterDelay();
+                // 현재 테스트를 위해 혼자일 때 라운드 종료 로직 주석 처리
+                // 최후의 1인 확인
+                // [수정] config의 test 설정이 true면 혼자 남았을 때 라운드가 종료되지 않음
+                if (!configManager.test) {
+                    if (survivors.size() <= 1) {
+                        Player winner = survivors.isEmpty() ? null : survivors.get(0);
+                        if (winner != null) {
+                            endRound(java.util.Collections.singletonList(winner));
+                        } else {
+                            Bukkit.broadcastMessage("§7다른 생존자가 없어 라운드를 종료합니다.");
+                            startRoundAfterDelay();
+                        }
+                    }
+                } else {
+                    // 테스트 모드일 때 메시지 출력 (확인용)
+                    if (survivors.size() <= 1) {
+                        Bukkit.broadcastMessage("§e[TEST] §f테스트 모드: 생존자가 1명 이하이지만 라운드가 계속됩니다.");
                     }
                 }
             }
@@ -795,6 +840,13 @@ public class GameManager implements Listener {
     public void endRound(List<Player> winners) {
         // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
         arenaManager.stopTasks();
+
+        // [버그 수정] 자기장 시작 대기 태스크가 돌고 있다면 취소
+        if (borderStartTask != null) {
+            borderStartTask.cancel();
+            borderStartTask = null;
+        }
+
         if (!isRunning)
             return;
         isInvincible = true; // 무적 상태 활성화.;
@@ -944,6 +996,111 @@ public class GameManager implements Listener {
         }
     }
 
+    /**
+     * [추가] 라운드 강제 스킵 (관리자용)
+     * 생존 점수 지급 없이 바로 다음 라운드로 넘어갑니다.
+     */
+    public void skipRound() {
+        // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
+        arenaManager.stopTasks();
+
+        // [버그 수정] 자기장 시작 대기 태스크가 돌고 있다면 취소
+        if (borderStartTask != null) {
+            borderStartTask.cancel();
+            borderStartTask = null;
+        }
+
+        if (!isRunning)
+            return;
+        isInvincible = true; // 무적 상태 활성화
+
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§6==========================");
+        Bukkit.broadcastMessage("§c[관리자] §e라운드가 강제로 종료되었습니다.");
+        Bukkit.broadcastMessage("§7(생존 점수는 지급되지 않습니다)");
+
+        // 4. 점수 현황판 출력
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
+        Bukkit.broadcastMessage(" ");
+
+        // 데이터 수집용 리스트 (로컬 클래스 중복 정의)
+        class ResultEntry {
+            String name;
+            int score;
+            String abilityName;
+            int usage;
+
+            public ResultEntry(String name, int score, String abilityName, int usage) {
+                this.name = name;
+                this.score = score;
+                this.abilityName = abilityName;
+                this.usage = usage;
+            }
+        }
+
+        List<ResultEntry> results = new ArrayList<>();
+
+        Set<UUID> checkSet = new HashSet<>(scores.keySet());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            checkSet.add(p.getUniqueId());
+        }
+
+        for (UUID uuid : checkSet) {
+            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            if (name == null)
+                continue;
+
+            int score = scores.getOrDefault(uuid, 0);
+
+            String abilityCode = (abilityManager != null && abilityManager.getPlayerAbilities() != null)
+                    ? abilityManager.getPlayerAbilities().get(uuid)
+                    : null;
+            String abilityName = "없음";
+            int usage = 0;
+
+            if (abilityCode != null && abilityManager != null) {
+                me.user.moc.ability.Ability ab = abilityManager.getAbility(abilityCode);
+                if (ab != null) {
+                    abilityName = ab.getName();
+                }
+                usage = abilityManager.getUsageCount(abilityCode);
+            }
+
+            results.add(new ResultEntry(name, score, abilityName, usage));
+        }
+
+        // 정렬
+        results.sort((a, b) -> Integer.compare(b.score, a.score));
+
+        // 단순히 출력
+        Bukkit.broadcastMessage("§7Score | Nickname | Ability Name | Usage Count this game");
+        for (ResultEntry e : results) {
+            String line = String.format("§f%d | %s | %s | %d",
+                    e.score, e.name, e.abilityName, e.usage);
+            Bukkit.broadcastMessage(line);
+        }
+
+        Bukkit.broadcastMessage("§6==========================");
+
+        // 5. 승리 조건 체크 (혹시 킬 점수로 끝났을 수도 있으니)
+        boolean gameShouldStop = false;
+        // scores 맵을 순회하며 점수 체크
+        for (Map.Entry<UUID, Integer> entry : scores.entrySet()) {
+            if (entry.getValue() >= configManager.win_value) {
+                gameShouldStop = true;
+                break;
+            }
+        }
+
+        if (gameShouldStop) {
+            stopGame();
+        } else {
+            Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
+            startRoundAfterDelay();
+        }
+    }
+
     // 시작 전 잠시 대기 시간.
     private void startRoundAfterDelay() {
         if (!isRunning)
@@ -1053,6 +1210,25 @@ public class GameManager implements Listener {
                 p.sendMessage("§e[MOC] §f관리자에 의해 능력이 확정되어 준비 완료 상태로 변경되었습니다.");
             }
         }
+    }
+
+    /**
+     * [추가] 모든 플레이어를 강제로 준비 완료 상태로 만듭니다.
+     */
+    public void allReady() {
+        if (!isRunning)
+            return;
+
+        int count = 0;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            // AFK가 아니고 아직 준비 안 된 사람만
+            if (!afkPlayers.contains(p.getName()) && !readyPlayers.contains(p.getUniqueId())) {
+                readyPlayers.add(p.getUniqueId());
+                p.sendMessage("§e[MOC] §f관리자에 의해 모든 플레이어가 준비 완료 처리되었습니다.");
+                count++;
+            }
+        }
+        Bukkit.broadcastMessage("§a[관리자] §f총 " + count + "명의 플레이어를 강제로 준비 완료 시켰습니다.");
     }
 
     // 능력 리롤.

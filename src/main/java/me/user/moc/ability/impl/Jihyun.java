@@ -5,7 +5,6 @@ import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -59,6 +58,7 @@ public class Jihyun extends Ability {
         ItemStack weapon = new ItemStack(Material.WHITE_WOOL);
         ItemMeta meta = weapon.getItemMeta();
         meta.setDisplayName("§f전자담배");
+        meta.setCustomModelData(1); // 리소스팩: jihyun
         weapon.setItemMeta(meta);
 
         // 첫 번째 슬롯에 지급
@@ -71,26 +71,18 @@ public class Jihyun extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§d히든 ● 지현(바집소)");
-        p.sendMessage("§f연기로 도넛을 만듭니다!");
-        p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 5초");
-        p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 전자담배");
-        p.sendMessage("§f장비 제거 : 철 검");
-        p.sendMessage("§f---");
-
-        // [능력 이펙트 상세 설명]
-        p.sendMessage("§e[능력 상세]");
         p.sendMessage("§f도넛 모양 연기를 날립니다.");
-        p.sendMessage("§f연기는 3초에 걸려 10블럭 날라가며 맞을 경우 5의 데미지를 줍니다.");
+        p.sendMessage("§f연기는 3초에 걸쳐 10블럭 날라가며 맞을 경우 5의 데미지를 줍니다.");
         p.sendMessage("§f맞은 대상은 3초간 시야가 좁아집니다(실명).");
         p.sendMessage(" ");
         p.sendMessage("§f능력을 사용할 수록 날라가는 연기가 증가하며");
         p.sendMessage("§f최대 8번까지 연속해서 연기를 발사합니다.");
         p.sendMessage("§f(연속 발사 간격: 0.2초)");
-
-        // 아이템 지급 (확인용)
-        giveItem(p);
+        p.sendMessage(" ");
+        p.sendMessage("§f쿨타임 : 5초");
+        p.sendMessage("§f---");
+        p.sendMessage("§f추가 장비 : 전자담배");
+        p.sendMessage("§f장비 제거 : 철 검");
     }
 
     @Override
@@ -128,6 +120,7 @@ public class Jihyun extends Ability {
 
             // 채팅 메시지 출력
             MocPlugin.getInstance().getServer().broadcastMessage("§e" + p.getName() + " §f: 담탐 ㄱ?");
+            p.sendMessage("§e[지현] §f현재 도넛 개수: " + currentStack + "개"); // 본인에게만 표시
 
             // 연사 루프 시작 (BukkitRunnable)
             new BukkitRunnable() {
@@ -208,56 +201,120 @@ public class Jihyun extends Ability {
                     return;
                 }
 
-                // 3. 도넛 파티클 그리기
-                // 원형으로 파티클 생성
-                int particleCount = 20; // 원 하나당 파티클 수
-
+                // 3. 도넛 비주얼 업데이트 (BlockDisplay)
                 // 거리에 비례해서 반지름 증가 (0.3 -> 1.5)
                 radius = 0.3 + (distanceTraveled / lifeTimeBlocks) * 1.2;
 
-                for (int i = 0; i < particleCount; i++) {
-                    double angle = 2 * Math.PI * i / particleCount;
-                    double xOffset = radius * Math.cos(angle);
-                    double yOffset = radius * Math.sin(angle);
-
-                    // 로컬 좌표(xOffset, yOffset)를 월드 좌표로 변환
-                    // pos = center + right * x + up * y
-                    Vector offset = right.clone().multiply(xOffset).add(up.clone().multiply(yOffset));
-                    Location particleLoc = currentLoc.clone().add(offset);
-
-                    p.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, particleLoc, 0, 0, 0, 0, 1);
+                if (donutParts.isEmpty()) {
+                    spawnDonutParts();
                 }
+                updateDonutParts();
 
                 // 4. 충돌 체크 (범위 내 적 확인)
                 // 도넛의 크기만큼 반경 체크
                 for (Entity entity : currentLoc.getWorld().getNearbyEntities(currentLoc, radius + 0.5, radius + 0.5,
                         radius + 0.5)) {
                     if (entity instanceof LivingEntity target && entity != p) {
-                        // 정확한 판정을 위해 거리 체크 한 번 더 (도넛 평면과의 거리 + 중심축과의 거리)
-                        // 여기선 간단하게 구체 판정으로 처리하되, 본인은 제외
-                        // 0.2초 간격 발사이므로 무적시간(NoDamageTicks)을 무시하거나 줄여야 연타가 들어감
-                        // 하지만 일반적인 데미지 처리를 원할 수 있으므로 기본 로직 사용.
-
-                        // 이미 맞은 대상인지 체크하는 로직이 필요할 수 있으나,
-                        // 기획서에 "관통"이라고 되어 있으므로 한 번 훑고 지나감.
-                        // 같은 투사체에 여러 번 맞지 않도록 리스트 관리 필요?
-                        // -> 투사체가 느려서(3초 10블럭) 계속 겹쳐있으면 매 틱마다 데미지 들어갈 수 있음.
-                        // -> 따라서 이 투사체에 의해 데미지를 입었는지 추적해야 함.
+                        // [수정] 관전자(Spectator) 제외
+                        if (target instanceof Player pTarget
+                                && pTarget.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                            continue;
+                        }
 
                         if (!hitEntities.contains(target.getUniqueId())) {
-                            // 데미지 5
+                            Vector originalVel = target.getVelocity().clone();
                             target.damage(5, p);
 
-                            // 실명 3초 (60틱)
-                            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 0));
+                            // 넉백 상쇄
+                            target.setVelocity(originalVel);
 
-                            // "시야에 3초간 연기가 떠다녀" -> 실명으로 표현됨.
-                            // 추가 효과를 원하면 여기에 파티클 등 추가 가능.
-
+                            // 실명 2초 (40틱)
+                            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0));
+                            target.sendMessage("§f악! 눈에 연기가!!"); // 본인에게만 표시
                             hitEntities.add(target.getUniqueId());
                         }
                     }
                 }
+            }
+
+            // [비주얼] 텍스트 디스플레이 관리 (투명도 지원)
+            private final List<org.bukkit.entity.TextDisplay> donutParts = new ArrayList<>();
+            private final int partCount = 24; // 도넛을 구성할 파츠 수 (더 촘촘하게)
+
+            private void spawnDonutParts() {
+                for (int i = 0; i < partCount; i++) {
+                    org.bukkit.entity.TextDisplay td = (org.bukkit.entity.TextDisplay) currentLoc.getWorld()
+                            .spawnEntity(currentLoc, org.bukkit.entity.EntityType.TEXT_DISPLAY);
+                    td.text(net.kyori.adventure.text.Component.text("   ")); // 공백을 늘려서 기본 가로 크기 확보
+                    td.setBackgroundColor(org.bukkit.Color.fromARGB(255, 200, 200, 200)); // 초기 완전 불투명 회백색
+                    td.setBillboard(org.bukkit.entity.Display.Billboard.CENTER); // 항상 플레이어 시선 방향
+
+                    // 크기 조정
+                    org.bukkit.util.Transformation t = td.getTransformation();
+                    t.getScale().set(0.2f);
+                    td.setTransformation(t);
+                    donutParts.add(td);
+
+                    registerSummon(p, td);
+                }
+            }
+
+            private void updateDonutParts() {
+                // 투명도 계산: 거리에 따라 255 -> 0
+                double progress = distanceTraveled / lifeTimeBlocks;
+                int alpha = (int) (255 * (1.0 - progress));
+                if (alpha < 0)
+                    alpha = 0;
+                if (alpha > 255)
+                    alpha = 255;
+
+                // 회백색 (200, 200, 200)에 알파값 적용
+                org.bukkit.Color color = org.bukkit.Color.fromARGB(alpha, 200, 200, 200);
+
+                // 크기 계산
+                // 겹침을 위해 배수 증가 (1.3 -> 2.5) -> "두툼하게"
+                float scale = (float) ((2 * Math.PI * radius) / partCount * 2.5);
+                if (scale < 0.4f)
+                    scale = 0.4f; // 최소 크기도 키움
+                // 텍스트 디스플레이 보정
+                scale *= 3.0f; // 조금 더 키움
+
+                for (int i = 0; i < donutParts.size(); i++) {
+                    org.bukkit.entity.TextDisplay td = donutParts.get(i);
+                    if (!td.isValid())
+                        continue;
+
+                    // 색상(투명도) 업데이트
+                    td.setBackgroundColor(color);
+
+                    double angle = 2 * Math.PI * i / donutParts.size();
+                    double xOffset = radius * Math.cos(angle);
+                    double yOffset = radius * Math.sin(angle);
+
+                    Vector offset = right.clone().multiply(xOffset).add(up.clone().multiply(yOffset));
+                    Location partLoc = currentLoc.clone().add(offset);
+
+                    td.teleport(partLoc);
+
+                    // 크기 업데이트
+                    org.bukkit.util.Transformation t = td.getTransformation();
+                    t.getScale().set(scale);
+                    td.setTransformation(t);
+                }
+            }
+
+            @Override
+            public void cancel() {
+                super.cancel();
+                for (org.bukkit.entity.TextDisplay td : donutParts) {
+                    if (td.isValid())
+                        td.remove();
+
+                    if (activeEntities.containsKey(p.getUniqueId())) {
+                        activeEntities.get(p.getUniqueId()).remove(td);
+                    }
+                }
+                donutParts.clear();
             }
 
             // 이 투사체에 이미 피격된 엔티티 목록 (중복 피격 방지)

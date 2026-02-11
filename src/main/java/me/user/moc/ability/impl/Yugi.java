@@ -95,7 +95,7 @@ public class Yugi extends Ability {
         p.sendMessage("§f20% 빅 실드 가드너 - 빅 실드 가드너 소환 (아군을 지켜줌)");
         p.sendMessage("§f20% 크리보 - 크리보 소환 (크리보가 살아있으면 유희에게 데미지가 들어오지 않음)");
         p.sendMessage("§f15% 죽은 자의 소생 - 불사의 토템 획득");
-        p.sendMessage("§f5% 엑조디아 - 엑조디아를 5 번 뽑으면 엑조드 파이어를 발사합니다");
+        p.sendMessage("§f5% 엑조디아 - 엑조디아를 5번 뽑으면 엑조드 파이어를 발사합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 7초");
         p.sendMessage("§f---");

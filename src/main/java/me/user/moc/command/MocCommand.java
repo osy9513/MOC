@@ -91,8 +91,16 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("§c사용법: /moc afk [플레이어이름]");
                     return true;
                 }
-                gm.toggleAfk(args[1]); // 해당 유저를 게임 인원에서 빼거나 넣습니다.
-                p.sendMessage("§e[MOC] §f" + args[1] + "님의 참가 상태를 변경했습니다.");
+
+                String targetName = args[1];
+                // [권한 체크] 본인이 아닌 다른 사람의 상태를 변경하려면 OP 권한 필요
+                if (!targetName.equals(p.getName()) && !p.isOp()) {
+                    p.sendMessage("§c[권한 부족] 다른 플레이어의 상태를 변경하려면 관리자 권한이 필요합니다.");
+                    return true;
+                }
+
+                gm.toggleAfk(targetName); // 해당 유저를 게임 인원에서 빼거나 넣습니다.
+                p.sendMessage("§e[MOC] §f" + targetName + "님의 참가 상태를 변경했습니다.");
                 return true;
             }
 
@@ -121,6 +129,19 @@ public class MocCommand implements CommandExecutor {
 
                 // [추가됨] 능력 부여 후 즉시 준비 완료 상태로 변경
                 gm.playerReadyTarget(args[1]);
+                return true;
+            }
+
+            case "skip" -> { // 라운드 스킵: /moc skip
+                if (!p.isOp()) {
+                    p.sendMessage("§c권한이 없습니다.");
+                    return true;
+                }
+                if (!gm.isRunning()) {
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
+                gm.skipRound();
                 return true;
             }
 
@@ -186,8 +207,40 @@ public class MocCommand implements CommandExecutor {
                 }
             }
 
+            case "help" -> { // 도움이 필요할 때: /moc help
+                p.sendMessage("§6=== [ MOC 명령어 도움말 ] ===");
+                p.sendMessage("§e/moc yes §f: 능력 확정 및 준비 완료");
+                p.sendMessage("§e/moc re §f: 능력 다시 뽑기 (횟수 제한 있음)");
+                p.sendMessage("§e/moc check §f: 내 능력 상세 정보 확인");
+                p.sendMessage("§e/moc list §f: 전체 능력 목록 확인");
+                p.sendMessage("§e/moc afk [닉네임] §f: 플레이어 게임 참여/열외 설정");
+                if (p.isOp()) {
+                    p.sendMessage("§c--- 관리자 명령어 ---");
+                    p.sendMessage("§c/moc start §f: 게임 시작");
+                    p.sendMessage("§c/moc stop §f: 게임 강제 종료");
+                    p.sendMessage("§c/moc skip §f: 현재 라운드 스킵 (생존 점수 X)");
+                    p.sendMessage("§c/moc allready §f: 모든 플레이어 준비 완료 처리"); // 추가
+                    p.sendMessage("§c/moc set [닉네임] [코드] §f: 능력 강제 부여");
+                    p.sendMessage("§c/moc config §f: 게임 설정 확인 및 변경");
+                }
+                return true;
+            }
+
+            case "allready" -> { // 모두 준비 완료: /moc allready
+                if (!p.isOp()) {
+                    p.sendMessage("§c권한이 없습니다.");
+                    return true;
+                }
+                if (!gm.isRunning()) {
+                    p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
+                    return true;
+                }
+                gm.allReady();
+                return true;
+            }
+
             default -> {
-                p.sendMessage("§c /moc help 를 입력하세요.");
+                p.sendMessage("§c알 수 없는 명령어입니다. /moc help 를 입력하세요.");
             }
         }
 

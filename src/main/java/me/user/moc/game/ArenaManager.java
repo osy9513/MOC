@@ -274,9 +274,22 @@ public class ArenaManager implements Listener {
     public void startBorderShrink() {
         if (gameCenter == null)
             return;
-        // stopTasks(); // [수정] 이거 때문에 대미지/청소 태스크가 멈췄음! 주석 처리 또는 개별 취소로 변경.
+
         if (borderShrinkTask != null) {
             borderShrinkTask.cancel();
+        }
+
+        WorldBorder border = gameCenter.getWorld().getWorldBorder();
+        double currentSize = border.getSize();
+        double targetSize = 5.0;
+
+        // [수정] 서서히 줄어드는 로직 (1초에 1칸씩)
+        // 기존: 3초에 2칸씩 (약 0.66칸/초) -> 변경: 1초에 1칸씩 (1.0칸/초)
+        // 부드럽게 줄어들도록 API 사용
+        if (currentSize > targetSize) {
+            long durationSeconds = (long) (currentSize - targetSize); // 1 block per second
+            border.setSize(targetSize, durationSeconds);
+            Bukkit.broadcastMessage("§c[!] §f자기장이 " + durationSeconds + "초 동안 서서히 줄어듭니다.");
         }
 
         borderShrinkTask = new BukkitRunnable() {
@@ -285,62 +298,37 @@ public class ArenaManager implements Listener {
 
                 // 1. [게임 종료 체크]
                 if (!gm.isRunning()) {
-                    stopTasks();
+                    // 게임 끝났으면 보더 줄어드는 것도 멈춰야 함 (현재 크기로 고정)
+                    border.setSize(border.getSize());
+                    this.cancel();
                     return;
                 }
 
-                double size = gameCenter.getWorld().getWorldBorder().getSize();
+                double size = border.getSize();
 
-                // 2. 자기장 크기가 5 이하가 되면 (최소 크기 도달)
-                if (size <= 5) {
-                    this.cancel(); // 자기장 줄이는 작업 종료
+                // 2. 자기장 크기가 5.5 이하가 되면 (최소 크기 도달 근접)
+                if (size <= 5.5) {
+                    border.setSize(5.0); // 확실하게 5로 고정
+                    this.cancel(); // 감시 태스크 종료
 
                     // 여기서부터 '자기장 줄이기' 역할은 끝났으니, '메시지 출력' 역할을 borderShrinkTask에 맡깁니다.
-                    // 이렇게 해야 stopTasks()를 호출했을 때 메시지 출력도 멈춥니다.
-                    borderShrinkTask = new BukkitRunnable() {
-                        String[] messages = {
-                                "§c[!] §f자기장이 최대로 줄어들었습니다.",
-                                "§c[!] §e1분 간 §f최종 전투를 시작합니다.",
-                                "§c[!] §e1분간 승자가 정해지지 않는 경우,",
-                                "§e    자동으로 라운드가 종료됩니다.",
-                                "§c[!] 잠시 후 시작합니다.",
-                                "§a최종 전장 활성화 카운트 다운 시작."
-                        };
-                        int index = 0;
-
-                        @Override
-                        public void run() {
-                            if (!gm.isRunning()) {
-                                this.cancel();
-                                return;
-                            }
-
-                            if (index < messages.length) {
-                                plugin.getServer().broadcastMessage(messages[index]);
-                                index++;
-                            } else {
-                                this.cancel();
-                                startTeleportCountdown(gm); // 다음 단계로
-                            }
-                        }
-                    }.runTaskTimer(plugin, 0L, 20L);
-
+                    startFinalBattleMessages();
                     return;
                 }
 
-                // 아직 5보다 크다면 계속 2씩 줄여나갑니다.
-                gameCenter.getWorld().getWorldBorder().setSize(size - 2);
-
                 // [추가] 자기장이 줄어들 때 밖의 생명체들 확실히 제거 (요청사항 반영)
-                double currentRadius = (size - 2) / 2.0;
-                Location center = gameCenter.getWorld().getWorldBorder().getCenter();
+                // 보더가 움직이고 있으므로 매초 확인
+                double currentRadius = size / 2.0;
+                Location center = border.getCenter();
                 for (org.bukkit.entity.LivingEntity entity : gameCenter.getWorld().getLivingEntities()) {
                     if (entity instanceof Player)
                         continue;
+                    // ArmorStand 등 살아있는 걸로 취급되는 비생물체 제외하고 싶으면 추가 필터링
                     if (!entity.isValid())
                         continue;
 
                     Location loc = entity.getLocation();
+                    // 오차범위 0.5 정도 둠
                     if (Math.abs(loc.getX() - center.getX()) > currentRadius + 0.5
                             || Math.abs(loc.getZ() - center.getZ()) > currentRadius + 0.5) {
                         entity.setHealth(0);
@@ -348,7 +336,40 @@ public class ArenaManager implements Listener {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0, 60L);
+        }.runTaskTimer(plugin, 0L, 20L); // 1초마다 체크
+    }
+
+    /**
+     * [분리] 최종 전투 알림 메시지 태스크
+     */
+    private void startFinalBattleMessages() {
+        borderShrinkTask = new BukkitRunnable() {
+            String[] messages = {
+                    "§c[!] §f자기장이 최대로 줄어들었습니다.",
+                    "§c[!] §e1분 간 §f최종 전투를 시작합니다.",
+                    "§c[!] §e1분간 승자가 정해지지 않는 경우,",
+                    "§e    자동으로 라운드가 종료됩니다.",
+                    "§c[!] 잠시 후 시작합니다.",
+                    "§a최종 전장 활성화 카운트 다운 시작."
+            };
+            int index = 0;
+
+            @Override
+            public void run() {
+                if (!gm.isRunning()) {
+                    this.cancel();
+                    return;
+                }
+
+                if (index < messages.length) {
+                    plugin.getServer().broadcastMessage(messages[index]);
+                    index++;
+                } else {
+                    this.cancel();
+                    startTeleportCountdown(gm); // 다음 단계로
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
     }
 
     /**

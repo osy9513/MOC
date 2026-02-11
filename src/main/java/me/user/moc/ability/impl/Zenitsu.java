@@ -70,14 +70,12 @@ public class Zenitsu extends Ability {
         p.sendMessage("§f경로상의 적에게 8의 고정 피해를 입힙니다.");
         p.sendMessage("§f웅크리고 우클릭하면 '벽력일섬 육연'을 시전합니다.");
         p.sendMessage("§f전방으로 짧게 6번 연속 돌진하며 광역 피해를 입힙니다.");
-        p.sendMessage("§f전방으로 짧게 6번 연속 돌진하며 광역 피해를 입힙니다.");
         // p.sendMessage("§4※주의※ 바닥도 뚫고 갑니다."); // 버그 수정으로 제거
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 8초 (육연 사용 시 12초)");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
-        giveItem(p);
     }
 
     @EventHandler

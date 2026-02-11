@@ -75,21 +75,21 @@ public class Spiderman extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 스파이더맨(마블 코믹스)");
-        p.sendMessage("라운드 시작 시 힘2, 점프강화 2 버프를 얻고 낙하 데미지를 무시합니다.");
-        p.sendMessage("스파이더맨은 거미줄에서 느려지지 않으며, 벽을 보고 웅크리면 벽을 탈 수 있습니다.");
+        p.sendMessage("§f라운드 시작 시 힘2, 점프강화 2 버프를 얻고 낙하 데미지를 무시합니다.");
+        p.sendMessage("§f스파이더맨은 거미줄에서 느려지지 않으며, 벽을 보고 웅크리면 벽을 탈 수 있습니다.");
         p.sendMessage(" ");
-        p.sendMessage("스파이더맨 슈트와 웹 슈터를 획득합니다.");
+        p.sendMessage("§f스파이더맨 슈트와 웹 슈터를 획득합니다.");
         p.sendMessage(" ");
-        p.sendMessage("웹 슈터 [좌클릭]:");
-        p.sendMessage("직선으로 거미줄을 발사합니다. (최대 80블럭)");
-        p.sendMessage("- 블럭에 닿으면 거미줄이 설치됩니다. (8초 후 사라짐)");
-        p.sendMessage("- 적에게 맞추면 거미줄에 묶어 느려지게 만듭니다.");
+        p.sendMessage("§f웹 슈터 [좌클릭]:");
+        p.sendMessage("§f직선으로 거미줄을 발사합니다. (최대 80블럭)");
+        p.sendMessage("§f- 블럭에 닿으면 거미줄이 설치됩니다. (8초 후 사라짐)");
+        p.sendMessage("§f- 적에게 맞추면 거미줄에 묶어 느려지게 만듭니다.");
         p.sendMessage(" ");
-        p.sendMessage("웹 슈터 [우클릭]:");
-        p.sendMessage("설치된 거미줄을 향해 빠르게 이동합니다.");
-        p.sendMessage("이동 중 다시 우클릭하면 줄을 끊고 이동을 멈춥니다.");
+        p.sendMessage("§f웹 슈터 [우클릭]:");
+        p.sendMessage("§f설치된 거미줄을 향해 빠르게 이동합니다.");
+        p.sendMessage("§f이동 중 다시 우클릭하면 줄을 끊고 이동을 멈춥니다.");
         p.sendMessage(" ");
-        p.sendMessage("피자 64개를 획득합니다.");
+        p.sendMessage("§f피자 64개를 획득합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 15초");
         p.sendMessage("§f---");
