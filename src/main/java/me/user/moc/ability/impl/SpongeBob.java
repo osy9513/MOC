@@ -127,9 +127,9 @@ public class SpongeBob extends Ability {
                 p.setSaturation(Math.min(p.getSaturation() + 5, 20));
 
                 // 15 seconds = 300 ticks
-                p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, 300, 4)); // 행운 5
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 4)); // 신속 5
-                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0)); // 힘 1
+                p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, 300, 9, true, true, true)); // 행운 10
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 4, true, true, true)); // 신속 5
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0, true, true, true)); // 힘 1
 
                 p.sendMessage("§d햄버거 좋아~");
                 p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);

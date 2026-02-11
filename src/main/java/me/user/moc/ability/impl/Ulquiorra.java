@@ -116,8 +116,8 @@ public class Ulquiorra extends Ability {
 
             // === [1단계: 시전 준비] ===
             // 2. 구속 255 + 점프 불가 (안전하게 70틱 부여 후 발사 시 해제)
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 70, 5, false, false, false));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 70, 255, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 70, 5, true, true, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 70, 255, true, true, true));
 
             // 3. 메시지 출력
             p.getServer().broadcastMessage("우르키오라 쉬퍼 : §2닫아라, 무르시엘라고");

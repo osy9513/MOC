@@ -68,6 +68,11 @@ public final class MocPlugin extends JavaPlugin {
         if (scoreboardManager != null) {
             scoreboardManager.stop();
         }
+
+        // [중요] 플러그인 리로드 시 이벤트 리스너가 중복 등록되는 '좀비 리스너' 방지
+        org.bukkit.event.HandlerList.unregisterAll(this);
+        org.bukkit.Bukkit.getScheduler().cancelTasks(this);
+
         getLogger().info("MOC 플러그인이 꺼졌습니다.");
     }
 

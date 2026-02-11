@@ -185,13 +185,17 @@ public class Saitama extends Ability {
 
         // 2. 버프 부여
         // 힘V (Strength)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 4));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 4, true, true, true));
         // 이속V (Speed)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 4));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 4, true, true, true));
         // 저항IV (Resistance)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, PotionEffect.INFINITE_DURATION, 3));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.RESISTANCE, PotionEffect.INFINITE_DURATION, 3, true, true, true));
         // 성급함V (Haste)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4, true, true, true));
     }
 
     private static class SaitamaProgress {

@@ -66,7 +66,7 @@ public class PaulPhoenix extends Ability {
         // 폴 피닉스는 맨손 격투가이므로 기본 지급된 철검 제거
         p.getInventory().remove(org.bukkit.Material.IRON_SWORD);
         // 상시 힘 1 버프
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, true, true));
     }
 
     @EventHandler
@@ -205,8 +205,8 @@ public class PaulPhoenix extends Ability {
         }
 
         // 2. 그로기 (CC) - 구속, 점프 불가
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 5, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 20, 255, false, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 5, true, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 20, 255, true, true));
 
         // 3. 적중 시 소리 (타격감 극대화)
         World w = target.getWorld();

@@ -108,8 +108,8 @@ public class PolarBearAbility extends Ability {
         isSatiated.put(p.getUniqueId(), true);
 
         // 투명화
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false,
-                false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, true,
+                true, true));
 
         // [추가] 갑옷 제거
         p.getInventory().setArmorContents(null);
@@ -262,7 +262,7 @@ public class PolarBearAbility extends Ability {
             privateBear.addScoreboardTag("POLAR_PRIVATE");
 
             privateBear.addPotionEffect(
-                    new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+                    new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, true, true));
 
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (!online.getUniqueId().equals(p.getUniqueId())) {
@@ -347,10 +347,10 @@ public class PolarBearAbility extends Ability {
                     }
 
                     if (currentSatiated) {
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, false, false, false));
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 1, false, false, false));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, true, true, true));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 1, true, true, true));
                     } else {
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 3, false, false, false));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 3, true, true, true));
                     }
 
                     // [변신 로직]

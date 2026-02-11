@@ -7,7 +7,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -79,12 +78,9 @@ public class Kaneki extends Ability {
         flesh.setAmount(64);
         p.getInventory().addItem(flesh); // 64개
 
-        // 3. 기본 버프 (재생 5, 허기 11)
-        // 재생 5 (Amplifier 4)
-        p.addPotionEffect(
-                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 4, false, false));
-        // 허기 20 (Amplifier 0) - 시각 효과용
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 19, false, false));
+        // 3. 기본 버프 (허기 20) - 시각 효과용
+        // 허기 20 (Amplifier 19)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 19, true, true));
 
         // 4. 메시지
         Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
@@ -94,9 +90,8 @@ public class Kaneki extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 카네키 켄(도쿄 구울)");
-        p.sendMessage("§f상시 체력 재생 및 상시 허기가 걸려있습니다.");
-        p.sendMessage("§f썩은 고기로만 배고픔을 채울 수 있습니다.");
-        p.sendMessage("§f배고픔이 5칸(10) 이하면 폭주하여 힘 3, 신속 3 버프를 얻습니다.");
+        p.sendMessage("§f배고픔이 줄어들 수록 강한 재생 버프를 받습니다.");
+        p.sendMessage("§f배고픔이 5칸 이하면 폭주하여 힘 3, 신속 3 버프를 얻습니다.");
         p.sendMessage("§f배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
         p.sendMessage("§f폭주 시 카구네가 활성화 되며, 좌클릭 시 카구네로 상대를 끌고 옵니다 (사거리 11블럭).");
         p.sendMessage(" ");
@@ -237,27 +232,38 @@ public class Kaneki extends Ability {
                         continue;
                     }
 
-                    // 카네키 켄이라면 재생 버프 유지 (없을 경우 다시 부여)
+                    int food = p.getFoodLevel();
+
+                    // 1. 배고픔 기반 동적 재생 (카네키 켄)
                     if (p.getLocation().getY() >= -64) {
-                        PotionEffect regen = p.getPotionEffect(PotionEffectType.REGENERATION);
-                        if (regen == null || regen.getAmplifier() != 4) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
-                                    PotionEffect.INFINITE_DURATION, 4, false, false));
+                        if (food > 14) {
+                            // 배고픔이 11 이상이면 재생 제거
+                            p.removePotionEffect(PotionEffectType.REGENERATION);
+                        } else {
+                            // 배고픔 14 이하: 1단계씩 증가 (최대 7)
+                            int targetAmplifier = Math.min(6, 14 - food);
+
+                            // 현재 걸린 재생 효과 확인
+                            PotionEffect currentRegen = p.getPotionEffect(PotionEffectType.REGENERATION);
+                            if (currentRegen == null || currentRegen.getAmplifier() != targetAmplifier) {
+                                // 레벨이 다르거나 없으면 새로 부여 (강제 갱신 true 추가하여 레벨 감소 대응)
+                                p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION,
+                                        40, targetAmplifier, true, true), true);
+                            }
                         }
                     } else {
                         // 공허에서는 버프 제거
                         p.removePotionEffect(PotionEffectType.REGENERATION);
                     }
 
-                    int food = p.getFoodLevel();
-
                     // 1. 배고픔 강제 감소 (5초마다 1칸씩)
                     if (drainHunger && food > 0) {
                         p.setFoodLevel(Math.max(0, food - 1));
+                        food = p.getFoodLevel(); // 값 동기화
                     }
 
                     // 2. 사망 위기 (배고픔 0) -> 지속 데미지
-                    if (p.getFoodLevel() <= 0) {
+                    if (food <= 0) {
                         // 유언 메시지
                         if (!starvingPlayers.contains(p.getUniqueId())) {
                             Bukkit.broadcastMessage("§c카네키 켄 : 커피라도 마실 걸 그랬나..");
@@ -267,11 +273,7 @@ public class Kaneki extends Ability {
                         // 무적 무시 1 데미지 (True Damage)
                         if (p.getHealth() > 0) {
                             p.setNoDamageTicks(0);
-                            p.damage(10.0); // 방어력 적용됨. 완전 고정 데미지 원하면 health 직접 깎아야 함.
-                            // 기획: "1틱당 무적 무시 1데미지 들어가게 해줘"
-                            // -> 방어력은 뚫으라는 말은 없었지만, 보통 이런 건 고정댐.
-                            // 일단 일반 damage(1.0) 호출 (방어구엔 막힘).
-                            // *사용자가 '무적 무시'라고만 했으므로 NoDamageTicks=0가 핵심.*
+                            p.damage(10.0); // 방어력 적용됨.
                         }
                     } else {
                         // 배고픔 회복 시 메시지 플래그 초기화
@@ -279,10 +281,10 @@ public class Kaneki extends Ability {
                     }
 
                     // 3. 폭주 모드
-                    if (p.getFoodLevel() <= 10) {
+                    if (food <= 10) {
                         // 지속시간도 짧게 갱신 (2틱이므로 40틱(2초)면 충분)
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 2, false, false, false));
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 2, false, false, false));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 2, true, true, true));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 2, true, true, true));
                         drawKaguneWings(p);
                         p.sendActionBar(net.kyori.adventure.text.Component.text("§4§l[ 폭주 상태 ]"));
                     }

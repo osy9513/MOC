@@ -116,8 +116,8 @@ public class GojoSatoru extends Ability {
         setCooldown(p, 19);
 
         // 1. 캐스팅 중 움직임 봉인 (2초)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 5, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 40, 250, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 5, true, true, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 40, 250, true, true, true));
 
         // 대사 출력
         p.getServer().broadcastMessage("§b§l고죠 사토루: 영역전개");
@@ -232,10 +232,10 @@ public class GojoSatoru extends Ability {
         // 7초간 행동 불가
         // 구속 250 (움직임 불가), 점프 부스트 250 (점프 불가), 나약함 (공격 데미지 감소), 채굴 피로 (공격 속도/채굴 감소)
         int duration = 140; // 7초 * 20
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 5, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 255, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 250, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 250, false, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 5, true, true, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 255, true, true, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 250, true, true, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 250, true, true, true));
 
         // [추가] 스턴 기간 동안에도 능력 봉인 적용
         if (target instanceof Player p) {

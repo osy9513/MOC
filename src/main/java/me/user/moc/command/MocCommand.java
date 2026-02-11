@@ -185,6 +185,9 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("§e win_value (승리 점수 - 숫자): §f" + cm.win_value);
                     // p.sendMessage("§e teammod (팀전 모드): §f" + cm.teammod);
                     p.sendMessage("§e hidden (히든 캐릭터 활성화): §f" + cm.hidden);
+                    p.sendMessage("§e battle_map (전장 바닥 생성 - true/false): §f" + cm.battle_map);
+                    p.sendMessage("§e test (테스트 모드 - true/false): §f" + cm.test); // [추가]
+                    p.sendMessage("§6 ※참고: 크리에이티브 일 땐 노쿨로 능력 사용 가능");
                     p.sendMessage(" ");
                     p.sendMessage("§7(변경법: /moc config set [이름] [값])");
                     p.sendMessage(" ");

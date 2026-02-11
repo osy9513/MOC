@@ -444,7 +444,12 @@ public class ArenaManager implements Listener {
                         }
                         // 2. 찾아낸 생존자 명단을 들고 GameManager의 endRound를 호출합니다.
                         // (주의: GameManager의 endRound 함수가 public 이어야 합니다!)
-                        gm.endRound(survivors);
+                        // [추가] 테스트 모드일 때는 1분이 지나도 라운드를 끝내지 않습니다.
+                        if (!me.user.moc.config.ConfigManager.getInstance().test) {
+                            gm.endRound(survivors);
+                        } else {
+                            plugin.getServer().broadcastMessage("§e[TEST] §f테스트 모드이므로 라운드가 종료되지 않습니다.");
+                        }
                     }
                 }
                 battleTime--;
@@ -465,10 +470,10 @@ public class ArenaManager implements Listener {
         WorldBorder border = world.getWorldBorder();
 
         // 1. [핵심] 마인크래프트 자체 장벽 대미지 설정 (가장 정확함)
-        // 버퍼(안전거리)를 0으로 설정해서 선을 밟자마자 아프게 합니다.
-        border.setDamageBuffer(0.0);
+        // [수정] 안전거리(버퍼)를 2.0칸으로 늘려서 억울한 죽음 방지 (텔포 오차 등)
+        border.setDamageBuffer(2.0);
         // 초당 대미지 설정 (한 칸 나갈 때마다 추가 대미지)
-        border.setDamageAmount(3.0);
+        border.setDamageAmount(2.0); // 3.0 -> 1.0으로 하향 조정 (즉사 방지)
 
         // 2. [메시지 알림 전용] 0.25초마다 검사하여 즉각 경고 메시지 전송
         if (borderDamageTask != null)
@@ -476,9 +481,25 @@ public class ArenaManager implements Listener {
 
         borderDamageTask = new BukkitRunnable() {
             int tickCount = 0; // [최적화] 엔티티 청소 주기 관리용 카운터
+            int graceSeconds = 5; // [추가] 초기 5초간 대미지 무시 (유예 시간)
 
             @Override
             public void run() {
+                // 게임이 끝났으면 태스크 종료 (중요)
+                if (!gm.isRunning()) {
+                    this.cancel();
+                    return;
+                }
+
+                // 초기 유예 시간 체크
+                if (graceSeconds > 0) {
+                    if (tickCount % 4 == 0) { // 1초마다 감소
+                        graceSeconds--;
+                    }
+                    tickCount++;
+                    return; // 아직은 대미지 로직 실행 안 함
+                }
+
                 double size = border.getSize() / 2.0;
                 Location center = border.getCenter();
 
@@ -498,6 +519,11 @@ public class ArenaManager implements Listener {
                         p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!")
                                 .color(net.kyori.adventure.text.format.NamedTextColor.RED)
                                 .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+
+                        // [추가] 2초당 1뎀씩 수동 부여 (버퍼랑 별개로 확실하게 아프게 하기 위해)
+                        if (tickCount % 8 == 0) {
+                            p.damage(1.0);
+                        }
                     }
                 }
 
@@ -514,6 +540,8 @@ public class ArenaManager implements Listener {
                         if (!entity.isValid())
                             continue; // 이미 죽거나 소멸된 엔티티 패스
 
+                        // [추가] 보스몹이나 중요 엔티티는 예외 처리? (일단 보류)
+
                         Location loc = entity.getLocation();
                         // 자기장 밖인지 검사 (약간의 여유 0.5칸 줌)
                         if (Math.abs(loc.getX() - center.getX()) > size + 0.5
@@ -523,15 +551,6 @@ public class ArenaManager implements Listener {
                             entity.remove();
                             removedCount++;
                         }
-                    }
-
-                    // 디버깅용 로그 (10초에 한번만 출력)
-                    if (removedCount > 0) {
-                        plugin.getLogger()
-                                .info("[ArenaManager] 자기장 밖 생명체 " + removedCount + "마리 처형됨. (현재 반지름: " + size + ")");
-                    } else if (tickCount % 40 == 0) {
-                        // 작동 확인용 로그
-                        // plugin.getLogger().info("[ArenaManager] 생명체 스캔 중... (반지름: " + size + ")");
                     }
                 }
             }

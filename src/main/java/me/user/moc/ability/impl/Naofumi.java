@@ -160,8 +160,8 @@ public class Naofumi extends Ability {
 
         if (hasShield) {
             // [효과 부여] 힘 1, 허기 1
-            p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 0, false, false, false));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 40, 4, false, false, false));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 0, true, true, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 40, 4, true, true, true));
         }
     }
 

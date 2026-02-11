@@ -176,7 +176,7 @@ public class DIO extends Ability {
             // -> DIO 능력이 있는 사람은 다 움직일 수 있어야 함. (Toga 포함)
 
             if (!AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
-                p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 100, 0, false, false, false));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 100, 0, true, true, true));
             }
         }
 
@@ -281,9 +281,9 @@ public class DIO extends Ability {
                         le.teleport(teleportLoc);
                         // [▲▲▲ 여기까지 수정됨 ▲▲▲]
 
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 5, false, false));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 255, false, false));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, true, true, true));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 5, true, true, true));
+                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 255, true, true, true));
                     }
 
                 }

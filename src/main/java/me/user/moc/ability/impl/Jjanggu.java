@@ -119,7 +119,7 @@ public class Jjanggu extends Ability {
 
         // 1. 신속 효과 부여 (0.2초 = 4틱)
         // 신속 30 정도면 매우 빠름. 화면이 확 줌인되는 효과도 있음.
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 30, false, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 30, true, true, true));
 
         // 2. 부리부리 소리 (돼지 소리?)
         p.playSound(p.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1f, 1.5f);

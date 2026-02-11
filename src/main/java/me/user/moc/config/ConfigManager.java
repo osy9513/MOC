@@ -91,6 +91,7 @@ public class ConfigManager {
         config.set("win_value", win_value);
         config.set("hidden", hidden);
         config.set("battle_map", battle_map); // [추가]
+        config.set("test", test); // [추가] 테스트 모드 저장
 
         plugin.saveConfig(); // 실제로 파일에 씁니다.
     }

@@ -130,7 +130,7 @@ public class CuChulainn extends Ability {
         // 좌클릭 쿨타임 확인
         if (checkLeftCooldown(p)) {
             // 효과 적용
-            target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 200, 0)); // 10초, 레벨 1
+            target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 200, 0, true, true, true)); // 10초, 레벨 1
             target.setMetadata("GeiBolgCurse", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
 
             // [추가] 10초 뒤 메타데이터(저주) 자동 해제 (위더랑 시간 맞춤)
@@ -185,7 +185,7 @@ public class CuChulainn extends Ability {
 
                 // 4. 발사 로직`
                 // 구속 페널티
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3)); // 3초, 구속 4
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3, true, true, true)); // 3초, 구속 4
 
                 // 이펙트 및 메시지
                 plugin.getServer().broadcastMessage("§c쿠 훌린 : §c꿰어뚫는 죽음의 나는 창 - 게이 볼그");

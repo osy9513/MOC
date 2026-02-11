@@ -99,7 +99,7 @@ public class Midas extends Ability {
         ItemStack glowPotion = new ItemStack(Material.SPLASH_POTION);
         PotionMeta meta = (PotionMeta) glowPotion.getItemMeta();
         if (meta != null) {
-            meta.addCustomEffect(new PotionEffect(PotionEffectType.GLOWING, 600, 0), true);
+            meta.addCustomEffect(new PotionEffect(PotionEffectType.GLOWING, 600, 0, true, true, true), true);
             meta.setDisplayName("§e미다스의 빛");
             glowPotion.setItemMeta(meta);
         }

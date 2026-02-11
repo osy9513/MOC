@@ -156,13 +156,13 @@ public class Rammus extends Ability {
                 if (isRammusOwner) {
                     // [주인] 구속 2 부여
                     p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 1,
-                            false, false));
+                            true, true, true));
                     p.getServer().broadcastMessage("§a람머스 : 구른다!");
                     p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_TURTLE, 1f, 1f);
                 } else {
                     // [타인] 구속 5 부여 (엄청 느려짐)
                     p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 4,
-                            false, false));
+                            true, true, true));
                     p.sendMessage("§c으윽.. 너무 무거워.."); // 메시지 출력
                     p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.5f, 0.5f);
                 }

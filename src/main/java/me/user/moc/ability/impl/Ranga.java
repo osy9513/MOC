@@ -122,9 +122,9 @@ public class Ranga extends Ability {
 
         // 버프
         ranga.addPotionEffect(
-                new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, false, false));
+                new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, true, true));
         ranga.addPotionEffect(
-                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 100, false, false));
+                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 100, true, true));
 
         // 맵에 등록 (부모 메서드 사용)
         registerSummon(p, ranga);
@@ -178,7 +178,7 @@ public class Ranga extends Ability {
 
                     // 영구 지속 이속 2 부여
                     owner.addPotionEffect(
-                            new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, false, false));
+                            new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, true, true));
                     owner.playSound(owner.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1f, 1f);
                     wolf.getWorld().spawnParticle(Particle.SMOKE, wolf.getLocation(), 50, 0.5, 0.5, 0.5, 0.1);
 

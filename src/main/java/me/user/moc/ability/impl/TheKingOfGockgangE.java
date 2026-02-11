@@ -78,7 +78,7 @@ public class TheKingOfGockgangE extends Ability {
         p.getInventory().addItem(pickaxe);
 
         // 4. 성급함 V 효과 부여 (99999초)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 4, true, true));
 
         // 5. 능력 발동 메시지
         p.sendMessage("§e[MOC] §fShout Out TEAM PICKAXE");

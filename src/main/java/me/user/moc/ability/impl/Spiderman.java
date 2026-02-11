@@ -149,9 +149,9 @@ public class Spiderman extends Ability {
 
     private void applyPassive(Player p) {
         // [Balance] 힘 2 -> 힘 1 (Amplifier 0 = 레벨 1)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, 0, true, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 1, false, false));
+                new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 1, true, true));
     }
 
     // --- 이벤트 리스너 ---

@@ -46,11 +46,12 @@
 - `me.user.moc.MocPlugin`: 싱글톤 인스턴스 관리 및 매니저 초기화.
 - `me.user.moc.ability.Ability`: 모든 능력의 부모 클래스 (이벤트 리스너 포함).
 - `me.user.moc.ability.AbilityManager`: `getCode()`를 통한 능력 등록 및 리롤(Reroll) 로직.
-- `me.user.moc.game.GameManager`: 라운드 흐름(시작->전투->종료), 점수 계산, AFK 관리.
-- `me.user.moc.game.ArenaManager`: 맵 생성 및 자기장/최종전 시나리오 제어.
+- `me.user.moc.game.GameManager`: 라운드 흐름(시작->전투->종료), 점수 계산, AFK 관리, config.yml의 test 모드 지원(혼자 남아도 라운드 진행).
+- `me.user.moc.game.ArenaManager`: 맵 생성 및 자기장(WorldBorder) 부드러운 수축 및 최종 결전 로직을 전담.
 - `MOC_ResourcePack`: 리소스팩 루트 디렉토리.
 
 ### 3. 개발 규칙 (Coding Standards)
+- **동적 버전 관리:** 버전 문자열을 하드코딩하지 말고 `plugin.getDescription().getVersion()`을 사용하세요.
 - **능력 추가:** `Ability`를 상속받고 `getCode()`, `getName()`, `giveItem()`, `detailCheck()`, `getDescription()`를 구현해야 합니다.
 `getName()`은 최대한 한국어로 작성해야 합니다.
 능력 구현 시 오류를 최대한 막기 위해 아래의 순서를 지키며 구현해주세요.
@@ -59,6 +60,10 @@
    3) 쿨타임 부여
    4) 능력 구현 소스 진행.
    아래는 구현 예시 입니다.
+
+- **콘피그 변수 자동 동기화 (중요):**
+  `ConfigManager.java`에 새로운 설정 변수를 추가할 경우, 반드시 `MocCommand.java`의 `/moc config` 명령어 출력 로직에도 해당 변수의 **한글 설명과 현재 값**을 보여주는 코드를 추가해야 합니다. 관리자가 새로운 설정을 즉시 확인하고 제어할 수 있도록 하기 위함입니다.
+
 ```java
    // AbilityManager를 통해 능력자 체크
    if (!checkCooldown(p)) // 쿨타임 중임을 체크
@@ -328,8 +333,8 @@ public List<String> getDescription() {
 
 ## [M] Maintenance Guide
 - **능력 수정:** `AbilityManager`을 참고하세요.
-- **자기장 수정:** `ArenaManager.startBorderShrink`의 타이밍이나 대미지 값을 조정하십시오.
-- **라운드 로직:** `GameManager`을 참고하세요.
+- **자기장 수정:** `ArenaManager.startBorderShrink`의 타이밍이나 대미지 값을 조정하십시오. (초당 1블록 수축 로직)
+- **라운드 로직:** `GameManager`을 참고하세요. `config.yml`의 `test` 옵션으로 솔로 테스트 및 시작 시 크리에이티브 모드 자동 전환 기능 지원.
 - **리소스팩 관리:** **Custom Model Data Registry**를 항상 최신으로 유지하세요.
 
 ---
@@ -343,7 +348,7 @@ public List<String> getDescription() {
 **현재 설정:**
 - **MC Version:** 1.21.11
 - **Java Version:** 21
-- **Plugin Version:** 0.1.1
+- **Plugin Version:** 0.1.2
 - **Resource Pack Version:** 1.3.0
 
 ---

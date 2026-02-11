@@ -480,7 +480,7 @@ public class EmiyaShirou extends Ability {
         // 일반 Arrow도 PotionEffect는 가질 수 있음.
         try {
             // 투명 포션 효과 적용 (입자 없음)
-            arrow.addCustomEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 600, 0, false, false), true);
+            arrow.addCustomEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 600, 0, false, false, false), true);
         } catch (Exception ignored) {
         }
 

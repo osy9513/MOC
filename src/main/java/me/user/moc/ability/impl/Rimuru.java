@@ -84,17 +84,17 @@ public class Rimuru extends Ability {
         p.setHealth(70.0);
 
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 2, false, false));
+                new PotionEffect(PotionEffectType.JUMP_BOOST, PotionEffect.INFINITE_DURATION, 2, true, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+                new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, true, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 0, false, false));
+                new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 0, true, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false));
+                new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, true, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, false, false)); // 상시
-                                                                                                                      // 화염
-                                                                                                                      // 저항
+                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 0, true, true)); // 상시
+                                                                                                                    // 화염
+                                                                                                                    // 저항
         p.getAttribute(org.bukkit.attribute.Attribute.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
 
         damageStacks.put(p.getUniqueId(), 0);
@@ -297,7 +297,7 @@ public class Rimuru extends Ability {
             // [수정] 본인 시점에서 반투명하게 보이게 하기 위해 투명화 적용 + 팀 설정
             privateSlime.addPotionEffect(
                     new PotionEffect(PotionEffectType.INVISIBILITY,
-                            PotionEffect.INFINITE_DURATION, 0, false, false));
+                            PotionEffect.INFINITE_DURATION, 0, true, true));
 
             // [핵심] 다른 플레이어들에게는 Private Slime을 숨김
             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -455,7 +455,7 @@ public class Rimuru extends Ability {
                             // 은신 효과가 풀리지 않도록 유지
                             if (!slime.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
                                 slime.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,
-                                        PotionEffect.INFINITE_DURATION, 0, false, false));
+                                        PotionEffect.INFINITE_DURATION, 0, true, true));
                             }
 
                             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -472,7 +472,7 @@ public class Rimuru extends Ability {
 
                     if (p.isInWater()) {
                         p.addPotionEffect(
-                                new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 40, false, false, false));
+                                new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 40, true, true, true));
                         if (!waterState.contains(p.getUniqueId())) {
                             p.sendMessage("§b리무루 템페스트 : §f수압 추진!");
                             p.playSound(p.getLocation(), Sound.ENTITY_DOLPHIN_SPLASH, 1f, 1f);

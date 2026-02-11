@@ -122,10 +122,10 @@ public class Deidara extends Ability {
         if (item.getType() == Material.CLAY_BALL) {
             e.setCancelled(true);
 
-            // 점토 쿨타임 체크 (개별)
+            // 점토 쿨타임 체크 (개별) - 크리에이티브는 무시
             long now = System.currentTimeMillis();
             long next = clayCooldowns.getOrDefault(p.getUniqueId(), 0L);
-            if (now < next) {
+            if (p.getGameMode() != org.bukkit.GameMode.CREATIVE && now < next) {
                 double left = (next - now) / 1000.0;
                 p.sendActionBar(
                         net.kyori.adventure.text.Component.text("§c점토 생성 쿨타임: " + String.format("%.1f", left) + "초"));

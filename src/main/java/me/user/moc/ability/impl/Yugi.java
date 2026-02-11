@@ -365,7 +365,7 @@ public class Yugi extends Ability {
                 // 저항 5 (Damage reduction 100% in vanilla usually capped, but let's give Res 4)
                 // Res 4 = 80%, Res 5 = 100% God mode.
                 // 기획: "데미지가 들어오지 않음" -> Res 5 (Resistance 255 ok)
-                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 4, false, false, true));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 4, true, true, true));
             }
         }.runTaskTimer(plugin, 0L, 20L);
 

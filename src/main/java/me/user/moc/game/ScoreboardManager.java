@@ -144,7 +144,7 @@ public class ScoreboardManager {
         if (plugin.getGameManager() != null) {
             currentRound = plugin.getGameManager().getRound();
         }
-        lines.add("§f라운드 : §a" + currentRound + "R");
+        lines.add("§f라운드  : §a" + currentRound + "R");
 
         lines.add("§7----------------------");
         lines.add("  "); // 공백 (중복 방지 위해 공백 개수 조절)

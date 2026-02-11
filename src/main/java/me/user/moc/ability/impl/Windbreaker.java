@@ -90,7 +90,7 @@ public class Windbreaker extends Ability {
             public void run() {
                 if (!p.isOnline() || p.isDead())
                     return;
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 0, false, false, false));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 0, true, true, true));
             }
         }.runTaskTimer(plugin, 0L, 20L);
         registerTask(p, task);
