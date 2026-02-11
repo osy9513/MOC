@@ -125,9 +125,20 @@ public class TungTungTungSahur extends Ability {
 
     }
 
+    // [추가] 변신 엔티티 직접 관리용 맵 (Cleanup 보장)
+    private final Map<UUID, BlockDisplay> disguises = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     public void cleanup(Player p) {
         UUID uuid = p.getUniqueId();
+
+        // [핵심] 변신 엔티티 확실하게 제거
+        if (disguises.containsKey(uuid)) {
+            BlockDisplay display = disguises.remove(uuid);
+            if (display != null && display.isValid()) {
+                display.remove();
+            }
+        }
 
         // 맵 및 태스크 정리
         currentTargets.remove(uuid);
@@ -157,8 +168,8 @@ public class TungTungTungSahur extends Ability {
     // [추가] 나무 변신 로직
     private void startDisguise(Player p) {
         // 1. 투명화 적용 (갑옷은 보일 수 있음 -> 기획상 허용? 보통 벗게 하거나 함. 여기선 일단 투명화만)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false,
-                false, false));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, true,
+                true, true));
 
         // 2. BlockDisplay 소환 (참나무 원목)
         BlockDisplay display = (BlockDisplay) p.getWorld().spawnEntity(p.getLocation(),
@@ -182,8 +193,9 @@ public class TungTungTungSahur extends Ability {
 
         display.setTransformation(transform);
 
-        // 등록 (Cleanup을 위해)
+        // 등록 (Cleanup을 위해 - 부모에도 등록하고, 로컬에도 등록)
         registerSummon(p, display);
+        disguises.put(p.getUniqueId(), display);
 
         // 3. 따라다니기 태스크
         BukkitTask task = new BukkitRunnable() {
@@ -193,6 +205,7 @@ public class TungTungTungSahur extends Ability {
                     this.cancel();
                     if (display.isValid())
                         display.remove();
+                    disguises.remove(p.getUniqueId()); // 맵에서도 제거
                     return;
                 }
 
@@ -384,8 +397,10 @@ public class TungTungTungSahur extends Ability {
             // 앰플리파이어는 0부터 시작하므로 (stack - 1)
             // 시간은 무한(GameManager에서 죽거나 끝나면 풀리겠지.. 여기선 일단 긴 시간)
             // *주의*: 중첩될 때마다 기존 효과를 덮어씌워야 함.
-            p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, stack - 1));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, stack - 1));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, stack - 1,
+                    true, true, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, stack - 1, true,
+                    true, true));
 
             // 이펙트: 초록색 연기 + 뼈가루 소리(보통 뼈가루는 BONE_MEAL_USE or COMPOSTER_FILL 등)
             // 여기서는 VILLAGER_WORK_FARMER(작물 심는 소리)나 ITEM_BONE_MEAL_USE 사용

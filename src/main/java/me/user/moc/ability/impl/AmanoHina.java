@@ -203,7 +203,7 @@ public class AmanoHina extends Ability {
 
         // 투명화 버프 (1초 = 20틱)
         p.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY, 20, 0,
-                false, false));
+                true, true, true));
 
         // 쿨타임 적용 (8초 지속 끝난 여기 시점부터 20초)
         setCooldown(p, 20);

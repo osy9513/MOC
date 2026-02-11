@@ -191,6 +191,11 @@ public class GameManager implements Listener {
         round++;
         readyPlayers.clear();
 
+        // [추가] 라운드 시작 시마다 랜덤 전장 재생성 (새로운 지형 설치)
+        if (configManager.spawn_point != null) {
+            arenaManager.prepareArena(configManager.spawn_point);
+        }
+
         // [무적 시작] 능력 추첨 중에는 서로 공격할 수 없게 설정합니다.
         this.isInvincible = true;
         // Bukkit.broadcastMessage("§e[정보] 능력 추첨 중에는 무적 상태가 됩니다.");
@@ -254,7 +259,13 @@ public class GameManager implements Listener {
                 p.spigot().respawn();
             }
 
-            p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
+            // [수정] 테스트 모드면 크리에이티브, 아니면 서바이벌
+            if (configManager.test) {
+                p.setGameMode(GameMode.CREATIVE);
+                p.sendMessage("§e[TEST] §f테스트 모드가 활성화되어 '크리에이티브' 모드로 설정됩니다.");
+            } else {
+                p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
+            }
             if (configManager.spawn_point != null) {
                 p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
             }
@@ -453,7 +464,7 @@ public class GameManager implements Listener {
             return;
         // 여기에 준비 안 된 플레이어들 전부 레디상태로 변경시켜줘.
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!afkPlayers.contains(p.getUniqueId()) && !readyPlayers.contains(p.getUniqueId())) {
+            if (!afkPlayers.contains(p.getName()) && !readyPlayers.contains(p.getUniqueId())) {
                 readyPlayers.add(p.getUniqueId());
             }
         }
@@ -474,6 +485,11 @@ public class GameManager implements Listener {
             if (afkPlayers.contains(p.getName()))
                 continue;
 
+            // [추가] 테스트 모드일 때는 자동으로 크리에이티브 모드로 전환합니다.
+            if (configManager.test) {
+                p.setGameMode(GameMode.CREATIVE);
+            }
+
             // 스폰 포인트(자기장 중심) 기준 랜덤 좌표 생성
             double rx = (Math.random() * (radius * 2)) - radius; // -radius ~ +radius
             double rz = (Math.random() * (radius * 2)) - radius;
@@ -484,8 +500,23 @@ public class GameManager implements Listener {
             // world.getHighestBlockYAt은 하늘에서부터 내려오며 처음 만나는 블록의 Y좌표를 줍니다.
             int highestY = targetLoc.getWorld().getHighestBlockYAt(targetLoc.getBlockX(), targetLoc.getBlockZ());
 
-            // 타겟 Y좌표 설정 (블록 위 + 1칸)
-            targetLoc.setY(highestY + 1.0);
+            // [안전장치] 만약 바닥이 없어서(공허) Y좌표가 너무 낮다면, 임시 발판을 생성합니다.
+            if (highestY <= targetLoc.getWorld().getMinHeight()) {
+                highestY = 64; // 안전한 높이 설정
+                targetLoc.setY(highestY + 20.0); // 플레이어 발 위치 (블록 위 + 20칸)
+
+                // [고도화] 단순 유리판 생성이 아니라, 해당 위치를 새로운 전장의 중심으로 잡고 아레나를 생성합니다.
+                arenaManager.prepareArena(targetLoc);
+
+                // [추가] 스폰 포인트도 안전한 곳으로 변경 (죽어도 여기로 오도록)
+                p.setBedSpawnLocation(targetLoc, true);
+
+                Bukkit.getLogger()
+                        .warning("[MocPlugin] " + p.getName() + "님의 스폰 위치 하단에 블록이 없어 안전지대(Y=64)에 전장을 생성했습니다.");
+            } else {
+                // 정상적인 경우: 타겟 Y좌표 설정 (블록 위 + 20칸)
+                targetLoc.setY(highestY + 20.0);
+            }
 
             p.teleport(targetLoc);
         }
@@ -605,9 +636,14 @@ public class GameManager implements Listener {
                 public void run() {
                     if (!isRunning)
                         return;
-                    Bukkit.broadcastMessage("§4§l[경고] §c자기장이 줄어들기 시작합니다!");
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_0, 1f, 1f);
+
+                    // [추가] 테스트 모드일 때는 경고 메시지를 띄우지 않고 로직을 ArenaManager에게 위임합니다.
+                    // ArenaManager.startBorderShrink() 내부에서도 test 체크를 하므로 안전합니다.
+                    if (!configManager.test) {
+                        Bukkit.broadcastMessage("§4§l[경고] §c자기장이 줄어들기 시작합니다!");
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            p.playSound(p.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_0, 1f, 1f);
+                        }
                     }
                     // 드디어 아레나 매니저의 그 함수를 여기서 부릅니다!
                     arenaManager.startBorderShrink();
@@ -645,8 +681,10 @@ public class GameManager implements Listener {
         p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
         // 4. 유리 5개
         p.getInventory().addItem(new ItemStack(Material.GLASS, 5));
+        // 5. 고기 64개
+        p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
 
-        // 5. [추가] 1레벨 체력 재생 포션 (1분)
+        // 6. [추가] 1레벨 체력 재생 포션 (1분)
         // 1.21 버전 대응 코드
         ItemStack regenPotion = new ItemStack(Material.POTION);
         PotionMeta meta = (PotionMeta) regenPotion.getItemMeta();
@@ -658,15 +696,8 @@ public class GameManager implements Listener {
         }
         p.getInventory().addItem(regenPotion);
 
-        // 6. 철 흉갑 자동으로 입혀주기
+        // 7. 철 흉갑 자동으로 입혀주기
         p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
-        // 1-2. 2초 뒤 라운드 시작
-        startGameTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                startRound();
-            }
-        }.runTaskLater(plugin, 40L); // 40 ticks = 2 seconds
 
         // [추가] 점수판 가동
         if (plugin.getScoreboardManager() != null) {
@@ -677,7 +708,7 @@ public class GameManager implements Listener {
         // 인벤토리 새로고침 (아이템이 바뀐 걸 유저 화면에 즉시 적용)
         p.updateInventory();
 
-        // 7. 고유 능력 아이템 (AbilityManager가 지급)
+        // 8. 고유 능력 아이템 (AbilityManager가 지급)
         if (abilityManager != null) {
             abilityManager.giveAbilityItems(p);
         }
@@ -764,7 +795,36 @@ public class GameManager implements Listener {
             if (maxHealth != null)
                 maxHealth.setBaseValue(20.0);
             p.setHealth(20.0);
+
+            // [추가] 방어 속성 초기화 (토가 히미코 버그 방지)
+            // 1.21.11 대응: Registry 사용
+            Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
+            Attribute toughnessAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
+            Attribute knockbackAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.knockback_resistance"));
+
+            if (armorAttr != null) {
+                AttributeInstance armor = p.getAttribute(armorAttr);
+                if (armor != null)
+                    armor.setBaseValue(0.0);
+            }
+            if (toughnessAttr != null) {
+                AttributeInstance toughness = p.getAttribute(toughnessAttr);
+                if (toughness != null)
+                    toughness.setBaseValue(0.0);
+            }
+            if (knockbackAttr != null) {
+                AttributeInstance knockback = p.getAttribute(knockbackAttr);
+                if (knockback != null)
+                    knockback.setBaseValue(0.0);
+            }
         }
+
+        // [강화] 게임 데이터 초기화
+        scores.clear();
+        afkPlayers.clear();
+        readyPlayers.clear();
+        players.clear();
+        livePlayers.clear();
 
         isRunning = false;
         configManager.spawn_point = null;
@@ -772,13 +832,23 @@ public class GameManager implements Listener {
     }
 
     // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
+    // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
+        // [중요] 좀비 리스너 차단: 플러그인이 비활성화된 상태라면 이벤트를 무시합니다.
+        if (!plugin.isEnabled()) {
+            return;
+        }
+
         if (!isRunning)
             return;
 
         Player victim = e.getEntity();
         Player killer = victim.getKiller();
+
+        // [디버그] 사망 로그 출력 (원인 파악용)
+        plugin.getLogger().info(
+                "[MocPlugin] Player died: " + victim.getName() + ", Cause: " + victim.getLastDamageCause().getCause());
 
         // 킬 점수 +1
         if (killer != null && !killer.equals(victim)) {
@@ -809,23 +879,15 @@ public class GameManager implements Listener {
                         .collect(Collectors.toList());
 
                 // 최후의 1인 확인
-                // 현재 테스트를 위해 혼자일 때 라운드 종료 로직 주석 처리
-                // 최후의 1인 확인
-                // [수정] config의 test 설정이 true면 혼자 남았을 때 라운드가 종료되지 않음
-                if (!configManager.test) {
-                    if (survivors.size() <= 1) {
-                        Player winner = survivors.isEmpty() ? null : survivors.get(0);
-                        if (winner != null) {
-                            endRound(java.util.Collections.singletonList(winner));
-                        } else {
-                            Bukkit.broadcastMessage("§7다른 생존자가 없어 라운드를 종료합니다.");
-                            startRoundAfterDelay();
-                        }
-                    }
-                } else {
-                    // 테스트 모드일 때 메시지 출력 (확인용)
-                    if (survivors.size() <= 1) {
-                        Bukkit.broadcastMessage("§e[TEST] §f테스트 모드: 생존자가 1명 이하이지만 라운드가 계속됩니다.");
+                // [수정] 낙사 등 자가 사망 시에도 1명만 남으면 라운드가 종료되도록 설정
+                // 테스트 모드여도 1명이 남으면 라운드를 종료하여 결과를 보여줍니다.
+                if (survivors.size() <= 1) {
+                    Player winner = survivors.isEmpty() ? null : survivors.get(0);
+                    if (winner != null) {
+                        endRound(java.util.Collections.singletonList(winner));
+                    } else {
+                        Bukkit.broadcastMessage("§7다른 생존자가 없어 라운드를 종료합니다.");
+                        startRoundAfterDelay();
                     }
                 }
             }
@@ -850,6 +912,19 @@ public class GameManager implements Listener {
         if (!isRunning)
             return;
         isInvincible = true; // 무적 상태 활성화.;
+
+        // [추가] 승자들의 능력 '게임 종료' 훅 실행 (토가 히미코 변신 해제 등)
+        if (abilityManager != null) {
+            for (Player winner : winners) {
+                String code = abilityManager.getPlayerAbilities().get(winner.getUniqueId());
+                if (code != null) {
+                    me.user.moc.ability.Ability ability = abilityManager.getAbility(code);
+                    if (ability != null) {
+                        ability.onGameEnd(winner);
+                    }
+                }
+            }
+        }
 
         // 2. 승자 이름 합치기 (예: "오승엽, 남상도, 박연준")
         // stream().map(Player::getName) -> 플레이어 객체에서 이름만 쏙쏙 뽑아내기
@@ -892,6 +967,89 @@ public class GameManager implements Listener {
         }
 
         // 4. 점수 현황판 출력
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
+        Bukkit.broadcastMessage(" ");
+
+        // 데이터 수집용 리스트
+        // 점수 및 통계 출력 (공통 함수 사용)
+        printRoundStats(winners);
+
+        Bukkit.broadcastMessage("§6==========================");
+
+        // 5. 승리 조건 체크
+        boolean gameShouldStop = false;
+        for (Player p : winners) {
+            if (scores.getOrDefault(p.getUniqueId(), 0) >= configManager.win_value) {
+                gameShouldStop = true;
+                break;
+            }
+        }
+
+        if (gameShouldStop) {
+            stopGame();
+        } else {
+            Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
+            startRoundAfterDelay();
+        }
+    }
+
+    /**
+     * [추가] 라운드 강제 스킵 (관리자용)
+     * 생존 점수 지급 없이 바로 다음 라운드로 넘어갑니다.
+     */
+    /**
+     * [추가] 라운드 강제 스킵 (관리자용)
+     * 생존 점수 지급 없이 바로 다음 라운드로 넘어갑니다.
+     */
+    /**
+     * [추가] 라운드 강제 스킵 (관리자용)
+     * 생존 점수 지급 없이 바로 다음 라운드로 넘어갑니다.
+     */
+    public void skipRound() {
+        // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
+        arenaManager.stopTasks();
+
+        // [버그 수정] 자기장 시작 대기 태스크가 돌고 있다면 취소
+        if (borderStartTask != null) {
+            borderStartTask.cancel();
+            borderStartTask = null;
+        }
+
+        if (!isRunning)
+            return;
+        isInvincible = true; // 무적 상태 활성화
+
+        Bukkit.broadcastMessage(" ");
+        Bukkit.broadcastMessage("§6==========================");
+        Bukkit.broadcastMessage("§c[관리자] §e라운드가 강제로 종료되었습니다.");
+        Bukkit.broadcastMessage("§7(생존 점수는 지급되지 않습니다)");
+
+        // 점수 및 통계 출력 (공통 함수 사용 - 승자 없음)
+        printRoundStats(null);
+
+        Bukkit.broadcastMessage("§6==========================");
+
+        // 5. 승리 조건 체크 (혹시 킬 점수로 끝났을 수도 있으니)
+        boolean gameShouldStop = false;
+        // scores 맵을 순회하며 점수 체크
+        for (Map.Entry<UUID, Integer> entry : scores.entrySet()) {
+            if (entry.getValue() >= configManager.win_value) {
+                gameShouldStop = true;
+                break;
+            }
+        }
+
+        if (gameShouldStop) {
+            stopGame();
+        } else {
+            Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
+            startRoundAfterDelay();
+        }
+    }
+
+    // [리팩토링] 라운드 통계 출력 공통 메서드
+    private void printRoundStats(List<Player> winners) {
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
         Bukkit.broadcastMessage(" ");
@@ -941,163 +1099,48 @@ public class GameManager implements Listener {
                 usage = abilityManager.getUsageCount(abilityCode);
             }
 
+            // 승자 여부 체크
             boolean isWinner = false;
-            for (Player w : winners) {
-                if (w.getUniqueId().equals(uuid)) {
-                    isWinner = true;
-                    break;
+            if (winners != null) {
+                for (Player w : winners) {
+                    if (w.getUniqueId().equals(uuid)) {
+                        isWinner = true;
+                        break;
+                    }
                 }
             }
 
             results.add(new ResultEntry(name, score, abilityName, usage, isWinner));
         }
 
-        // 정렬
+        // 정렬: 승자 우선, 그 다음 점수 높은 순
         results.sort((a, b) -> {
             if (a.isWinner != b.isWinner)
                 return a.isWinner ? -1 : 1;
             return Integer.compare(b.score, a.score);
         });
 
-        // 출력 포맷팅
-        String header1 = "점수";
-        String header2 = "닉네임";
-        String header3 = "능력 이름";
-        String header4 = "이번 판 사용 횟수";
+        // 라운드 정보 출력.
+        // [수정] 픽셀 기반 정렬로 변경
+        // 1. 헤더 출력
+        String header = String.format("§7%s | %s | %s",
+                padRightPixel("플레이어", 100),
+                padRightPixel("능력명", 130),
+                "횟수");
+        Bukkit.broadcastMessage(header);
 
-        // 단순히 출력
-        Bukkit.broadcastMessage("§7Score | Nickname | Ability Name | Usage Count this game");
         for (ResultEntry e : results) {
+            // 승자는 노란색(§e), 나머지는 흰색(§f)
             String color = e.isWinner ? "§e" : "§f";
-            String mark = e.isWinner ? "★ " : "";
-            // 포맷: Score | Nickname | Ability | Usage
-            // 예: 15 | 홍길동 | 사이타마 | 3
-            String line = String.format("%s%d | %s%s | %s | %d",
-                    color, e.score, mark, e.name, e.abilityName, e.usage);
+
+            String paddedName = padRightPixel(e.name, 100);
+            String paddedAbility = padRightPixel(e.abilityName, 130);
+
+            String line = String.format("%s%s §7| %s%s §7| %s%s",
+                    color, paddedName,
+                    color, paddedAbility,
+                    color, e.usage + "회");
             Bukkit.broadcastMessage(line);
-        }
-
-        Bukkit.broadcastMessage("§6==========================");
-
-        // 5. 승리 조건 체크
-        boolean gameShouldStop = false;
-        for (Player p : winners) {
-            if (scores.getOrDefault(p.getUniqueId(), 0) >= configManager.win_value) {
-                gameShouldStop = true;
-                break;
-            }
-        }
-
-        if (gameShouldStop) {
-            stopGame();
-        } else {
-            Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
-            startRoundAfterDelay();
-        }
-    }
-
-    /**
-     * [추가] 라운드 강제 스킵 (관리자용)
-     * 생존 점수 지급 없이 바로 다음 라운드로 넘어갑니다.
-     */
-    public void skipRound() {
-        // 장벽이 줄어드는 작업이 있다면 모두 멈춥니다.
-        arenaManager.stopTasks();
-
-        // [버그 수정] 자기장 시작 대기 태스크가 돌고 있다면 취소
-        if (borderStartTask != null) {
-            borderStartTask.cancel();
-            borderStartTask = null;
-        }
-
-        if (!isRunning)
-            return;
-        isInvincible = true; // 무적 상태 활성화
-
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage("§6==========================");
-        Bukkit.broadcastMessage("§c[관리자] §e라운드가 강제로 종료되었습니다.");
-        Bukkit.broadcastMessage("§7(생존 점수는 지급되지 않습니다)");
-
-        // 4. 점수 현황판 출력
-        Bukkit.broadcastMessage(" ");
-        Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
-        Bukkit.broadcastMessage(" ");
-
-        // 데이터 수집용 리스트 (로컬 클래스 중복 정의)
-        class ResultEntry {
-            String name;
-            int score;
-            String abilityName;
-            int usage;
-
-            public ResultEntry(String name, int score, String abilityName, int usage) {
-                this.name = name;
-                this.score = score;
-                this.abilityName = abilityName;
-                this.usage = usage;
-            }
-        }
-
-        List<ResultEntry> results = new ArrayList<>();
-
-        Set<UUID> checkSet = new HashSet<>(scores.keySet());
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            checkSet.add(p.getUniqueId());
-        }
-
-        for (UUID uuid : checkSet) {
-            String name = Bukkit.getOfflinePlayer(uuid).getName();
-            if (name == null)
-                continue;
-
-            int score = scores.getOrDefault(uuid, 0);
-
-            String abilityCode = (abilityManager != null && abilityManager.getPlayerAbilities() != null)
-                    ? abilityManager.getPlayerAbilities().get(uuid)
-                    : null;
-            String abilityName = "없음";
-            int usage = 0;
-
-            if (abilityCode != null && abilityManager != null) {
-                me.user.moc.ability.Ability ab = abilityManager.getAbility(abilityCode);
-                if (ab != null) {
-                    abilityName = ab.getName();
-                }
-                usage = abilityManager.getUsageCount(abilityCode);
-            }
-
-            results.add(new ResultEntry(name, score, abilityName, usage));
-        }
-
-        // 정렬
-        results.sort((a, b) -> Integer.compare(b.score, a.score));
-
-        // 단순히 출력
-        Bukkit.broadcastMessage("§7Score | Nickname | Ability Name | Usage Count this game");
-        for (ResultEntry e : results) {
-            String line = String.format("§f%d | %s | %s | %d",
-                    e.score, e.name, e.abilityName, e.usage);
-            Bukkit.broadcastMessage(line);
-        }
-
-        Bukkit.broadcastMessage("§6==========================");
-
-        // 5. 승리 조건 체크 (혹시 킬 점수로 끝났을 수도 있으니)
-        boolean gameShouldStop = false;
-        // scores 맵을 순회하며 점수 체크
-        for (Map.Entry<UUID, Integer> entry : scores.entrySet()) {
-            if (entry.getValue() >= configManager.win_value) {
-                gameShouldStop = true;
-                break;
-            }
-        }
-
-        if (gameShouldStop) {
-            stopGame();
-        } else {
-            Bukkit.broadcastMessage("§75초 뒤 다음 라운드가 시작됩니다.");
-            startRoundAfterDelay();
         }
     }
 
@@ -1258,13 +1301,42 @@ public class GameManager implements Listener {
     }
 
     // 승리 축하 폭죽 로직 (생략 가능, 단순화)
+    /**
+     * 승리 축하 폭죽 로직 (슈슈슈슈슉!)
+     * 승리한 플레이어 머리 위로 별 모양 폭죽 10개를 연속으로 발사합니다.
+     */
     private void spawnFireworks(Location loc) {
-        org.bukkit.entity.Firework fw = loc.getWorld().spawn(loc, org.bukkit.entity.Firework.class);
-        org.bukkit.inventory.meta.FireworkMeta fm = fw.getFireworkMeta();
-        fm.addEffect(FireworkEffect.builder().withColor(Color.RED).withFade(Color.ORANGE).with(FireworkEffect.Type.BALL)
-                .build());
-        fm.setPower(1);
-        fw.setFireworkMeta(fm);
+        // 0.2초(4틱) 간격으로 폭죽을 쏘기 위한 반복 작업 시작!
+        new BukkitRunnable() {
+            int count = 0;
+
+            @Override
+            public void run() {
+                if (count >= 10) { // 10개를 다 쐈으면 종료
+                    this.cancel();
+                    return;
+                }
+
+                // 폭죽 소환! (플레이어 머리 위 약간 랜덤한 위치)
+                Location spawnLoc = loc.clone().add(Math.random() * 2 - 1, 3, Math.random() * 2 - 1);
+                org.bukkit.entity.Firework fw = spawnLoc.getWorld().spawn(spawnLoc, org.bukkit.entity.Firework.class);
+                org.bukkit.inventory.meta.FireworkMeta fm = fw.getFireworkMeta();
+
+                // 별 모양(STAR) 폭죽 효과 설정! 색깔도 알록달록하게 섞어볼게요.
+                fm.addEffect(FireworkEffect.builder()
+                        .withColor(Color.YELLOW, Color.ORANGE, Color.RED) // 기본 색상
+                        .withFade(Color.WHITE, Color.FUCHSIA) // 사라질 때 색상
+                        .with(FireworkEffect.Type.STAR) // ★별 모양★
+                        .flicker(true) // 반짝임 효과 추가
+                        .trail(true) // 꼬리 효과 추가
+                        .build());
+
+                fm.setPower(1); // 폭죽 발사 강도
+                fw.setFireworkMeta(fm);
+
+                count++;
+            }
+        }.runTaskTimer(plugin, 0, 4L); // 0틱부터 시작해서 4틱(0.2초)마다 실행!
     }
 
     // 1. [일반 블록 설치 검사] 유리가 아니면 설치를 막습니다.
@@ -1308,36 +1380,53 @@ public class GameManager implements Listener {
     // [유틸리티] 채팅창 줄맞춤을 위한 도우미 메서드들
 
     /**
-     * 문자열의 '한글 기준' 길이를 계산합니다. (채팅창 정렬용)
-     * - 한글/특수문자: 2칸 취급
-     * - 영문/숫자/공백: 1칸 취급
+     * 문자열의 픽셀 너비를 계산합니다. (마인크래프트 기본 폰트 기준 근사치)
      */
-    private int getDisplayWidth(String s) {
+    private int getPixelWidth(String s) {
         if (s == null)
             return 0;
-        int length = 0;
+        int width = 0;
         for (char c : s.toCharArray()) {
-            // 한글 범위 (가~힣) 또는 기타 2바이트 문자
-            if ((c >= 0xAC00 && c <= 0xD7A3) || Character.getType(c) == Character.OTHER_LETTER) {
-                length += 2;
+            if (c >= 0xAC00 && c <= 0xD7A3) { // 한글
+                width += 9; // 한글은 보통 9~10px
+            } else if (c == 'f' || c == 'k' || c == '{' || c == '}' || c == '<' || c == '>') {
+                width += 5;
+            } else if (c == 'i' || c == ':' || c == ';' || c == '.' || c == ',' || c == '!' || c == '|') {
+                width += 2;
+            } else if (c == 'l' || c == '\'') {
+                width += 3;
+            } else if (c == 't' || c == 'I' || c == '[' || c == ']') {
+                width += 4;
+            } else if (c == ' ') {
+                width += 4;
+            } else if (c >= 'A' && c <= 'Z') {
+                width += 6; // 대문자 평균
+            } else if (c >= 'a' && c <= 'z') {
+                width += 6; // 소문자 평균
+            } else if (c >= '0' && c <= '9') {
+                width += 6; // 숫자
             } else {
-                length += 1;
+                // 기타 특수문자 or CJK
+                if (Character.isIdeographic(c))
+                    width += 9;
+                else
+                    width += 6;
             }
         }
-        return length;
+        return width;
     }
 
     /**
-     * 목표 길이(targetWidth)가 될 때까지 문자열 뒤에 공백을 채웁니다.
-     * 한글이 포함된 문자열의 시각적 길이를 고려하여 정렬합니다.
+     * 목표 픽셀 너비(targetPixelWidth)가 될 때까지 공백(4px)을 추가합니다.
      */
-    private String padRight(String s, int targetWidth) {
-        int currentWidth = getDisplayWidth(s);
-        if (currentWidth >= targetWidth)
+    private String padRightPixel(String s, int targetPixelWidth) {
+        int currentWidth = getPixelWidth(s);
+        if (currentWidth >= targetPixelWidth) {
             return s;
+        }
 
         StringBuilder sb = new StringBuilder(s);
-        while (getDisplayWidth(sb.toString()) < targetWidth) {
+        while (getPixelWidth(sb.toString()) < targetPixelWidth) {
             sb.append(" ");
         }
         return sb.toString();
@@ -1348,8 +1437,34 @@ public class GameManager implements Listener {
      */
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent e) {
+        Player p = e.getPlayer();
         if (abilityManager != null) {
-            abilityManager.cleanup(e.getPlayer());
+            abilityManager.cleanup(p);
+        }
+
+        // [추가] 퇴장 시 게임 진행 중이라면 생존자 체크하여 라운드 종료 처리
+        if (isRunning) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!isRunning)
+                        return;
+
+                    List<Player> survivors = Bukkit.getOnlinePlayers().stream()
+                            .filter(player -> player.getGameMode() == GameMode.SURVIVAL
+                                    && !afkPlayers.contains(player.getName()))
+                            .collect(Collectors.toList());
+
+                    if (survivors.size() <= 1) {
+                        Player winner = survivors.isEmpty() ? null : survivors.get(0);
+                        if (winner != null) {
+                            endRound(java.util.Collections.singletonList(winner));
+                        } else {
+                            startRoundAfterDelay();
+                        }
+                    }
+                }
+            }.runTaskLater(plugin, 1L);
         }
     }
 }

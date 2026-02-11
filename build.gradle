@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    // [중요] libs 참조 코드를 완전히 지웠습니다. 
+    // [중요] libs 참조 코드를 완전히 지웠습니다.
     // 이제 방해꾼 없이 인터넷 창고에서 진짜 '1.21.11 API'만 가져옵니다.
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
 }
@@ -30,6 +30,15 @@ configurations.all {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
 }
 
 tasks {

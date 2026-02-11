@@ -242,7 +242,7 @@ public class Olaf extends Ability {
         // 데미지 8 (4칸)
         target.damage(8.0, attacker);
         // 구속 1 (1초 = 20 ticks)
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 0));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 0, true, true, true));
     }
 
     // 도끼 드랍 (아이템 엔티티 생성)

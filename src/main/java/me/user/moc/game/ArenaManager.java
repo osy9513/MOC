@@ -30,6 +30,7 @@ public class ArenaManager implements Listener {
     private BukkitTask borderShrinkTask; // 자기장 및 진행 관련 타이머
     private BukkitTask borderDamageTask; // 대미지 체크 타이머
     private BukkitTask generateTask; // 맵 공사 타이머 (추가됨!)
+    private org.bukkit.entity.Entity centerMarker; // [추가] 중앙 마커 엔티티
     private GameManager gm;
 
     public ArenaManager(MocPlugin plugin) {
@@ -130,14 +131,28 @@ public class ArenaManager implements Listener {
         int cx = center.getBlockX();
         int cz = center.getBlockZ();
 
+        // [추가] 만약 기존에 맵 생성 중인 태스크가 있다면 취소합니다.
+        if (generateTask != null) {
+            generateTask.cancel();
+        }
+
         // 그냥 new BukkitRunnable() 하지 않고, generateTask 변수에 담습니다.
         // 그래야 stopTasks()가 얘를 멈출 수 있습니다.
+
+        // [수정] 라운드마다 다른 지형을 위해 동적 시드 생성
+        final long mapSeed = System.nanoTime();
+
         generateTask = new BukkitRunnable() {
             // 시작 지점: 중심에서 -halfSize 만큼 떨어진 곳
             int x = cx - halfSize;
 
             @Override
             public void run() {
+                // [추가] 시작 전 기존 마커 제거 (첫 실행 시)
+                if (x == cx - halfSize) {
+                    removeCenterMarker();
+                }
+
                 // 서버 렉 방지를 위해 한 번에 20줄씩 공사
                 for (int i = 0; i < 20; i++) {
                     // 모든 X축 범위 공사가 끝났다면 (중심 + halfSize를 넘었을 때)
@@ -151,20 +166,123 @@ public class ArenaManager implements Listener {
                         if (config.spawn_tf) {
                             Bukkit.getOnlinePlayers().forEach(p -> p.teleport(center.clone().add(0.5, 1.0, 0.5)));
                         }
+
+                        // [추가] 맵 생성 완료 후 중앙 마커 생성 (텍스트 디스플레이 빛 기둥)
+                        // [수정] center가 소수점 좌표일 수 있으므로, 정확히 블록 중앙(0.5)에 오도록 cx, cz 정수 좌표를 사용합니다.
+                        Location markerLoc = new Location(world, cx + 0.5, center.getBlockY() + 3.0, cz + 0.5);
+                        createCenterMarker(markerLoc); // 바닥보다 좀 더 위에
+
                         this.cancel();
                         return;
                     }
 
-                    // Z축 공사 (원형 체크 로직 삭제 -> 사각형으로 일괄 처리)
+                    // Z축 공사
                     for (int z = cz - halfSize; z <= cz + halfSize; z++) {
-                        // 3. [청소 및 건설] 해당 좌표의 하늘부터 땅끝까지
-                        for (int y = world.getMinHeight(); y < world.getMaxHeight(); y++) {
+                        // [추가] 해당 (x, z) 좌표의 무작위 지형 높이 및 블록 결정
+                        int randomHeight = 0;
+                        Material randomMaterial = Material.GRASS_BLOCK;
+
+                        if (config.random_map) {
+                            // [추가] 중앙 주변 8*8 (반경 4) 구역은 블록 생성 금지
+                            boolean isSafeZone = Math.abs(x - cx) < 4 && Math.abs(z - cz) < 4;
+
+                            if (!isSafeZone) {
+                                // [수정] 웅덩이 발생 로직을 일반 블록 확률(10%)과 분리하여 독립적으로 처리합니다.
+                                // 웅덩이는 흐름 방지를 위해 16x16 격자 기반 유지 권장
+                                int gridX = x >> 4;
+                                int gridZ = z >> 4;
+
+                                // [수정] 동적 시드(mapSeed)를 추가하여 매번 다른 웅덩이 생성
+                                java.util.Random cellRand = new java.util.Random(
+                                        gridX * 341873128712L + gridZ * 132897987541L + world.getSeed() + mapSeed);
+
+                                double poolProb = cellRand.nextDouble();
+                                boolean isPartOfPool = false;
+
+                                if (poolProb < 0.03) { // 전체의 3% 확률로 웅덩이 후보 발생
+                                    int poolX = (gridX << 4) + cellRand.nextInt(2, 12);
+                                    int poolZ = (gridZ << 4) + cellRand.nextInt(2, 12);
+                                    boolean isLava = cellRand.nextDouble() < 0.33; // 1% 용암 (3% 중 1/3)
+
+                                    // 3x3 액체 구역 (반드시 3*3 형태로 출력)
+                                    if (x >= poolX && x < poolX + 3 && z >= poolZ && z < poolZ + 3) {
+                                        randomHeight = 1;
+                                        randomMaterial = isLava ? Material.LAVA : Material.WATER;
+                                        isPartOfPool = true;
+                                    }
+                                    // 액체의 테두리 (흐름 방지를 위한 흙블럭)
+                                    else if (x >= poolX - 1 && x < poolX + 4 && z >= poolZ - 1 && z < poolZ + 4) {
+                                        randomHeight = 1;
+                                        randomMaterial = Material.DIRT;
+                                        isPartOfPool = true;
+                                    }
+                                }
+
+                                // 웅덩이 구역이 아닐 때만 일반 블록 생성 로직 적용
+                                if (!isPartOfPool) {
+                                    // [수정] 기본적으로 1층(배드락 위)은 무조건 잔디로 채움 (높이 1)
+                                    randomHeight = 1;
+                                    randomMaterial = Material.GRASS_BLOCK;
+
+                                    // [수정] 1.5% 확률로 2층(장애물) 생성 (기존 로직: 10% * 15% = 1.5%)
+                                    double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+                                    if (rand < 0.015) {
+                                        randomHeight = 2;
+
+                                        // 2층 재질은 랜덤하게 결정 (기존 로직 유지)
+                                        double matRand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+                                        if (matRand < 0.7)
+                                            randomMaterial = Material.GRASS_BLOCK; // 2층도 잔디일 수 있음
+                                        else if (matRand < 0.85)
+                                            randomMaterial = Material.DIRT;
+                                        else if (matRand < 0.95)
+                                            randomMaterial = Material.COBBLESTONE;
+                                        else
+                                            randomMaterial = Material.SAND;
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. [청소 및 건설] 해당 좌표의 높이 정리
+                        // [복구] 사용자의 요청에 따라 월드 전체 높이(Min~Max)를 모두 초기화합니다.
+                        int minHeight = world.getMinHeight();
+                        int maxHeight = world.getMaxHeight();
+
+                        for (int y = minHeight; y < maxHeight; y++) {
                             Block b = world.getBlockAt(x, y, z);
+
                             if (y == targetY) {
                                 // 기반암 설치
                                 b.setType(Material.BEDROCK, false);
+
+                                // 중앙 1칸만 에메랄드로 유지
+                                if (x == cx && z == cz) {
+                                    b.setType(Material.EMERALD_BLOCK, false);
+                                }
+                            } else if (config.random_map && y > targetY && y <= targetY + randomHeight) {
+                                // [수정] 무작위 지형 생성
+                                if (y == targetY + 1) {
+                                    // 1층은 웅덩이(Liquid)가 아니면 무조건 잔디 블럭
+                                    // (웅덩이 로직에서는 randomMaterial이 Water/Lava로 설정됨 -> 이 경우엔 그대로 유지해야 함)
+                                    // 웅덩이는 randomHeight가 1이므로,
+                                    // 풀밭 로직에서 randomHeight=2가 걸렸을 때, randomMaterial이 Stone이어도 1층은 Grass여야 함.
+                                    if (randomMaterial == Material.WATER || randomMaterial == Material.LAVA
+                                            || randomMaterial == Material.DIRT) {
+                                        // 웅덩이 관련 재질이면 그대로 적용 (DIRT는 웅덩이 테두리일 수 있음)
+                                        // 하지만 위의 로직에서 '일반 구역'은 1.5% 확률로 2층이 되고 재질이 바뀜.
+                                        // 일반 구역의 1층(GRASS_BLOCK)과 2층(COBBLESTONE)을 분리해야 함.
+                                        b.setType(randomMaterial, false);
+                                    } else {
+                                        // 일반 구역 1층은 무조건 잔디
+                                        b.setType(Material.GRASS_BLOCK, false);
+                                    }
+                                } else {
+                                    // 2층 이상은 랜덤 재질 적용
+                                    b.setType(randomMaterial, false);
+                                }
                             } else {
-                                // 기반암 위아래는 공기로 싹 비우기
+                                // 기반암 및 지형 외 구역은 공기로 싹 비우기 (이전 판 블록 제거)
                                 if (b.getType() != Material.AIR) {
                                     b.setType(Material.AIR, false);
                                 }
@@ -274,6 +392,12 @@ public class ArenaManager implements Listener {
     public void startBorderShrink() {
         if (gameCenter == null)
             return;
+
+        // [추가] 테스트 모드일 때는 자기장이 줄어들지 않습니다.
+        if (config.test) {
+            Bukkit.broadcastMessage("§e[TEST] §f테스트 모드이므로 자기장이 줄어들지 않습니다.");
+            return;
+        }
 
         if (borderShrinkTask != null) {
             borderShrinkTask.cancel();
@@ -444,7 +568,12 @@ public class ArenaManager implements Listener {
                         }
                         // 2. 찾아낸 생존자 명단을 들고 GameManager의 endRound를 호출합니다.
                         // (주의: GameManager의 endRound 함수가 public 이어야 합니다!)
-                        gm.endRound(survivors);
+                        // [추가] 테스트 모드일 때는 1분이 지나도 라운드를 끝내지 않습니다.
+                        if (!me.user.moc.config.ConfigManager.getInstance().test) {
+                            gm.endRound(survivors);
+                        } else {
+                            plugin.getServer().broadcastMessage("§e[TEST] §f테스트 모드이므로 라운드가 종료되지 않습니다.");
+                        }
                     }
                 }
                 battleTime--;
@@ -465,10 +594,10 @@ public class ArenaManager implements Listener {
         WorldBorder border = world.getWorldBorder();
 
         // 1. [핵심] 마인크래프트 자체 장벽 대미지 설정 (가장 정확함)
-        // 버퍼(안전거리)를 0으로 설정해서 선을 밟자마자 아프게 합니다.
-        border.setDamageBuffer(0.0);
+        // [수정] 안전거리(버퍼)를 2.0칸으로 늘려서 억울한 죽음 방지 (텔포 오차 등)
+        border.setDamageBuffer(2.0);
         // 초당 대미지 설정 (한 칸 나갈 때마다 추가 대미지)
-        border.setDamageAmount(3.0);
+        border.setDamageAmount(2.0); // 3.0 -> 1.0으로 하향 조정 (즉사 방지)
 
         // 2. [메시지 알림 전용] 0.25초마다 검사하여 즉각 경고 메시지 전송
         if (borderDamageTask != null)
@@ -476,9 +605,25 @@ public class ArenaManager implements Listener {
 
         borderDamageTask = new BukkitRunnable() {
             int tickCount = 0; // [최적화] 엔티티 청소 주기 관리용 카운터
+            int graceSeconds = 5; // [추가] 초기 5초간 대미지 무시 (유예 시간)
 
             @Override
             public void run() {
+                // 게임이 끝났으면 태스크 종료 (중요)
+                if (!gm.isRunning()) {
+                    this.cancel();
+                    return;
+                }
+
+                // 초기 유예 시간 체크
+                if (graceSeconds > 0) {
+                    if (tickCount % 4 == 0) { // 1초마다 감소
+                        graceSeconds--;
+                    }
+                    tickCount++;
+                    return; // 아직은 대미지 로직 실행 안 함
+                }
+
                 double size = border.getSize() / 2.0;
                 Location center = border.getCenter();
 
@@ -498,6 +643,11 @@ public class ArenaManager implements Listener {
                         p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!")
                                 .color(net.kyori.adventure.text.format.NamedTextColor.RED)
                                 .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
+
+                        // [추가] 2초당 1뎀씩 수동 부여 (버퍼랑 별개로 확실하게 아프게 하기 위해)
+                        if (tickCount % 8 == 0) {
+                            p.damage(1.0);
+                        }
                     }
                 }
 
@@ -514,6 +664,8 @@ public class ArenaManager implements Listener {
                         if (!entity.isValid())
                             continue; // 이미 죽거나 소멸된 엔티티 패스
 
+                        // [추가] 보스몹이나 중요 엔티티는 예외 처리? (일단 보류)
+
                         Location loc = entity.getLocation();
                         // 자기장 밖인지 검사 (약간의 여유 0.5칸 줌)
                         if (Math.abs(loc.getX() - center.getX()) > size + 0.5
@@ -523,15 +675,6 @@ public class ArenaManager implements Listener {
                             entity.remove();
                             removedCount++;
                         }
-                    }
-
-                    // 디버깅용 로그 (10초에 한번만 출력)
-                    if (removedCount > 0) {
-                        plugin.getLogger()
-                                .info("[ArenaManager] 자기장 밖 생명체 " + removedCount + "마리 처형됨. (현재 반지름: " + size + ")");
-                    } else if (tickCount % 40 == 0) {
-                        // 작동 확인용 로그
-                        // plugin.getLogger().info("[ArenaManager] 생명체 스캔 중... (반지름: " + size + ")");
                     }
                 }
             }
@@ -562,6 +705,54 @@ public class ArenaManager implements Listener {
             generateTask = null;
         }
 
-        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+        // 4. [추가] 중앙 마커(텍스트 디스플레이) 제거
+        removeCenterMarker();
+    }
+
+    /**
+     * [추가] 중앙 마커(텍스트 디스플레이) 제거
+     */
+    public void removeCenterMarker() {
+        if (centerMarker != null && !centerMarker.isDead()) {
+            centerMarker.remove();
+            centerMarker = null;
+        }
+    }
+
+    /**
+     * [추가] 중앙 마커(텍스트 디스플레이) 생성 - 빛 기둥 효과
+     */
+    private void createCenterMarker(Location loc) {
+        removeCenterMarker(); // 혹시 모를 중복 제거
+
+        if (loc.getWorld() == null)
+            return;
+
+        centerMarker = loc.getWorld().spawn(loc, org.bukkit.entity.TextDisplay.class, display -> {
+            // 텍스트 설정 (위아래좌우 공백을 넣어 기둥처럼 보이게 함)
+            display.setText("\n\n\n\n§a§l     CENTER     \n\n\n\n");
+
+            // 항상 플레이어를 바라보도록 설정
+            display.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
+
+            // 배경색을 반투명한 초록색으로 설정하여 "빛 기둥" 느낌 연출
+            display.setBackgroundColor(org.bukkit.Color.fromARGB(100, 0, 255, 0));
+
+            // 벽 뒤에서도 보이게 설정 (위치 식별 용이)
+            display.setSeeThrough(true);
+
+            // 그림자 없음
+            display.setShadowed(false);
+
+            // 발광 효과 (멀리서도 테두리 보임)
+            display.setGlowing(true);
+
+            // 크기 조정 (잘 보이게) - Transformation 클래스 호환성 문제로 잠시 제거 (기본 크기 사용)
+            // display.setTransformation(new org.bukkit.util.transformation.Transformation(
+            // new org.joml.Vector3f(0f, 0f, 0f),
+            // new org.joml.AxisAngle4f(),
+            // new org.joml.Vector3f(2f, 2f, 2f), // 2배 크기
+            // new org.joml.AxisAngle4f()));
+        });
     }
 }

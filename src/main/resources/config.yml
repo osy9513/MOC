@@ -36,3 +36,6 @@ battle_map: true
 
 # 테스트 모드 (true=혼자 남았을 때 라운드가 끝나지 않음 / false=정상 종료)
 test: false
+
+# 전장 생성 시 자연 지형(흙, 물, 용암 등) 무작위 생성 여부 (true/false)
+random_map: true

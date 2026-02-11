@@ -12,6 +12,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.Registry;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -50,6 +53,11 @@ public class TogaHimiko extends Ability {
         java.util.Collection<org.bukkit.potion.PotionEffect> potionEffects;
         // [추가] 무적 시간 백업
         int maxNoDamageTicks;
+
+        // [버그 수정] 방어 관련 속성 백업 (이름 충돌 방지: attr 접두사 사용)
+        double attrArmor;
+        double attrArmorToughness;
+        double attrKnockbackResistance;
     }
 
     // 변신 전 원본 상태 저장소
@@ -288,6 +296,22 @@ public class TogaHimiko extends Ability {
                 ? p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).getValue()
                 : 0.2; // 플레이어 기본 이속 0.2
 
+        // [버그 수정] 방어력(Armor) 및 방어 강도(Toughness) 백업 추가
+        // 1.21.11 대응: Registry 사용
+        Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
+        Attribute toughnessAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
+        Attribute knockbackAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.knockback_resistance"));
+
+        state.attrArmor = (armorAttr != null && p.getAttribute(armorAttr) != null)
+                ? p.getAttribute(armorAttr).getValue()
+                : 0.0;
+        state.attrArmorToughness = (toughnessAttr != null && p.getAttribute(toughnessAttr) != null)
+                ? p.getAttribute(toughnessAttr).getValue()
+                : 0.0;
+        state.attrKnockbackResistance = (knockbackAttr != null && p.getAttribute(knockbackAttr) != null)
+                ? p.getAttribute(knockbackAttr).getValue()
+                : 0.0;
+
         state.potionEffects = p.getActivePotionEffects(); // 현재 버프 목록 복사
         state.maxNoDamageTicks = p.getMaximumNoDamageTicks(); // 무적 시간 설정 백업
 
@@ -317,28 +341,24 @@ public class TogaHimiko extends Ability {
             am.changeAbilityTemporary(p, targetAbCode);
             ignoringCleanup.remove(p.getUniqueId());
 
+            // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
+            Ability newAbility = am.getAbility(targetAbCode);
+            if (newAbility != null) {
+                newAbility.giveItem(p);
+                // giveItem이 인벤토리를 건드리지만, 아래에서 타겟 인벤토리로 덮어씌웁니다.
+                // 핵심은 giveItem 내부의 사이드 이펙트(소환, 태스크 등)를 실행하는 것입니다.
+            }
+
             // 3. 인벤토리 복사
             p.getInventory().setContents(target.getInventory().getContents());
             p.getInventory().setArmorContents(target.getInventory().getArmorContents());
 
-            // **결정**: 인벤토리를 그대로 복사했으므로 `giveItem`은 호출하지 않습니다.
-
             // [고도화 1] 변경된 능력 상세 설명 출력
-            Ability newAbility = am.getAbility(targetAbCode);
             if (newAbility != null) {
                 p.sendMessage(" ");
                 p.sendMessage("§a당신이 변신한 §e" + target.getName() + "§a 의 능력은 아래와 같습니다.");
                 p.sendMessage(" ");
                 newAbility.detailCheck(p);
-
-                // [Fix] 직쏘 등 아이템이 필수인 능력은 아이템 지급
-                // 인벤토리를 덮어씌웠지만, 상대가 아이템을 버렸거나 없을 수 있음.
-                // 또는 직쏘(049)의 경우 '석재 절단기'가 없으면 게임 시작 불가.
-                // 그냥 안전하게 giveItem 호출? -> 갑옷/칼 등 중복 지급 우려.
-                // 특정 능력 코드만 체크해서 지급
-                if (targetAbCode.equals("049")) { // 직쏘
-                    newAbility.giveItem(p);
-                }
             }
         }
 
@@ -372,72 +392,100 @@ public class TogaHimiko extends Ability {
         AbilityManager am = AbilityManager.getInstance((MocPlugin) plugin);
 
         if (original != null) {
-            // 1. 변신했던 능력 정리 (소환수 제거 등)
-            String currentAbCode = am.getPlayerAbilities().get(p.getUniqueId());
-            Ability currentAb = am.getAbility(currentAbCode);
-            if (currentAb != null) {
-                // cleanup() 내부에서 revertToOriginal()이 다시 호출될 수 있으나,
-                // 위에서 이미 isTransformed.remove()를 했으므로 안전합니다.
-                currentAb.cleanup(p);
-            }
-
-            // 2. 원래 정보 복구
-            p.setPlayerProfile(original.profile);
-
-            // [버그 수정] 복구 시에도 스킨 리프레시
-            for (Player online : Bukkit.getOnlinePlayers()) {
-                online.hidePlayer(plugin, p);
-                online.showPlayer(plugin, p);
-            }
-            p.updateInventory();
-
-            p.getInventory().setContents(original.inventory);
-            p.getInventory().setArmorContents(original.armor);
-
-            // [추가] 속성값 완벽 복구
-            if (p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(original.maxHealth);
-            if (p.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(original.scale);
-            if (p.getAttribute(org.bukkit.attribute.Attribute.ENTITY_INTERACTION_RANGE) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.ENTITY_INTERACTION_RANGE)
-                        .setBaseValue(original.interactionRange);
-            if (p.getAttribute(org.bukkit.attribute.Attribute.BLOCK_INTERACTION_RANGE) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.BLOCK_INTERACTION_RANGE)
-                        .setBaseValue(original.blockInteractionRange);
-            if (p.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE).setBaseValue(original.attackDamage);
-            if (p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null)
-                p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(original.movementSpeed);
-
-            // [추가] 버프 복구
-            // 먼저 현재(변신 중 얻은) 버프 모두 제거
-            for (org.bukkit.potion.PotionEffect effect : p.getActivePotionEffects()) {
-                p.removePotionEffect(effect.getType());
-            }
-            // 원래 가지고 있던 버프 다시 추가
-            if (original.potionEffects != null) {
-                p.addPotionEffects(original.potionEffects);
-            }
-
-            // [추가] 무적 시간(NoDamageTicks) 관련 설정 복구
-            p.setMaximumNoDamageTicks(original.maxNoDamageTicks);
-            p.setNoDamageTicks(0); // 혹시 모를 잔여 무적 시간 초기화
-
-            // 3. 원래 능력 코드로 복귀
+            // [중요 수정] 순서 변경 및 지연 복구
+            // 1. 먼저 능력을 교체합니다. (이 과정에서 기존 능력의 cleanup이 호출됨)
+            // 이때 리무루/북극곰 cleanup이 호출되어 MaxHealth가 20으로 초기화될 수 있음.
             am.changeAbilityTemporary(p, original.abilityCode);
 
-            p.sendMessage("§d변신이 해제되어 원래 모습으로 돌아왔습니다.");
-            p.playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 0.5f);
-        }
+            // 2. 1틱 후에 원래 상태를 덮어씌웁니다.
+            // cleanup의 부작용(체력 리셋 등)을 확실히 이긴 뒤에 적용하기 위함입니다.
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!p.isOnline())
+                        return;
 
-        // 데이터 정리
-        savedStates.remove(p.getUniqueId());
-        // isTransformed.remove(p.getUniqueId()); // 위에서 이미 제거함
+                    // 정보 복구
+                    p.setPlayerProfile(original.profile);
 
-        // 내 태스크(타이머) 목록 비우기
-        if (activeTasks.containsKey(p.getUniqueId())) {
-            activeTasks.get(p.getUniqueId()).clear();
+                    // 스킨 리프레시
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        online.hidePlayer(plugin, p);
+                        online.showPlayer(plugin, p);
+                    }
+                    p.updateInventory();
+
+                    p.getInventory().setContents(original.inventory);
+                    p.getInventory().setArmorContents(original.armor);
+
+                    // [핵심] 속성값 완벽 복구
+                    // cleanup 후이므로 안전하게 MaxHealth를 원래대로(예: 60) 돌려놓을 수 있음.
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null) {
+                        p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(original.maxHealth);
+                    }
+
+                    // 최대 체력 복구 후 현재 체력 설정
+                    double restoredMax = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+                    p.setHealth(Math.min(original.health, restoredMax));
+
+                    // 나머지 속성 복구
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null)
+                        p.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(original.scale);
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.ENTITY_INTERACTION_RANGE) != null)
+                        p.getAttribute(org.bukkit.attribute.Attribute.ENTITY_INTERACTION_RANGE)
+                                .setBaseValue(original.interactionRange);
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.BLOCK_INTERACTION_RANGE) != null)
+                        p.getAttribute(org.bukkit.attribute.Attribute.BLOCK_INTERACTION_RANGE)
+                                .setBaseValue(original.blockInteractionRange);
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE) != null)
+                        p.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE)
+                                .setBaseValue(original.attackDamage);
+                    if (p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null)
+                        p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED)
+                                .setBaseValue(original.movementSpeed);
+
+                    // 방어 속성 복구
+                    Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
+                    Attribute toughnessAttr = Registry.ATTRIBUTE
+                            .get(NamespacedKey.minecraft("generic.armor_toughness"));
+                    Attribute knockbackAttr = Registry.ATTRIBUTE
+                            .get(NamespacedKey.minecraft("generic.knockback_resistance"));
+
+                    if (armorAttr != null && p.getAttribute(armorAttr) != null)
+                        p.getAttribute(armorAttr).setBaseValue(original.attrArmor);
+                    if (toughnessAttr != null && p.getAttribute(toughnessAttr) != null)
+                        p.getAttribute(toughnessAttr).setBaseValue(original.attrArmorToughness);
+                    if (knockbackAttr != null && p.getAttribute(knockbackAttr) != null)
+                        p.getAttribute(knockbackAttr).setBaseValue(original.attrKnockbackResistance);
+
+                    // 버프 복구
+                    for (org.bukkit.potion.PotionEffect effect : p.getActivePotionEffects()) {
+                        p.removePotionEffect(effect.getType());
+                    }
+                    if (original.potionEffects != null) {
+                        p.addPotionEffects(original.potionEffects);
+                    }
+
+                    // 무적 시간 복구
+                    p.setMaximumNoDamageTicks(original.maxNoDamageTicks);
+                    p.setNoDamageTicks(0);
+
+                    p.sendMessage("§d변신이 해제되어 원래 모습으로 돌아왔습니다.");
+                    p.playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 0.5f);
+
+                    // 데이터 정리 (지연 실행 내에서)
+                    savedStates.remove(p.getUniqueId());
+
+                    // 내 태스크(타이머) 목록 비우기 (부모 cleanup에서 안지워졌을 경우 대비)
+                    if (activeTasks.containsKey(p.getUniqueId())) {
+                        activeTasks.get(p.getUniqueId()).clear();
+                    }
+                }
+            }.runTaskLater(plugin, 1L); // 1틱 지연
+        } else {
+            // original이 없는 경우(거의 없겠지만) 그냥 상태만 지움
+            savedStates.remove(p.getUniqueId());
+            isTransformed.remove(p.getUniqueId());
         }
     }
 
@@ -483,5 +531,31 @@ public class TogaHimiko extends Ability {
             // 다만 GameManager.onDeath가 먼저 호출되는지, 이게 먼저인지 순서에 따라
             // 킬러 정보(getKiller)가 달라질 수 있으나, 변신 여부와 상관없이 Player 객체는 동일하므로 OK.
         }
+    }
+
+    @Override
+    public void onGameEnd(Player p) {
+        // [Fix] 라운드 승리 시, 승리 메시지에 변신 이름이 아닌 본캐 닉네임이 뜨도록 강제 복구
+        if (isTransformed.contains(p.getUniqueId())) {
+            revertToOriginal(p);
+        }
+    }
+
+    /**
+     * 특정 플레이어가 토가 히미코의 '변신 상태'인지 확인하는 헬퍼 메서드
+     * (다른 능력 클래스에서 소환수 이름 변경 등에 사용)
+     */
+    public static boolean isToga(Player p) {
+        if (p == null)
+            return false;
+        AbilityManager am = AbilityManager.getInstance();
+        if (am == null)
+            return false;
+        // 047은 TogaHimiko 코드
+        Ability ab = am.getAbility("047");
+        if (ab instanceof TogaHimiko toga) {
+            return toga.isTransformed(p.getUniqueId());
+        }
+        return false;
     }
 }

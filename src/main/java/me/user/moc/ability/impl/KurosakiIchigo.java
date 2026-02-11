@@ -115,8 +115,8 @@ public class KurosakiIchigo extends Ability {
 
         // 지속 효과 (7.5초)
         // 신속 2, 재생 2
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 150, 1));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 150, 1));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 150, 1, true, true, true));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 150, 1, true, true, true));
 
         // 공격 속도 대폭 증가 (딜레이 제거)
         // 기본 4.0 -> 100.0 (거의 무한)
@@ -168,7 +168,7 @@ public class KurosakiIchigo extends Ability {
         }
 
         // 구속 3 부여 (5초)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 2));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 2, true, true, true));
     }
 
     @EventHandler

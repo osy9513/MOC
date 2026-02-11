@@ -228,7 +228,7 @@ public class Meliodas extends Ability {
 
         // 패널티: 3초간 움직임 불가 (Self-Stun)
         // 구속(Slowness) 높은 레벨 + 점프 불가
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 5, false, false));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 60, 255, false, false)); // 250: 점프 불가
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 5, true, true, true));
+        applyJumpSilence(p, 60);
     }
 }

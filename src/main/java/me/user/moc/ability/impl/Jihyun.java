@@ -229,7 +229,8 @@ public class Jihyun extends Ability {
                             target.setVelocity(originalVel);
 
                             // 실명 2초 (40틱)
-                            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0));
+                            target.addPotionEffect(
+                                    new PotionEffect(PotionEffectType.BLINDNESS, 40, 0, true, true, true));
                             target.sendMessage("§f악! 눈에 연기가!!"); // 본인에게만 표시
                             hitEntities.add(target.getUniqueId());
                         }

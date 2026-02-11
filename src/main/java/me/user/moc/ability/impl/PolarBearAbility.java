@@ -69,9 +69,17 @@ public class PolarBearAbility extends Ability {
     public void giveItem(Player p) {
         // [초기화]
         p.getInventory().remove(Material.IRON_SWORD);
-        // [너프] 3줄 5반 (71칸)
-        p.setMaxHealth(71.0);
-        p.setHealth(71.0);
+        p.getInventory().remove(Material.POTION); // 재생 포션
+
+        // [Fix] Paper 1.21.11 대응: Attribute API 사용 및 안전한 체력 설정
+        try {
+            if (p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null) {
+                p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(71.0); // 3줄 5반
+            }
+            p.setHealth(71.0);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[PolarBear] 체력 설정 중 오류 발생: " + e.getMessage());
+        }
 
         // [추가] 구운 소고기 제거 및 생고기 지급
         p.getInventory().remove(Material.COOKED_BEEF);
@@ -109,7 +117,7 @@ public class PolarBearAbility extends Ability {
 
         // 투명화
         p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false,
-                false, false));
+                false, true));
 
         // [추가] 갑옷 제거
         p.getInventory().setArmorContents(null);
@@ -128,13 +136,24 @@ public class PolarBearAbility extends Ability {
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 곰 앞발, 생소고기 32개");
-        p.sendMessage("§f장비 제거 : 철 칼, 철 흉갑, 구운 소고기 64개");
+        p.sendMessage("§f장비 제거 : 철 칼, 철 흉갑, 구운 소고기 64개, 재생 포션");
     }
 
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
-        p.setMaxHealth(20.0);
+
+        try {
+            // [Fix] 원래 체력(20)으로 복구 (Attribute API 사용)
+            if (p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null) {
+                p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20.0);
+            }
+            if (p.getHealth() > 20.0)
+                p.setHealth(20.0);
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("[PolarBear] Cleanup 체력 복구 중 오류 발생: " + e.getMessage());
+        }
+
         isSatiated.remove(p.getUniqueId());
 
         // 팀 해제
@@ -249,18 +268,21 @@ public class PolarBearAbility extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
-        team.addEntry(p.getName());
+        if (!team.hasEntry(p.getName())) {
+            team.addEntry(p.getName());
+        }
 
         // 본인용 (Private)
         for (int i = 0; i < 2; i++) {
             PolarBear privateBear = (PolarBear) p.getWorld().spawnEntity(p.getLocation(), EntityType.POLAR_BEAR);
             privateBear.setAI(false);
             privateBear.setInvulnerable(true);
-            privateBear.setCollidable(false);
+            privateBear.setCollidable(false); // [추가] 본인이 밀리지 않도록 충돌 제거
             privateBear.setSilent(true);
             privateBear.setAdult();
             privateBear.addScoreboardTag("POLAR_PRIVATE");
 
+            // [수정] 본인에게는 반투명하게 보여야 함 (Team.CanSeeFriendlyInvisibles=true 덕분에 반투명으로 보임)
             privateBear.addPotionEffect(
                     new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
 
@@ -269,7 +291,12 @@ public class PolarBearAbility extends Ability {
                     online.hideEntity(plugin, privateBear);
                 }
             }
-            team.addEntry(privateBear.getUniqueId().toString());
+            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함
+            String entry = privateBear.getUniqueId().toString();
+            if (!team.hasEntry(entry)) {
+                team.addEntry(entry);
+            }
+
             entities.add(privateBear);
         }
 
@@ -285,6 +312,13 @@ public class PolarBearAbility extends Ability {
         publicBear.addScoreboardTag("POLAR_PUBLIC");
 
         p.hideEntity(plugin, publicBear);
+
+        // [추가] 충돌 방지: Public Bear도 팀에 추가 (COLLISION_RULE.NEVER 적용)
+        String publicEntry = publicBear.getUniqueId().toString();
+        if (!team.hasEntry(publicEntry)) {
+            team.addEntry(publicEntry);
+        }
+
         entities.add(publicBear);
 
         if (activeEntities.containsKey(p.getUniqueId())) {
@@ -347,10 +381,10 @@ public class PolarBearAbility extends Ability {
                     }
 
                     if (currentSatiated) {
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, false, false, false));
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 1, false, false, false));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, true, true, true));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 1, true, true, true));
                     } else {
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 3, false, false, false));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 3, true, true, true));
                     }
 
                     // [변신 로직]
@@ -387,7 +421,8 @@ public class PolarBearAbility extends Ability {
                         if (bear.isDead())
                             continue;
 
-                        bear.teleport(p.getLocation());
+                        // [수정] 월드 보더 밖으로 나가지 않도록 보정
+                        bear.teleport(clampLocationToBorder(p.getLocation()));
 
                         double ownerHealth = Math.min(p.getHealth(), 100.0);
                         if (bear.getHealth() != ownerHealth) {
@@ -398,6 +433,9 @@ public class PolarBearAbility extends Ability {
                         }
 
                         if (bear.getScoreboardTags().contains("POLAR_PRIVATE")) {
+                            // [수정] 본인에게는 보이도록 설정 (반투명 유지를 위해)
+                            p.showEntity(plugin, bear);
+
                             for (Player online : Bukkit.getOnlinePlayers()) {
                                 if (!online.getUniqueId().equals(p.getUniqueId())) {
                                     online.hideEntity(plugin, bear);

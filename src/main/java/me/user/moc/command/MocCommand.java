@@ -3,6 +3,7 @@ package me.user.moc.command; // 명령어가 들어있는 폴더 주소
 import me.user.moc.MocPlugin;
 import me.user.moc.game.GameManager;
 import me.user.moc.ability.AbilityManager;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -185,6 +186,10 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("§e win_value (승리 점수 - 숫자): §f" + cm.win_value);
                     // p.sendMessage("§e teammod (팀전 모드): §f" + cm.teammod);
                     p.sendMessage("§e hidden (히든 캐릭터 활성화): §f" + cm.hidden);
+                    p.sendMessage("§e battle_map (전장 바닥 생성 - true/false): §f" + cm.battle_map);
+                    p.sendMessage("§e random_map (자연 전장 생성 - true/false): §f" + cm.random_map);
+                    p.sendMessage("§e test (테스트 모드 - true/false): §f" + cm.test); // [추가]
+                    p.sendMessage("§6 ※참고: 테스트 모드 시 자동으로 크리에이티브 모드로 전환됩니다. 크리에이티브 모드 일 땐 노쿨로 능력 사용 가능");
                     p.sendMessage(" ");
                     p.sendMessage("§7(변경법: /moc config set [이름] [값])");
                     p.sendMessage(" ");
@@ -203,6 +208,17 @@ public class MocCommand implements CommandExecutor {
                     // ConfigManager에게 일을 떠넘깁니다. "이거 바꿔줘!"
                     String result = cm.setValue(key, value);
                     p.sendMessage(result);
+
+                    // [추가] 테스트 모드가 변경되었다면 즉시 게임모드 반영
+                    if (key.equalsIgnoreCase("test")) {
+                        org.bukkit.GameMode targetMode = cm.test ? org.bukkit.GameMode.CREATIVE
+                                : org.bukkit.GameMode.SURVIVAL;
+                        for (Player onlineP : Bukkit.getOnlinePlayers()) {
+                            onlineP.setGameMode(targetMode);
+                        }
+                        p.sendMessage(cm.test ? "§e[TEST] §f모든 플레이어가 크리에이티브 모드로 전환되었습니다."
+                                : "§e[TEST] §f모든 플레이어가 서바이벌 모드로 전환되었습니다.");
+                    }
                     return true;
                 }
             }

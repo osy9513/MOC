@@ -67,6 +67,8 @@ public class ScoreboardManager {
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             updateScoreboard(p);
+            // [추가] 각 플레이어의 점수판에 메인 점수판의 팀 정보를 동기화 (소환수 가시성/충돌 방지)
+            syncTeams(p);
         }
     }
 
@@ -144,7 +146,7 @@ public class ScoreboardManager {
         if (plugin.getGameManager() != null) {
             currentRound = plugin.getGameManager().getRound();
         }
-        lines.add("§f라운드 : §a" + currentRound + "R");
+        lines.add("§f라운드  : §a" + currentRound + "R");
 
         lines.add("§7----------------------");
         lines.add("  "); // 공백 (중복 방지 위해 공백 개수 조절)
@@ -195,5 +197,63 @@ public class ScoreboardManager {
 
     private List<Map.Entry<UUID, Integer>> getTopScores() {
         return gameManager.getTopScores();
+    }
+
+    // [핵심] 메인 점수판의 팀 정보를 개인 점수판으로 동기화
+    // 리무르/북극곰 등 소환수의 가시성(반투명) 및 충돌 방지 설정을 유지하기 위함.
+    private void syncTeams(Player p) {
+        Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
+        Scoreboard userInfo = p.getScoreboard();
+
+        if (main == userInfo)
+            return; // 같으면 동기화 불필요
+
+        // [Fix] mainTeamNames 변수 선언 추가
+        java.util.Set<String> mainTeamNames = new java.util.HashSet<>();
+
+        for (Team mainTeam : main.getTeams()) {
+            mainTeamNames.add(mainTeam.getName()); // [Fix] 팀 이름 수집
+            Team userTeam = userInfo.getTeam(mainTeam.getName());
+            if (userTeam == null) {
+                userTeam = userInfo.registerNewTeam(mainTeam.getName());
+            }
+
+            // 옵션 동기화
+            try {
+                userTeam.setDisplayName(mainTeam.getDisplayName());
+                userTeam.setPrefix(mainTeam.getPrefix());
+                userTeam.setSuffix(mainTeam.getSuffix());
+                userTeam.setColor(mainTeam.getColor());
+                userTeam.setAllowFriendlyFire(mainTeam.allowFriendlyFire());
+                userTeam.setCanSeeFriendlyInvisibles(mainTeam.canSeeFriendlyInvisibles());
+                userTeam.setOption(Team.Option.NAME_TAG_VISIBILITY,
+                        mainTeam.getOption(Team.Option.NAME_TAG_VISIBILITY));
+                userTeam.setOption(Team.Option.COLLISION_RULE, mainTeam.getOption(Team.Option.COLLISION_RULE));
+                userTeam.setOption(Team.Option.DEATH_MESSAGE_VISIBILITY,
+                        mainTeam.getOption(Team.Option.DEATH_MESSAGE_VISIBILITY));
+            } catch (Exception e) {
+                // 버전 차이 등으로 인한 예외 무시
+            }
+
+            // 멤버 동기화 (추가된 멤버만)
+            for (String entry : mainTeam.getEntries()) {
+                if (!userTeam.hasEntry(entry)) {
+                    userTeam.addEntry(entry);
+                }
+            }
+        }
+
+        // 2. 개인 -> 메인 동기화 (삭제 및 정리) [메모리 누수 방지]
+        // 메인 스코어보드에서 사라진 팀(예: 능력 해제 후)은 개인 스코어보드에서도 제거해야 함.
+        // [주의] ConcurrentModificationException 방지를 위해 복사본 사용
+        for (Team userTeam : new java.util.HashSet<>(userInfo.getTeams())) {
+            if (!mainTeamNames.contains(userTeam.getName())) {
+                try {
+                    userTeam.unregister();
+                } catch (Exception e) {
+                    // 제거 실패 시 무시
+                }
+            }
+        }
     }
 }

@@ -292,10 +292,10 @@ public class Ddangkong extends Ability {
             registerTask(p, stressTask);
 
             // 구속 5, 저항 2 (10초 = 200 ticks)
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 200, 4));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 200, 1));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 200, 4, true, true, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 200, 1, true, true, true));
             // 추가: 시야 흔들림 (멀미) 짧게 줘서 당황 효과
-            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 1));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 1, true, true, true));
 
             // 10초 후 전화 종료 및 상태 해제
             BukkitTask endTask = new BukkitRunnable() {

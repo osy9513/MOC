@@ -140,7 +140,7 @@ public class AsuiTsuyu extends Ability {
                         if (p.isInWater()) {
                             // 돌고래의 가호 (수영 속도 증가)
                             p.addPotionEffect(
-                                    new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 2, false, false, false));
+                                    new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 2, true, true, true));
                         }
                     }
                 }

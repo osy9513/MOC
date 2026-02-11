@@ -168,13 +168,13 @@ public class Singed extends Ability {
                 // 2. [패시브] 신속 관리
                 if (speedBoostTicks > 0) {
                     speedBoostTicks--;
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 5, false, false, true));
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 5, true, true, true));
 
                     // [이펙트] 몸에 파랑 파티클 (오라)
                     p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3,
                             new Particle.DustOptions(Color.BLUE, 1.0f));
                 } else {
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, false, false, false));
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, true, true, true));
                 }
 
                 // 3. [맹독의 자취] 가스 생성

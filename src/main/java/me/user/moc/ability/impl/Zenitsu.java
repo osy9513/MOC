@@ -162,7 +162,7 @@ public class Zenitsu extends Ability {
             p.getWorld().spawnParticle(Particle.EXPLOSION, target.getLocation().add(0, 1, 0), 1);
         }
 
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 1)); // Speed 2
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20, 1, true, true, true)); // Speed 2
     }
 
     private void useSixfold(Player p) {

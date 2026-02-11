@@ -439,14 +439,12 @@ public class Mothership extends Ability {
         shipLoc.getWorld().playSound(shipLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 2.0f);
 
         // 히트박스: 모선 바로 아래 지상
-        // 단순히 높이 무시하고 X, Z 좌표 차이가 1.5 이내인 적
         for (Entity e : shipLoc.getWorld().getLivingEntities()) {
-            if (e.equals(owner))
-                continue;
             if (e instanceof Player p && p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
                 continue;
-            // 호출기 든 사람 제외
-            if (e instanceof Player p) {
+
+            // 호출기 든 사람 제외 (적군일 때만 해당, 주인은 아래에서 별도 처리)
+            if (e instanceof Player p && !p.equals(owner)) {
                 ItemStack hand = p.getInventory().getItemInMainHand();
                 if (hand != null && hand.getType() == Material.BEACON)
                     continue;
@@ -458,21 +456,25 @@ public class Mothership extends Ability {
 
                 // 높이는? 모선보다 아래에 있어야 함.
                 if (targetLoc.getY() < shipLoc.getY()) {
+                    // [강화] 만약 주인이라면 속도 버프 부여
+                    if (e.equals(owner)) {
+                        owner.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                                org.bukkit.potion.PotionEffectType.SPEED, 100, 4, true, true, true));
+                        continue;
+                    }
+
                     ((LivingEntity) e).damage(10.0, owner); // 10 데미지
 
-                    // [추가] 넉백 적용 (연속 피격 방지용)
-                    // 빔 중심(shipLoc)에서 피해자(targetLoc) 방향으로 밀어냄
+                    // [추가] 넉백 적용
                     Location beamCenter = shipLoc.clone();
-                    beamCenter.setY(targetLoc.getY()); // 높이 보정 (수평 밀치기)
-
+                    beamCenter.setY(targetLoc.getY());
                     Vector knockback = targetLoc.toVector().subtract(beamCenter.toVector());
 
-                    // 만약 정확히 중앙이라서 벡터가 0이면 임의 방향(X축)으로 설정
                     if (knockback.lengthSquared() < 0.0001) {
                         knockback = new Vector(1, 0, 0);
                     }
 
-                    knockback.normalize().multiply(2.5).setY(0.3); // 수평 2.5강도 (상향), 위로 0.3
+                    knockback.normalize().multiply(2.5).setY(0.3);
                     e.setVelocity(knockback);
                 }
             }

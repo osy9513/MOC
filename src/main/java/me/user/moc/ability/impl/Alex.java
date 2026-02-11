@@ -183,7 +183,7 @@ public class Alex extends Ability {
         MocPlugin.getInstance().getArenaManager().removeSquareFloor();
 
         // 느린 낙하 버프 (20초 = 400틱, 레벨3 = amplifier 2)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 20, 2));
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 20, 2, true, true, true));
     }
 
     private void cleanupData(UUID uuid) {

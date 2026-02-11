@@ -42,20 +42,6 @@ public class EmiyaShirou extends Ability {
             "§c§lSo as I pray, Unlimited Blade Works."
     };
 
-    // 소환된 검 관리
-    private class RisingSword {
-        ArmorStand stand;
-        boolean fired;
-
-        public RisingSword(ArmorStand stand) {
-            this.stand = stand;
-            this.fired = false;
-        }
-    }
-
-    private final Map<UUID, List<RisingSword>> activeSwords = new HashMap<>();
-    private final Map<UUID, List<ArmorStand>> flyingSwords = new HashMap<>(); // 날아가는 중인 검 (제거용)
-
     // 키값
     private static final String KEY_UBW_HOMING = "MOC_UBW_HOMING";
 
@@ -113,13 +99,21 @@ public class EmiyaShirou extends Ability {
     }
 
     // === 자동 발동 체크 ===
+    private BukkitTask autoCheckTask; // [추가] 태스크 참조 저장
+
     private void startAutoTriggerCheck() {
-        new BukkitRunnable() {
+        // [Fix] 이미 돌고 있으면 중복 실행 방지
+        if (autoCheckTask != null && !autoCheckTask.isCancelled()) {
+            return;
+        }
+
+        autoCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
                 // 플러그인이 비활성화되면 중단
                 if (!plugin.isEnabled()) {
                     this.cancel();
+                    autoCheckTask = null;
                     return;
                 }
 
@@ -135,6 +129,7 @@ public class EmiyaShirou extends Ability {
 
     private void checkAndTrigger(Player p) {
         UUID uuid = p.getUniqueId();
+        // [Fix] 이미 발동했거나 진행 중이면 패스
         if (hasTriggered.getOrDefault(uuid, false))
             return;
         if (isChanting.getOrDefault(uuid, false) || isActive.getOrDefault(uuid, false))
@@ -144,13 +139,14 @@ public class EmiyaShirou extends Ability {
         if (MocPlugin.getInstance().getGameManager().isBattleStarted()) {
             // [추가] 관전 모드이거나 죽은 상태면 발동 안함
             if (p.getGameMode() == GameMode.SPECTATOR || p.isDead()) {
-                hasTriggered.put(uuid, true); // 더 이상 체크하지 않도록 true로 설정
+                // 죽어서 발동 못한 경우에도 발동한 것으로 처리할지?
+                // 아니면 부활하면 발동하게 할지? -> 일단 발동 처리하여 무한 루프 방지
+                hasTriggered.put(uuid, true);
                 return;
             }
 
-            hasTriggered.put(uuid, true); // 중복 실행 방지
-            // 알림 필요 없음
-            // p.sendMessage("§7[System] 15초 후 무한의 검제 영창을 시작합니다...");
+            // [핵심] 여기서 true로 만들어서 중복 진입 차단
+            hasTriggered.put(uuid, true);
 
             // 15초 카운트다운 후 영창 시작
             new BukkitRunnable() {
@@ -181,6 +177,7 @@ public class EmiyaShirou extends Ability {
         }
     }
 
+    // [복구] 삭제된 startChant 메서드 및 관련 메서드 복구
     private void startChant(Player p) {
         UUID uuid = p.getUniqueId();
         if (isChanting.getOrDefault(uuid, false) || isActive.getOrDefault(uuid, false))
@@ -203,7 +200,7 @@ public class EmiyaShirou extends Ability {
 
                 if (index < CHANT_LINES.length) {
                     Bukkit.broadcastMessage(chantSpeaker() + CHANT_LINES[index]);
-                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f,
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1f,
                             0.6f + (index * 0.1f));
 
                     // 파티클
@@ -252,31 +249,21 @@ public class EmiyaShirou extends Ability {
         registerTask(p, task);
     }
 
-    private String chantSpeaker() { // removed argument
+    private String chantSpeaker() {
         return "§e에미야 시로 : ";
     }
 
     private void cancelChant(Player p) {
         if (p.isOnline())
             p.resetPlayerTime();
+        // [Fix] isChanting, isActive map handling
         isChanting.put(p.getUniqueId(), false);
         isActive.put(p.getUniqueId(), false);
         p.sendMessage("§c영창이 취소되었습니다.");
     }
 
     private void startUBW(Player p) {
-        if (!p.isOnline() || p.isDead()) {
-            cancelChant(p);
-            return;
-        }
-
         UUID uuid = p.getUniqueId();
-        isChanting.put(uuid, false);
-        isActive.put(uuid, true);
-
-        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 2.0f, 1.0f);
-        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 0.5f);
-
         // 검 생성 스케줄러 (1초마다 1개씩, 무제한)
         BukkitTask spawnTask = new BukkitRunnable() {
             @Override
@@ -292,250 +279,205 @@ public class EmiyaShirou extends Ability {
                 // 5x5 범위 (반경 2.5) 내 랜덤 위치
                 double dx = (Math.random() * 5.0) - 2.5;
                 double dz = (Math.random() * 5.0) - 2.5;
-                Location targetLoc = center.add(dx, 0, dz);
 
-                spawnRisingSwordAction(p, targetLoc);
+                // [Fix] Y좌표 보정: getHighestBlockYAt은 실내에서 천장을 잡거나 땅굴에서 지상을 잡는 문제가 있음
+                // 따라서 플레이어의 Y좌표 기준으로 아래로 탐색하여 바닥을 찾음
+                int targetY = center.getBlockY();
+                // 플레이어 발밑부터 아래로 5칸 탐색
+                for (int i = 0; i < 5; i++) {
+                    Location check = center.clone().add(dx, -i, dz);
+                    if (check.getBlock().getType().isSolid()) {
+                        targetY = check.getBlockY();
+                        break;
+                    }
+                }
+                // 만약 위쪽으로 바닥이 있을 수도 있음 (반블록 등) -> 위로 2칸 탐색
+                if (targetY == center.getBlockY()) { // 아래에서 못 찾았거나 바로 발밑인 경우
+                    for (int i = 1; i <= 2; i++) {
+                        Location check = center.clone().add(dx, i, dz);
+                        if (check.getBlock().getType().isSolid()) {
+                            targetY = check.getBlockY(); // 더 높은 바닥이 있으면 거기로
+                        }
+                    }
+                }
+
+                // 바닥 + 1.2 (약간 위)
+                Location spawnLoc = new Location(p.getWorld(), center.getX() + dx, targetY + 1.2, center.getZ() + dz);
+                // 혹시 블록 속에 묻히면 안 되니까
+                if (spawnLoc.getBlock().getType().isSolid()) {
+                    spawnLoc.add(0, 1, 0);
+                }
+
+                spawnRisingSwordAction(p, spawnLoc);
             }
         }.runTaskTimer(plugin, 0L, 20L); // 1초마다 실행
 
         registerTask(p, spawnTask);
     }
 
-    private void spawnRisingSwordAction(Player owner, Location xzLoc) {
-        // Y좌표 찾기 (Bedrock)
-        // 플레이어 높이부터 아래로 탐색
-        int startY = xzLoc.getBlockY();
-        int bedrockY = xzLoc.getWorld().getMinHeight(); // 기본값
+    private void spawnRisingSwordAction(Player owner, Location targetLoc) {
+        // 1. ItemDisplay 생성 (땅 속에 박힌 상태로 시작)
+        // 시작 높이: 목표 높이보다 1.5칸 아래
+        Location startLoc = targetLoc.clone().add(0, -1.5, 0);
 
-        for (int y = startY; y >= xzLoc.getWorld().getMinHeight(); y--) {
-            if (xzLoc.getWorld().getBlockAt(xzLoc.getBlockX(), y, xzLoc.getBlockZ()).getType() == Material.BEDROCK) {
-                bedrockY = y;
-                break;
-            }
+        ItemDisplay display = owner.getWorld().spawn(startLoc, ItemDisplay.class);
+        ItemStack sword = new ItemStack(Material.IRON_SWORD);
+        org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(10); // 리소스팩: emiyashirou
+            sword.setItemMeta(meta);
         }
+        display.setItemStack(sword);
+        display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED); // 제어 용이성
 
-        // Bedrock 바로 위 높이 보정
-        // [수정] 솟아오르는 높이를 높힘 (Bedrock을 뚫고 올라오는 느낌 강화)
+        // 크기 및 회전 (검이 거꾸로 박혀있거나, 위로 솟아오르는 형태)
+        Transformation transform = display.getTransformation();
+        transform.getScale().set(1.5f, 1.5f, 1.5f);
+        // X축 135도 회전 시 검이 수직으로 꽂힌 모양이 됨
+        // AxisAngle4f 사용 (joml)
+        transform.getLeftRotation().set(new AxisAngle4f((float) Math.toRadians(135), 0, 0, 1));
+        display.setTransformation(transform);
 
-        double startHeight = bedrockY - 1.5;
-        double finalHeight = bedrockY + 0.5; // 최종 높이 (거의 바닥까지 올라옴)
+        registerSummon(owner, display);
 
-        Location spawnLoc = new Location(xzLoc.getWorld(), xzLoc.getX(), startHeight, xzLoc.getZ());
-        // [추가] 칼의 방향을 랜덤으로 설정 (단조로움 회피)
-        spawnLoc.setYaw((float) (Math.random() * 360));
-
-        // 아머스탠드 생성
-        ArmorStand stand = xzLoc.getWorld().spawn(spawnLoc, ArmorStand.class);
-        stand.setVisible(false);
-        stand.setGravity(false);
-        stand.setMarker(true); // 히트박스 제거 (클릭 방지)
-        stand.setBasePlate(false);
-        stand.setArms(true);
-
-        // 철 칼 장착 (칼날이 아래를 보게? -> ArmorStand 팔 각도 조절 필요)
-        // 원작 고증: 칼이 땅에 꽂혀있는 형태에서 솟아오름 -> 핸들이 위, 칼날이 아래.
-        // ArmorStand 팔 기본 각도는 앞으로 뻗음.
-        // setRightArmPose로 조절.
-        // X축 -90도면 위로 듬, 90도면 아래로 내림 logic.
-        // 칼날이 위를 향해 솟아올라야 발사될 때 자연스러움. (아니면 요청사항: "칼날이 아래를 바라보는 채")
-        // "칼날이 아래를 바라보는 채... 한칸 높게 올라옵니다." -> 거꾸로 솟아오름?
-        // 보통 UBW는 칼자루가 하늘, 칼날이 땅에 박힌 상태임.
-        stand.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-
-        // 칼날이 아래로 가려면: 오른팔을 아래로 내리거나 회전시켜야 함.
-        stand.setRightArmPose(new EulerAngle(Math.toRadians(90), 0, 0)); // 팔을 아래로 내림 -> 칼날도 아래?
-        // 테스트 필요하지만, 일단 90도면 아래를 가리킬 것임.
-
-        RisingSword rSword = new RisingSword(stand);
-        activeSwords.computeIfAbsent(owner.getUniqueId(), k -> new ArrayList<>()).add(rSword);
-
-        // 솟아오르는 애니메이션 (1초에 걸쳐 1칸 위로)
-        new BukkitRunnable() {
-            int ticks = 0;
-            final int DURATION = 20; // 1초
-            double step = (finalHeight - startHeight) / DURATION; // 부드럽게 상승
+        // 2. 상승 애니메이션 (Ground -> +2 높이까지) & 조준/발사 로직
+        BukkitTask riseTask = new BukkitRunnable() {
+            int tick = 0;
+            boolean rising = true;
+            Location currentLoc = startLoc.clone();
 
             @Override
             public void run() {
-                // [수정] 리스트 포함 여부 체크 (UUID 맵 경유)
-                boolean stillActive = false;
-                List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
-                if (mySwords != null && mySwords.contains(rSword)) {
-                    stillActive = true;
-                }
-
-                if (stand.isDead() || !stillActive) {
-                    this.cancel();
-                    stand.remove();
-                    return;
-                }
-
-                if (ticks >= DURATION) {
-                    // 상승 완료 -> 감시 모드 시작
-                    startScanning(owner, rSword);
+                if (!display.isValid() || !owner.isOnline()) {
+                    display.remove();
                     this.cancel();
                     return;
                 }
 
-                Location current = stand.getLocation();
-                current.add(0, step, 0);
-                stand.teleport(current);
+                if (rising) {
+                    // 상승 로직
+                    if (tick < 20) {
+                        currentLoc.add(0, 0.15, 0); // 20틱 * 0.15 = 3칸 이동 (-2 -> +1)
+                        display.teleport(currentLoc);
+                        tick++;
+                    } else {
+                        // 상승 완료 -> 타겟팅 모드로 전환
+                        rising = false;
+                        tick = 0; // 틱 초기화 (대기 시간 용)
+                    }
+                } else {
+                    // 3. 조준 및 발사 대기
+                    if (tick > 100) { // 5초 동안 적 못 찾으면 삭제
+                        display.remove();
+                        this.cancel();
+                        return;
+                    }
 
-                // 흙먼지 효과
-                if (ticks % 5 == 0) {
-                    stand.getWorld().spawnParticle(Particle.BLOCK, stand.getLocation(), 3, 0.2, 0.1, 0.2,
-                            Material.BEDROCK.createBlockData());
-                    // [추가] 칼이 솟아오를 때 파란색 파티클 효과 추가
-                    stand.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, stand.getLocation().add(0, 0.5, 0), 5, 0.1,
-                            0.1, 0.1, 0.02);
+                    // 적 탐색 (반경 10칸)
+                    LivingEntity target = null;
+                    double closestDist = 100.0;
+
+                    for (Entity e : display.getWorld().getNearbyEntities(display.getLocation(), 10, 10, 10)) {
+                        if (e != owner && e instanceof LivingEntity le) {
+                            if (le instanceof Player pTarget
+                                    && (pTarget.getGameMode() == GameMode.SPECTATOR || pTarget.isDead()))
+                                continue;
+
+                            // 시야 조건 없이 거리만 체크
+                            double d = e.getLocation().distance(display.getLocation());
+                            if (d < closestDist) {
+                                closestDist = d;
+                                target = le;
+                            }
+                        }
+                    }
+
+                    if (target != null) {
+                        // 적 발견! 발사!
+                        fireSword(owner, display, target);
+                        this.cancel(); // 이 태스크는 종료하고 발사 태스크로 넘김
+                    }
+
+                    tick++;
                 }
-
-                ticks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);
+
+        registerTask(owner, riseTask);
     }
 
-    private void startScanning(Player owner, RisingSword rSword) {
-        // 감시 태스크 (매 4틱마다 검사)
-        BukkitTask scanTask = new BukkitRunnable() {
+    private void fireSword(Player owner, ItemDisplay display, LivingEntity target) {
+        owner.getWorld().playSound(display.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 0.5f);
+
+        // 발사 태스크
+        BukkitTask fireTask = new BukkitRunnable() {
+            Location currentLoc = display.getLocation().clone();
+            Vector dir = target.getEyeLocation().subtract(currentLoc).toVector().normalize();
+            double speed = 1.5; // 투사체 속도
+            double distanceTraveled = 0;
+            double maxDistance = 30;
+
             @Override
             public void run() {
-                // [수정] 리스트 포함 여부 체크 (UUID 맵 경유)
-                boolean stillActive = false;
-                List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
-                if (mySwords != null && mySwords.contains(rSword)) {
-                    stillActive = true;
-                }
-
-                if (rSword.stand.isDead() || rSword.fired || !stillActive) {
+                if (!display.isValid() || distanceTraveled > maxDistance) {
+                    display.remove();
                     this.cancel();
                     return;
                 }
 
-                if (owner.isDead() || !owner.isOnline()) { // 주인 사망 시 소멸
-                    rSword.stand.remove();
+                // 이동
+                Vector move = dir.clone().multiply(speed);
+                Location nextLoc = currentLoc.clone().add(move);
+
+                // 회전 (날아가는 방향으로)
+                Transformation t = display.getTransformation();
+                t.getRightRotation().rotateZ((float) Math.toRadians(45)); // Z축 회전 추가
+                display.setTransformation(t);
+
+                // 충돌 체크
+                // 1. 블록 충돌
+                if (!nextLoc.getBlock().isPassable()) {
+                    display.getWorld().playSound(nextLoc, Sound.ENTITY_ITEM_BREAK, 1f, 1f);
+                    display.getWorld().spawnParticle(Particle.CRIT, nextLoc, 10);
+                    display.remove();
                     this.cancel();
                     return;
                 }
 
-                // ArmorStand 칼 기준
-                // [수정] 인식 범위 버프 x y z 높이는 높게 잡아서 거의 반드시 맞추게끔
-                List<Entity> nearby = rSword.stand.getNearbyEntities(12, 50, 12);
-                LivingEntity target = null;
-
-                for (Entity e : nearby) {
-                    if (e instanceof LivingEntity le && e != owner && !e.isDead() && !(e instanceof ArmorStand)) {
-                        // 타겟팅 조건: 서바이벌 모드 플레이어 등
-                        if (e instanceof Player pTarget && pTarget.getGameMode() == GameMode.SPECTATOR)
+                // 2. 엔티티 충돌
+                for (Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 1.0, 1.0)) {
+                    if (e != owner && e instanceof LivingEntity le) {
+                        if (le instanceof Player pTarget && (pTarget.getGameMode() == GameMode.SPECTATOR))
                             continue;
 
-                        target = le;
-                        break; // 한 명만 걸리면 발사
+                        // 타격
+                        le.damage(4.0, owner);
+                        le.getWorld().playSound(le.getLocation(), Sound.ENTITY_ARROW_HIT, 1f, 1f);
+
+                        // [추가] 타격 이펙트 (피 튀기는 효과 대신 레드스톤 블록 파괴 효과)
+                        le.getWorld().spawnParticle(Particle.BLOCK, le.getLocation().add(0, 1, 0), 10,
+                                Material.REDSTONE_BLOCK.createBlockData());
+
+                        display.remove();
+                        this.cancel();
+                        return;
                     }
                 }
 
-                if (target != null) {
-                    fireSword(owner, rSword, target);
-                    this.cancel();
+                currentLoc = nextLoc;
+                display.teleport(currentLoc);
+                distanceTraveled += speed;
+
+                // [유도력] 타겟이 움직였으면 방향 약간 보정 (약한 유도)
+                if (target.isValid() && !target.isDead()) {
+                    Vector targetDir = target.getEyeLocation().subtract(currentLoc).toVector().normalize();
+                    // 기존 방향 80% + 타겟 방향 20%
+                    dir.multiply(0.8).add(targetDir.multiply(0.2)).normalize();
                 }
             }
-        }.runTaskTimer(plugin, 0L, 4L);
+        }.runTaskTimer(plugin, 0L, 1L);
 
-        registerTask(owner, scanTask);
-    }
-
-    private void fireSword(Player owner, RisingSword rSword, LivingEntity target) {
-        if (rSword.fired)
-            return;
-
-        List<RisingSword> mySwords = activeSwords.get(owner.getUniqueId());
-        if (mySwords != null)
-            mySwords.remove(rSword);
-
-        rSword.fired = true;
-
-        // 기존 아머스탠드 제거 (땅에서 솟아오른 것)
-        if (rSword.stand != null) {
-            rSword.stand.remove();
-        }
-
-        // 발사 로직
-        // 1. 타겟 방향 벡터 계산
-        Location startLoc = rSword.stand.getLocation().add(0, 1.5, 0); // 눈높이 보정
-        Location targetLoc = target.getEyeLocation();
-        Vector dir = targetLoc.toVector().subtract(startLoc.toVector()).normalize();
-
-        // 2. 화살(Projectile) 생성
-        Arrow arrow = startLoc.getWorld().spawn(startLoc, Arrow.class);
-        arrow.setShooter(owner);
-        arrow.setDamage(4.0);
-        arrow.setVelocity(dir.multiply(1.5));
-        arrow.setSilent(true);
-        arrow.setGravity(false); // 직선 비행
-        arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-        // [Fix] 화살 투명화 (올라프 스타일)
-        // Entity.setInvisible(true)는 클라이언트 버전에 따라 화살에 적용 안 될 수도 있어서 포션 효과도 같이 적용
-        arrow.setInvisible(true);
-        // arrow.setColor는 TippedArrow가 아니면 안 될 수 있음.
-        // 일반 Arrow도 PotionEffect는 가질 수 있음.
-        try {
-            // 투명 포션 효과 적용 (입자 없음)
-            arrow.addCustomEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 600, 0, false, false), true);
-        } catch (Exception ignored) {
-        }
-
-        arrow.setMetadata(KEY_UBW_HOMING, new FixedMetadataValue(plugin, owner.getUniqueId().toString()));
-
-        // 3. ItemDisplay 생성 (검은색/흰색 검 - 막야/간장)
-        // 리소스팩: emiyashirou (CustomModelData 10)
-        ItemDisplay visual = startLoc.getWorld().spawn(startLoc, ItemDisplay.class, entity -> {
-            ItemStack sword = new ItemStack(Material.IRON_SWORD);
-            org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
-            if (meta != null) {
-                meta.setCustomModelData(10); // emiyashirou
-                sword.setItemMeta(meta);
-            }
-            entity.setItemStack(sword);
-            // 크기 및 회전 조정 (칼이 날아가는 방향으로 눕게)
-            // 기본 ItemDisplay는 수직으로 서 있음.
-            // X축 90도 회전하면 앞으로 누움.
-            entity.setTransformation(new Transformation(
-                    new Vector3f(0, 0, 0),
-                    new AxisAngle4f((float) (Math.PI / 2), 1, 0, 0), // 90도 회전
-                    new Vector3f(1, 1, 1),
-                    new AxisAngle4f(0, 0, 0, 1)));
-            entity.setBillboard(Display.Billboard.FIXED); // 회전 고정 (화살 따라감)
-        });
-
-        // 화살에 태우기
-        arrow.addPassenger(visual);
-
-        // 소리
-        startLoc.getWorld().playSound(startLoc, Sound.ITEM_TRIDENT_THROW, 1.0f, 2.0f);
-        startLoc.getWorld().playSound(startLoc, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 1.5f);
-
-        // 디스폰 및 파티클 태스크
-        new BukkitRunnable() {
-            int timer = 0;
-
-            @Override
-            public void run() {
-                if (arrow.isDead() || !arrow.isValid() || timer >= 200) {
-                    if (visual.isValid())
-                        visual.remove();
-                    if (!arrow.isDead())
-                        arrow.remove();
-                    this.cancel();
-                    return;
-                }
-
-                // 파티클
-                Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(150, 255, 255), 0.5f);
-                arrow.getWorld().spawnParticle(Particle.DUST, arrow.getLocation(), 3, 0.1, 0.1, 0.1, dust);
-
-                timer++;
-            }
-        }.runTaskTimer(plugin, 1L, 1L);
+        registerTask(owner, fireTask);
     }
 
     // === 이벤트 처리 ===
@@ -552,86 +494,38 @@ public class EmiyaShirou extends Ability {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent e) {
-        // 화살 데미지 처리 (Arrow 데미지 자체로 8.0이 들어가겠지만 확실하게)
-        if (e.getDamager() instanceof Arrow arrow && arrow.hasMetadata(KEY_UBW_HOMING)) {
-            // [추가] 본인이 본인 칼에 맞는 경우 데미지 무효화 및 칼 소멸
-            if (arrow.getShooter() instanceof Player shooter && shooter.equals(e.getEntity())) {
-                e.setCancelled(true);
-                // 칼(아머스탠드)과 화살 제거
-                for (Entity passenger : arrow.getPassengers()) {
-                    passenger.remove();
-                }
-                arrow.remove();
-                return;
-            }
-
-            // [수정] 데미지 4 고정 (너프)
-            e.setDamage(4.0);
-
-            // [추가] 화살이 몸에 박힌 흔적 제거
-            arrow.remove(); // 화살 객체를 즉시 제거하여 꽂히지 않게 함
-            if (e.getEntity() instanceof LivingEntity le) {
-                le.setArrowsInBody(0); // 혹시 박혔을 경우를 대비해 0으로 초기화
-            }
-
-            // 아머스탠드 제거 (동기화 로직에서 arrow.isDead() 체크하므로 자동 제거됨, 하지만 즉시 반응을 위해 처리)
-            // Passengers 로직은 더 이상 사용하지 않으므로, flyingSwords 목록에서 찾아 제거해야 함.
-            // 하지만 arrow.remove()를 하면 위 Runnable에서 다음 틱에 감지하고 stand.remove()를 호출함.
-        }
+        // 기존 화살 로직 제거됨.
+        // ItemDisplay가 직접 충돌 체크하고 damage()를 주므로,
+        // 여기서 별도로 처리할 것은 없음. (ItemDisplay는 damage 이벤트를 발생시키지 않음 -> direct damage)
+        // 만약 damage() 호출로 인해 이 이벤트가 다시 발생한다면?
+        // -> Damager가 owner(Player)로 전달됨.
+        // -> 특별히 막을 건 없음.
     }
 
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
         UUID uuid = p.getUniqueId();
-        isChanting.remove(uuid);
+        isChanting.remove(uuid); // remove or put false, removing is fine as getOrDefault(uuid, false) handles it
         isActive.remove(uuid);
         hasTriggered.remove(uuid);
         p.resetPlayerTime();
 
-        // 대기 중인 검 제거
-        List<RisingSword> mySwords = activeSwords.remove(uuid);
-        if (mySwords != null) {
-            for (RisingSword rs : mySwords) {
-                if (rs.stand != null)
-                    rs.stand.remove();
-            }
-            mySwords.clear();
-        }
-
-        // 날아가는 검 제거
-        List<ArmorStand> myFlying = flyingSwords.remove(uuid);
-        if (myFlying != null) {
-            for (ArmorStand as : myFlying) {
-                if (as != null)
-                    as.remove();
-            }
-            myFlying.clear();
-        }
+        // activeEntities와 activeTasks는 부모 클래스(Ability)에서 처리하므로
+        // 별도의 activeSwords, flyingSwords 정리 필요 없음.
     }
 
     @Override
     public void reset() {
         super.reset();
-        // 전체 초기화 (게임 종료 시) - 모든 맵 클리어
+        // 전체 초기화 (게임 종료 시)
         isChanting.clear();
         isActive.clear();
         hasTriggered.clear();
 
-        for (List<RisingSword> list : activeSwords.values()) {
-            for (RisingSword rs : list) {
-                if (rs.stand != null)
-                    rs.stand.remove();
-            }
-        }
-        activeSwords.clear();
-
-        for (List<ArmorStand> list : flyingSwords.values()) {
-            for (ArmorStand as : list) {
-                if (as != null)
-                    as.remove();
-            }
-        }
-        flyingSwords.clear();
+        // 부모의 reset 호출 (있다면)
+        // Ability.reset()은 없지만, Global Map들은 AbilityManager 등에서 관리되거나 개별 cleanup 호출로
+        // 정리됨.
+        // 여기선 static/전역 상태만 정리.
     }
 }

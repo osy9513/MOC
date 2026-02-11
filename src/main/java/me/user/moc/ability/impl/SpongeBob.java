@@ -65,6 +65,7 @@ public class SpongeBob extends Ability {
 
         // [추가] 기본 지급되는 구운 소고기 제거 (요청사항)
         p.getInventory().remove(Material.COOKED_BEEF);
+        p.getInventory().remove(Material.IRON_SWORD);
     }
 
     @Override
@@ -127,9 +128,9 @@ public class SpongeBob extends Ability {
                 p.setSaturation(Math.min(p.getSaturation() + 5, 20));
 
                 // 15 seconds = 300 ticks
-                p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, 300, 4)); // 행운 5
-                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 4)); // 신속 5
-                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0)); // 힘 1
+                p.addPotionEffect(new PotionEffect(PotionEffectType.LUCK, 300, 9, true, true, true)); // 행운 10
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 300, 4, true, true, true)); // 신속 5
+                p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0, true, true, true)); // 힘 1
 
                 p.sendMessage("§d햄버거 좋아~");
                 p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);

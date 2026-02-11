@@ -1,0 +1,47 @@
+
+    /**
+     * [추가] 중앙 마커(텍스트 디스플레이) 제거
+     */
+    public void removeCenterMarker() {
+        if (centerMarker != null && !centerMarker.isDead()) {
+            centerMarker.remove();
+            centerMarker = null;
+        }
+    }
+
+    /**
+     * [추가] 중앙 마커(텍스트 디스플레이) 생성 - 빛 기둥 효과
+     */
+    private void createCenterMarker(Location loc) {
+        removeCenterMarker(); // 혹시 모를 중복 제거
+
+        if (loc.getWorld() == null) return;
+
+        centerMarker = loc.getWorld().spawn(loc, org.bukkit.entity.TextDisplay.class, display -> {
+            // 텍스트 설정 (위아래 공백을 넣어 기둥처럼 보이게 함)
+            display.setText("\n\n\n\n§a§lCENTER\n\n\n\n");
+            
+            // 항상 플레이어를 바라보도록 설정
+            display.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
+            
+            // 배경색을 반투명한 초록색으로 설정하여 "빛 기둥" 느낌 연출
+            display.setBackgroundColor(org.bukkit.Color.fromARGB(100, 0, 255, 0));
+            
+            // 벽 뒤에서도 보이게 설정 (위치 식별 용이)
+            display.setSeeThrough(true);
+            
+            // 그림자 없음
+            display.setShadowed(false);
+            
+            // 발광 효과 (멀리서도 테두리 보임)
+            display.setGlowing(true);
+
+            // 크기 조정 (잘 보이게)
+            display.setTransformation(new org.bukkit.util.transformation.Transformation(
+                new org.joml.Vector3f(0f, 0f, 0f),
+                new org.joml.AxisAngle4f(),
+                new org.joml.Vector3f(3f, 8f, 3f), // Y축을 길게 늘려서 기둥처럼 보이게 함
+                new org.joml.AxisAngle4f()
+            ));
+        });
+    }

@@ -203,7 +203,7 @@ public class Jumptaengi extends Ability {
 
         // 2. 시각적 변신 (투명화 + 고양이)
         victim.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY,
-                org.bukkit.potion.PotionEffect.INFINITE_DURATION, 0, false, false));
+                org.bukkit.potion.PotionEffect.INFINITE_DURATION, 0, true, true, true));
 
         Cat cat = (Cat) victim.getWorld().spawnEntity(victim.getLocation(), EntityType.CAT);
         cat.setInvulnerable(true);

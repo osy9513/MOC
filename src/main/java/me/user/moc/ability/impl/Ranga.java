@@ -94,7 +94,13 @@ public class Ranga extends Ability {
         ranga.setOwner(p);
         ranga.setTamed(true);
         ranga.setAdult();
-        ranga.customName(Component.text("란가").color(NamedTextColor.RED));
+
+        // [수정] 토가 히미코 전용 이름
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            ranga.customName(Component.text("토가의 란가").color(NamedTextColor.LIGHT_PURPLE)); // §d
+        } else {
+            ranga.customName(Component.text("란가").color(NamedTextColor.RED));
+        }
         ranga.setVariant(org.bukkit.entity.Wolf.Variant.BLACK);
         ranga.setCustomNameVisible(true);
         // ranga.setInterested(true); // 고개를 갸웃거리는 상태 (선택)
@@ -122,9 +128,9 @@ public class Ranga extends Ability {
 
         // 버프
         ranga.addPotionEffect(
-                new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, false, false));
+                new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, true, true));
         ranga.addPotionEffect(
-                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 100, false, false));
+                new PotionEffect(PotionEffectType.FIRE_RESISTANCE, PotionEffect.INFINITE_DURATION, 100, true, true));
 
         // 맵에 등록 (부모 메서드 사용)
         registerSummon(p, ranga);
@@ -178,7 +184,7 @@ public class Ranga extends Ability {
 
                     // 영구 지속 이속 2 부여
                     owner.addPotionEffect(
-                            new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, false, false));
+                            new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, true, true));
                     owner.playSound(owner.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1f, 1f);
                     wolf.getWorld().spawnParticle(Particle.SMOKE, wolf.getLocation(), 50, 0.5, 0.5, 0.5, 0.1);
 

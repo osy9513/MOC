@@ -41,6 +41,7 @@ public class ConfigManager {
     public int win_value = 40; // 몇 점을 먼저 따면 최종 우승인가요?
     public boolean hidden = false; // 숨겨진 캐릭터가 등장하나요?
     public boolean battle_map = true; // [추가] 전장 바닥(배드락)을 생성할까요? (false=야생맵 사용)
+    public boolean random_map = true; // [추가] 전장 생성 시 자연 환경(흙, 물, 용암 등)을 생성할까요?
     public boolean test = false; // [추가] 테스트 모드 여부 (true=혼자 남아도 라운드 안 끝남)
 
     /**
@@ -64,6 +65,7 @@ public class ConfigManager {
         win_value = config.getInt("win_value", 40);
         hidden = config.getBoolean("hidden", false);
         battle_map = config.getBoolean("battle_map", true);
+        random_map = config.getBoolean("random_map", true); // [추가]
         test = config.getBoolean("test", false); // [추가] 테스트 모드 (혼자 남았을 때 종료 X)
 
         // 위치 정보는 좌표 X, Y, Z가 다 필요해서 따로 저장합니다. 지금은 일단 패스.
@@ -90,7 +92,9 @@ public class ConfigManager {
         config.set("map_size", map_size);
         config.set("win_value", win_value);
         config.set("hidden", hidden);
-        config.set("battle_map", battle_map); // [추가]
+        config.set("battle_map", battle_map);
+        config.set("random_map", random_map); // [추가]
+        config.set("test", test); // [추가] 테스트 모드 저장
 
         plugin.saveConfig(); // 실제로 파일에 씁니다.
     }
