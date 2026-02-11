@@ -810,17 +810,24 @@ public class GameManager implements Listener {
 
                 // 최후의 1인 확인
                 // 현재 테스트를 위해 혼자일 때 라운드 종료 로직 주석 처리
-                /*
-                 * if (survivors.size() <= 1) {
-                 * Player winner = survivors.isEmpty() ? killer : survivors.get(0);
-                 * if (winner != null) {
-                 * endRound(java.util.Collections.singletonList(winner));
-                 * } else {
-                 * Bukkit.broadcastMessage("§7다른 생존자가 없어 라운드를 종료합니다.");
-                 * startRoundAfterDelay();
-                 * }
-                 * }
-                 */
+                // 최후의 1인 확인
+                // [수정] config의 test 설정이 true면 혼자 남았을 때 라운드가 종료되지 않음
+                if (!configManager.test) {
+                    if (survivors.size() <= 1) {
+                        Player winner = survivors.isEmpty() ? null : survivors.get(0);
+                        if (winner != null) {
+                            endRound(java.util.Collections.singletonList(winner));
+                        } else {
+                            Bukkit.broadcastMessage("§7다른 생존자가 없어 라운드를 종료합니다.");
+                            startRoundAfterDelay();
+                        }
+                    }
+                } else {
+                    // 테스트 모드일 때 메시지 출력 (확인용)
+                    if (survivors.size() <= 1) {
+                        Bukkit.broadcastMessage("§e[TEST] §f테스트 모드: 생존자가 1명 이하이지만 라운드가 계속됩니다.");
+                    }
+                }
             }
         }.runTaskLater(plugin, 1L);
     }

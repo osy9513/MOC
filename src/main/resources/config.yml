@@ -33,3 +33,6 @@ hidden: false
 
 # 전장 바닥(배드락) 생성 및 지형 변경 여부 (true=기반암 전장 생성 / false=야생 맵 유지)
 battle_map: true
+
+# 테스트 모드 (true=혼자 남았을 때 라운드가 끝나지 않음 / false=정상 종료)
+test: false

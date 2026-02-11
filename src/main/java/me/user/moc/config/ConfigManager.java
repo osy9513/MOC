@@ -41,6 +41,7 @@ public class ConfigManager {
     public int win_value = 40; // 몇 점을 먼저 따면 최종 우승인가요?
     public boolean hidden = false; // 숨겨진 캐릭터가 등장하나요?
     public boolean battle_map = true; // [추가] 전장 바닥(배드락)을 생성할까요? (false=야생맵 사용)
+    public boolean test = false; // [추가] 테스트 모드 여부 (true=혼자 남아도 라운드 안 끝남)
 
     /**
      * [설정 불러오기]
@@ -62,7 +63,8 @@ public class ConfigManager {
         map_size = config.getInt("map_size", 75);
         win_value = config.getInt("win_value", 40);
         hidden = config.getBoolean("hidden", false);
-        battle_map = config.getBoolean("battle_map", true); // [추가]
+        battle_map = config.getBoolean("battle_map", true);
+        test = config.getBoolean("test", false); // [추가] 테스트 모드 (혼자 남았을 때 종료 X)
 
         // 위치 정보는 좌표 X, Y, Z가 다 필요해서 따로 저장합니다. 지금은 일단 패스.
         // spawn_point는 나중에 Location 저장 로직 추가 필요.
