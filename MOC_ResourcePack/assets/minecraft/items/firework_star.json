@@ -9,6 +9,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/deidara1"
                 }
+            },
+            {
+                "threshold": 2,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/ddangkong1"
+                }
             }
         ],
         "fallback": {

@@ -7,13 +7,13 @@
                 "threshold": 1,
                 "model": {
                     "type": "minecraft:model",
-                    "model": "minecraft:item/gojo"
+                    "model": "minecraft:item/ddangkong2"
                 }
             }
         ],
         "fallback": {
             "type": "minecraft:model",
-            "model": "minecraft:block/black_wool"
+            "model": "minecraft:block/tnt"
         }
     }
 }

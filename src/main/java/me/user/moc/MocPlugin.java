@@ -18,6 +18,7 @@ public final class MocPlugin extends JavaPlugin {
     private ArenaManager arenaManager;
     private ClearManager clearManager;
     private ConfigManager configManager;
+    private me.user.moc.game.ScoreboardManager scoreboardManager; // [추가]
 
     /**
      * [매우 중요] 다른 파일(람머스 등)에서 이 플러그인을 부를 때 사용하는 함수입니다.
@@ -45,7 +46,10 @@ public final class MocPlugin extends JavaPlugin {
         // [순서 4번] 게임 관리자에게 능력 관리자를 소개시켜 줍니다.
         this.gameManager.setAbilityManager(abilityManager);
 
-        // [순서 5번] 명령어 등록
+        // [순서 5번] 점수판 매니저 초기화 (시작은 하지 않음)
+        this.scoreboardManager = new me.user.moc.game.ScoreboardManager(this);
+
+        // [순서 6번] 명령어 등록
         // /moc 명령어를 처리할 담당자(MocCommand)를 등록합니다.
         if (getCommand("moc") != null) {
             getCommand("moc").setExecutor(new MocCommand());
@@ -60,6 +64,9 @@ public final class MocPlugin extends JavaPlugin {
         // 서버가 꺼질 때 진행 중인 게임이 있다면 강제로 멈춥니다.
         if (gameManager != null) {
             gameManager.stopGame();
+        }
+        if (scoreboardManager != null) {
+            scoreboardManager.stop();
         }
         getLogger().info("MOC 플러그인이 꺼졌습니다.");
     }
@@ -83,5 +90,9 @@ public final class MocPlugin extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public me.user.moc.game.ScoreboardManager getScoreboardManager() {
+        return scoreboardManager;
     }
 }

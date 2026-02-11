@@ -335,7 +335,7 @@ public List<String> getDescription() {
 ---
 
 ## [I] Interaction Guide (대화 가이드)
--   틀린 정보를 말하지 않도록 항상 최신 버전(2026.01.28 기준 1.21.11 버전)을 중심으로 생각하세요.
+-   틀린 마인크래프트 정보를 말하지 않도록 항상 최신 버전(2026.01.28 기준 최신 버전인 마인크래프트 1.21.11 버전)을 중심으로 생각하세요.
 
 
 **Current Mission:** Assist the user in building the ultimate Minecraft ability plugin using 1.21.11 features.

@@ -43,7 +43,7 @@ public class Ddangkong extends Ability {
 
     @Override
     public String getName() {
-        return "땅콩";
+        return "땅콩";// 연준이
     }
 
     @Override
@@ -60,8 +60,8 @@ public class Ddangkong extends Ability {
         ItemStack bullet = new ItemStack(Material.FIREWORK_STAR);
         ItemMeta bulletMeta = bullet.getItemMeta();
         bulletMeta.displayName(Component.text("§c총알"));
-        bulletMeta.setLore(Arrays.asList("§7우클릭하여 발사합니다.", "§8(데미지 10)"));
-        bulletMeta.setCustomModelData(4001); // 식별용 데이터
+        bulletMeta.setLore(Arrays.asList("§7우클릭하여 발사합니다.", "§8(원거리 데미지 10)", "§8(근접 데미지 3)"));
+        bulletMeta.setCustomModelData(2); // 리소스팩: ddangkong1
         bullet.setItemMeta(bulletMeta);
 
         // 훈련용 수류탄 (TNT)
@@ -69,7 +69,7 @@ public class Ddangkong extends Ability {
         ItemMeta grenadeMeta = grenade.getItemMeta();
         grenadeMeta.displayName(Component.text("§c훈련용 수류탄"));
         grenadeMeta.setLore(Arrays.asList("§7우클릭하여 투척합니다.", "§8(3초 후 폭발)"));
-        grenadeMeta.setCustomModelData(4002);
+        grenadeMeta.setCustomModelData(1); // 리소스팩: ddangkong2
         grenade.setItemMeta(grenadeMeta);
 
         p.getInventory().addItem(bullet);
@@ -91,9 +91,6 @@ public class Ddangkong extends Ability {
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 총알, 수류탄");
         p.sendMessage("§f장비 제거 : 없음");
-
-        // 마지막으로 아이템 지급 (테스트 용도 등)
-        giveItem(p);
     }
 
     @EventHandler
@@ -188,8 +185,13 @@ public class Ddangkong extends Ability {
 
                 setCustomCooldown(p, "GRENADE", 10); // 10초 쿨타임
 
-                // TNT 아이템 던지기
-                Item thrownTnt = p.getWorld().dropItem(p.getEyeLocation(), new ItemStack(Material.TNT));
+                // TNT 아이템 던지기 (리소스팩 적용)
+                ItemStack tntItem = new ItemStack(Material.TNT);
+                ItemMeta tntMeta = tntItem.getItemMeta();
+                tntMeta.setCustomModelData(1); // 리소스팩: ddangkong2
+                tntItem.setItemMeta(tntMeta);
+
+                Item thrownTnt = p.getWorld().dropItem(p.getEyeLocation(), tntItem);
                 thrownTnt.setPickupDelay(Integer.MAX_VALUE); // 줍기 방지
                 thrownTnt.setVelocity(p.getLocation().getDirection().multiply(1.5)); // 적절한 투척 속도
                 thrownTnt.setOwner(p.getUniqueId()); // 소유자 설정
@@ -232,7 +234,6 @@ public class Ddangkong extends Ability {
                                     thrownTnt.getLocation(), 3); // 거대 폭발
                             thrownTnt.getWorld().spawnParticle(org.bukkit.Particle.LAVA,
                                     thrownTnt.getLocation(), 20, 1.5, 1.5, 1.5);
-                            // [Fix] FLASH -> EXPLOSION or POOF (FLASH error fix)
                             thrownTnt.getWorld().spawnParticle(org.bukkit.Particle.EXPLOSION,
                                     thrownTnt.getLocation(), 1);
 
@@ -319,6 +320,7 @@ public class Ddangkong extends Ability {
 
     @EventHandler
     public void onHit(EntityDamageByEntityEvent e) {
+        // 1. 원거리 공격 (눈덩이)
         if (e.getDamager() instanceof Snowball s) {
             if (s.getScoreboardTags().contains("DdangkongBullet")) {
                 // 총알 데미지 10 고정
@@ -329,6 +331,25 @@ public class Ddangkong extends Ability {
                         e.getEntity().getLocation().add(0, 1, 0), 10, 0.2, 0.2, 0.2,
                         Material.REDSTONE_BLOCK.createBlockData());
                 e.getEntity().getWorld().playSound(e.getEntity().getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0f, 1.0f);
+            }
+        }
+        // 2. 근접 공격 (좌클릭)
+        else if (e.getDamager() instanceof Player p) {
+            if (AbilityManager.getInstance().hasAbility(p, getCode())) {
+                ItemStack item = p.getInventory().getItemInMainHand();
+                if (item.getType() == Material.FIREWORK_STAR && item.getItemMeta() != null
+                        && item.getItemMeta().getDisplayName().equals("§c총알")) {
+                    // 기본 데미지(주먹 1) + 추가 데미지 3 = 4 (하트 2칸)
+                    // 기획: "데미지 3 추가" -> 3으로 고정할지, 추가할지? 보통 "추가"면 +3.
+                    // 기존 코드 스타일 보면 setDamage를 주로 씀.
+                    // 주먹 데미지가 1이므로, 3을 주고 싶으면 setDamage(3) 혹은 addModifier.
+                    // "좌클릭 데미지 3 추가" -> 기본 1 + 3 = 4? 아니면 그냥 3?
+                    // 보통 "데미지 3"이라고 하면 setDamage(3). "추가"면 +3.
+                    // 요청사항: "땅콩 총알 좌클릭 데미지 3 추가" -> Add 3 damage.
+                    // 명확하지 않지만, 보통 무기 데미지로 3을 원함. (목검 4, 돌검 5...)
+                    // 총알이니까 약하게 3(하트 1.5칸) 정도로 설정.
+                    e.setDamage(3.0);
+                }
             }
         }
     }
