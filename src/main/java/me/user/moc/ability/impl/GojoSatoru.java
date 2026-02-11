@@ -7,7 +7,6 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -23,9 +22,6 @@ import org.joml.Vector3f;
 import java.util.*;
 
 public class GojoSatoru extends Ability {
-
-    // 능력 봉인 대상자를 관리하기 위한 전역 집합 (다른 클래스에서 접근 가능하도록 public static)
-    public static final Set<UUID> silencedPlayers = new HashSet<>();
 
     public GojoSatoru(JavaPlugin plugin) {
         super(plugin);
@@ -77,7 +73,7 @@ public class GojoSatoru extends Ability {
 
     @Override
     public void reset() {
-        silencedPlayers.clear();
+        // AbilityManager에서 전역적으로 처리하므로 여기서 별도 clear 불필요 (부모 reset 호출로 충분)
         super.reset();
     }
 
@@ -85,10 +81,11 @@ public class GojoSatoru extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
-        // 1. 봉인된 플레이어인지 확인 (전역 봉인 체크)
-        if (silencedPlayers.contains(p.getUniqueId())) {
+        // 1. 봉인된 플레이어인지 확인 (전역 봉인 체크 - Ability.checkCooldown에서 수행하므로 여기선 중복 체크 제거 가능하지만
+        // 명시적으로 남김)
+        if (AbilityManager.silencedPlayers.contains(p.getUniqueId())) {
+            // checkCooldown에서 메시지를 띄워주겠지만, 상호작용 이벤트 자체를 여기서 먼저 취소
             e.setCancelled(true);
-            p.sendMessage("§c능력이 봉인되어 사용할 수 없습니다.");
             return;
         }
 
@@ -104,7 +101,7 @@ public class GojoSatoru extends Ability {
         if (p.getInventory().getItemInMainHand().getType() != Material.AIR)
             return;
 
-        // 4. 쿨타임 체크
+        // 4. 쿨타임 체크 (이제 여기서 봉인 체크도 함께 수행됨)
         if (!checkCooldown(p))
             return;
 
@@ -117,7 +114,7 @@ public class GojoSatoru extends Ability {
 
         // 1. 캐스팅 중 움직임 봉인 (2초)
         p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 5, true, true, true));
-        p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 40, 250, true, true, true));
+        applyJumpSilence(p, 40);
 
         // 대사 출력
         p.getServer().broadcastMessage("§b§l고죠 사토루: 영역전개");
@@ -146,16 +143,12 @@ public class GojoSatoru extends Ability {
             entity.setBillboard(Display.Billboard.FIXED); // 고정
         });
 
-        // 목표 크기 설정
-        final float targetScale = 16.0f; // 최종 크기 (지름)
-        final int DURATION = 40; // 2초 (40틱)
-
-        // [삭제됨] 원래 여기 있던 1틱 뒤에 한 번에 커지는 코드는 지웠어!
-
         // 파티클, 피격 판정, 그리고 ★크기 변화★ 태스크
         new BukkitRunnable() {
             int tick = 0;
             final Set<UUID> hitTargets = new HashSet<>();
+            final float targetScale = 16.0f; // 최종 크기 (지름)
+            final int DURATION = 40; // 2초 (40틱)
 
             @Override
             public void run() {
@@ -170,14 +163,10 @@ public class GojoSatoru extends Ability {
                     return;
                 }
 
-                // ★ [여기가 핵심] ★
-                // 현재 틱에 맞는 크기를 계산해서 매번 업데이트해줘!
-                // tick이 0에서 40으로 갈수록, 크기는 0.1에서 16.0으로 부드럽게 변해.
                 float currentScale = (targetScale / (float) DURATION) * tick;
                 if (currentScale < 0.1f)
                     currentScale = 0.1f; // 최소 크기 방어
 
-                // 매 틱마다 크기를 재설정 (InterpolationDuration을 1로 주면 틱 사이도 부드럽게 이어짐)
                 domain.setInterpolationDuration(1);
                 domain.setTransformation(new Transformation(
                         new Vector3f(0, 0, 0),
@@ -185,9 +174,6 @@ public class GojoSatoru extends Ability {
                         new Vector3f(currentScale, currentScale, currentScale), // 점점 커지는 크기 적용
                         new AxisAngle4f(0, 0, 0, 1)));
 
-                // --- 아래는 기존 피격 판정 로직 (그대로 유지) ---
-
-                // 현재 반경 계산 (0.1 ~ 8.0) - 시각적 크기(Scale)의 절반이 반지름
                 double currentRadius = currentScale / 2.0;
 
                 // 실시간 피격 판정
@@ -200,13 +186,14 @@ public class GojoSatoru extends Ability {
                         if (!hitTargets.contains(target.getUniqueId())) {
                             applyStun(target);
                             hitTargets.add(target.getUniqueId());
-                            p.getWorld().playSound(target.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.5f);
-                            p.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, target.getLocation(), 1);
+                            p.getWorld().playSound(target.getLocation(), Sound.BLOCK_STONE_STEP, 1.0f,
+                                    0.5f);
+                            p.getWorld().spawnParticle(Particle.ENCHANTED_HIT, target.getLocation(), 10, 0.2, 0.2, 0.2,
+                                    0.1);
                         }
                     }
                 }
 
-                // 룬 문자 파티클 (반경에 맞춰 생성)
                 for (int i = 0; i < 20; i++) {
                     double u = Math.random();
                     double v = Math.random();
@@ -225,24 +212,20 @@ public class GojoSatoru extends Ability {
 
     private void triggerInfiniteVoidEffect(Player caster, Location center) {
         caster.getServer().broadcastMessage("§b§l고죠 사토루: 무량공처");
-        // [수정] 중앙 폭발 제거 (타겟 개별 폭발로 변경됨)
     }
 
     private void applyStun(LivingEntity target) {
-        // 7초간 행동 불가
-        // 구속 250 (움직임 불가), 점프 부스트 250 (점프 불가), 나약함 (공격 데미지 감소), 채굴 피로 (공격 속도/채굴 감소)
         int duration = 140; // 7초 * 20
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 5, true, true, true));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration, 255, true, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 250, true, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 250, true, true, true));
 
-        // [추가] 스턴 기간 동안에도 능력 봉인 적용
+        // [수정] 스턴 기간 동안 전역 봉인 및 점프 봉인 적용
         if (target instanceof Player p) {
-            silencedPlayers.add(p.getUniqueId());
+            AbilityManager.silencedPlayers.add(p.getUniqueId());
+            applyJumpSilence(p, duration);
         }
 
-        // 시각 효과: 룬 문자 파티클 흐름 & 채팅 도배
         BukkitTask effectTask = new BukkitRunnable() {
             int ticks = 0;
 
@@ -251,21 +234,18 @@ public class GojoSatoru extends Ability {
                 if (target.isDead() || ticks >= 140) {
                     this.cancel();
 
-                    // 스턴 종료 후 6초간 봉인
+                    // 스턴 종료 후 6초간 봉인 유지
                     if (target instanceof Player p) {
                         applySilence(p);
                     } else {
-                        // [추가] AI 복구
                         target.setAI(true);
                     }
                     return;
                 }
 
-                // 파티클: 머리 위에서 아래로
                 Location loc = target.getLocation().add(0, 2.5, 0);
                 target.getWorld().spawnParticle(Particle.ENCHANT, loc, 10, 0.5, 0.5, 0.5, 1);
 
-                // 채팅 도배 (0.2초마다 = 4틱마다)
                 if (ticks % 4 == 0 && target instanceof Player p) {
                     p.sendMessage("§k" + generateRandomString());
                 }
@@ -274,43 +254,30 @@ public class GojoSatoru extends Ability {
             }
 
             private String generateRandomString() {
-                // 적당히 긴 난수 문자열
                 return "무량공처무량공처무량공처무량공처";
             }
         }.runTaskTimer(plugin, 0L, 2L);
 
-        if (target instanceof
-
-        Player p) {
-            silencedPlayers.add(p.getUniqueId());
+        if (target instanceof Player p) {
             registerTask(p, effectTask);
         } else {
-            // [추가] 플레이어가 아닌 엔티티(주민, 몹 등)는 AI를 비활성화하여 완벽하게 정지시킴
             target.setAI(false);
-
-            // AI 복구 태스크 (effectTask 내에서 처리하지 않고 별도로 스케줄링하거나 effectTask가 끝날 때 처리)
-            // 위 effectTask는 Player 대상에게만 registerTask로 등록되었으므로,
-            // 비-플레이어 엔티티를 위한 별도의 cleanup 로직이 필요함.
-            // 하지만 effectTask 자체는 runTaskTimer로 돌아가므로, 내부에서 AI 복구하면 됨.
         }
     }
 
-    private String Code() {
-        return getCode();
-    }
-
     private void applySilence(Player p) {
-        silencedPlayers.add(p.getUniqueId());
+        // [수정] AbilityManager의 전역 봉인 목록 사용
+        AbilityManager.silencedPlayers.add(p.getUniqueId());
         p.sendMessage("§c능력이 봉인되었습니다.");
 
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (p.isOnline()) {
-                    silencedPlayers.remove(p.getUniqueId());
+                    AbilityManager.silencedPlayers.remove(p.getUniqueId());
                     p.sendMessage("§a능력 봉인이 해제되었습니다.");
                 } else {
-                    silencedPlayers.remove(p.getUniqueId());
+                    AbilityManager.silencedPlayers.remove(p.getUniqueId());
                 }
             }
         }.runTaskLater(plugin, 120L); // 6초

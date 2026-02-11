@@ -198,14 +198,11 @@ public class KiraYoshikage extends Ability {
                         tryRemoveSHA(ownerUUID);
                         Location respawnLoc = lastKnownLocations.get(ownerUUID);
 
-                        // 월드 보더 밖 체크
+                        // [수정] 월드 보더 밖 체크 (공통 유틸리티 사용)
                         if (respawnLoc != null) {
-                            org.bukkit.WorldBorder border = owner.getWorld().getWorldBorder();
-                            if (!border.isInside(respawnLoc)) {
-                                respawnLoc = owner.getLocation();
-                            }
+                            respawnLoc = clampLocationToBorder(respawnLoc);
                         } else {
-                            respawnLoc = owner.getLocation();
+                            respawnLoc = clampLocationToBorder(owner.getLocation());
                         }
 
                         spawnSheerHeartAttackEntity(owner, respawnLoc);

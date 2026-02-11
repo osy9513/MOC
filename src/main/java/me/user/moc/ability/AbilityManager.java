@@ -26,6 +26,11 @@ public class AbilityManager {
     // [추가] 이번 게임 세션 동안 각 능력(코드)이 몇 번 등장했는지 카운트하는 지도 (통계용)
     private final Map<String, Integer> gameUsageCounts = new ConcurrentHashMap<>();
 
+    // [추가] 고죠 사토루 등 능력 봉인 스킬에 걸린 플레이어 목록 (전역 관리)
+    public static final Set<UUID> silencedPlayers = ConcurrentHashMap.newKeySet();
+    // [추가] 점프가 봉인된 플레이어 목록 (UUID -> 만료 밀리초)
+    public static final java.util.Map<UUID, Long> jumpSilenceExpirations = new ConcurrentHashMap<>();
+
     private static AbilityManager instance;
 
     public AbilityManager(MocPlugin plugin) {
@@ -190,6 +195,8 @@ public class AbilityManager {
 
         playerAbilities.clear();
         rerollCounts.clear();
+        silencedPlayers.clear(); // [추가] 봉인 상태도 라운드 시작 시 초기화
+        jumpSilenceExpirations.clear(); // [추가] 점프 봉인 상태도 초기화
     }
 
     /**

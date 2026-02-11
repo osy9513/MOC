@@ -256,11 +256,12 @@ public class PolarBearAbility extends Ability {
             PolarBear privateBear = (PolarBear) p.getWorld().spawnEntity(p.getLocation(), EntityType.POLAR_BEAR);
             privateBear.setAI(false);
             privateBear.setInvulnerable(true);
-            privateBear.setCollidable(false);
+            privateBear.setCollidable(false); // [추가] 본인이 밀리지 않도록 충돌 제거
             privateBear.setSilent(true);
             privateBear.setAdult();
             privateBear.addScoreboardTag("POLAR_PRIVATE");
 
+            // [수정] 본인에게는 반투명하게 보여야 함 (Team.CanSeeFriendlyInvisibles=true 덕분에 반투명으로 보임)
             privateBear.addPotionEffect(
                     new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, true, true));
 
@@ -269,7 +270,9 @@ public class PolarBearAbility extends Ability {
                     online.hideEntity(plugin, privateBear);
                 }
             }
+            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함 -> 투명화 제거했으므로 팀은 충돌 방지용
             team.addEntry(privateBear.getUniqueId().toString());
+
             entities.add(privateBear);
         }
 
@@ -285,6 +288,10 @@ public class PolarBearAbility extends Ability {
         publicBear.addScoreboardTag("POLAR_PUBLIC");
 
         p.hideEntity(plugin, publicBear);
+
+        // [추가] 충돌 방지: Public Bear도 팀에 추가 (COLLISION_RULE.NEVER 적용)
+        team.addEntry(publicBear.getUniqueId().toString());
+
         entities.add(publicBear);
 
         if (activeEntities.containsKey(p.getUniqueId())) {
@@ -387,7 +394,8 @@ public class PolarBearAbility extends Ability {
                         if (bear.isDead())
                             continue;
 
-                        bear.teleport(p.getLocation());
+                        // [수정] 월드 보더 밖으로 나가지 않도록 보정
+                        bear.teleport(clampLocationToBorder(p.getLocation()));
 
                         double ownerHealth = Math.min(p.getHealth(), 100.0);
                         if (bear.getHealth() != ownerHealth) {

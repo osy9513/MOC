@@ -118,8 +118,8 @@ public class KimDokja extends Ability {
                     && item.getItemMeta().getDisplayName().contains("사인참사검")) {
 
                 // 에메랄드 블럭을 캘 때 성급함 7 (Amplifier 6) 부여
-                // 지속시간 3초 (60틱)
-                p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 60, 6, false, false));
+                // 지속시간 20초 (400틱) - 사용자 요청으로 대폭 증가
+                p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 400, 6, false, false));
             }
         }
     }

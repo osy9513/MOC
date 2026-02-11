@@ -189,7 +189,7 @@ public class PaulPhoenix extends Ability {
             applyHitEffect(p, target);
         } else {
             // 허공 타격 시 효과음
-            w.playSound(impactLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 0.7f);
+            w.playSound(impactLoc, Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 0.7f);
             w.playSound(impactLoc, Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 0.5f, 1.5f);
         }
     }
@@ -206,15 +206,17 @@ public class PaulPhoenix extends Ability {
 
         // 2. 그로기 (CC) - 구속, 점프 불가
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 5, true, true));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 20, 255, true, true));
+        if (target instanceof Player p) {
+            applyJumpSilence(p, 20);
+        }
 
         // 3. 적중 시 소리 (타격감 극대화)
         World w = target.getWorld();
         Location hitLoc = target.getLocation().add(0, 1, 0);
 
-        w.playSound(hitLoc, Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 0.6f);
+        w.playSound(hitLoc, Sound.ENTITY_PLAYER_ATTACK_STRONG, 2.0f, 0.6f);
         w.playSound(hitLoc, Sound.BLOCK_ANVIL_LAND, 1.0f, 0.5f); // 묵직한 쇠소리
-        w.playSound(hitLoc, Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.5f, 0.5f); // 우지끈
+        w.playSound(hitLoc, Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1.5f, 0.5f); // 우지끈
 
         // 4. 충격파 (Shockwave AoE)
         // 타겟 주변 3블록 내 적들에게 넉백
@@ -223,11 +225,11 @@ public class PaulPhoenix extends Ability {
                 if (nearby instanceof Player && ((Player) nearby).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     continue;
 
-                // 중심에서 바깥으로 밀어내기
+                // 중심에서 바깥으로 밀어내기 (넉백 감소)
                 Vector knockback = e.getLocation().toVector().subtract(target.getLocation().toVector()).normalize()
-                        .multiply(1.2).setY(0.4);
+                        .multiply(0.5).setY(0.2); // [Fix] 넉백 0.5배, Y축 0.2로 감소
                 if (Double.isNaN(knockback.getX()))
-                    knockback = new Vector(0, 0.4, 0); // 겹쳐있을 경우 위로
+                    knockback = new Vector(0, 0.2, 0); // 겹쳐있을 경우 위로
 
                 nearby.setVelocity(knockback);
                 // nearby.sendMessage("§c강렬한 충격파에 밀려났습니다!");

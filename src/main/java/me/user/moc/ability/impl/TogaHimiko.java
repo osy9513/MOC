@@ -484,4 +484,12 @@ public class TogaHimiko extends Ability {
             // 킬러 정보(getKiller)가 달라질 수 있으나, 변신 여부와 상관없이 Player 객체는 동일하므로 OK.
         }
     }
+
+    @Override
+    public void onGameEnd(Player p) {
+        // [Fix] 라운드 승리 시, 승리 메시지에 변신 이름이 아닌 본캐 닉네임이 뜨도록 강제 복구
+        if (isTransformed.contains(p.getUniqueId())) {
+            revertToOriginal(p);
+        }
+    }
 }

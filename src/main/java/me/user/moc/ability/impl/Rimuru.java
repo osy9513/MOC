@@ -289,15 +289,20 @@ public class Rimuru extends Ability {
             privateSlime.setSize(2);
             privateSlime.setAI(false);
             privateSlime.setInvulnerable(true); // 본인용은 무적
-            privateSlime.setCollidable(false);
+            privateSlime.setCollidable(false); // [추가/확인] 본인이 밀리지 않도록 충돌 제거
             privateSlime.setSilent(true);
             privateSlime.setMaxHealth(100.0);
             privateSlime.addScoreboardTag("RIMURU_PRIVATE");
 
-            // [수정] 본인 시점에서 반투명하게 보이게 하기 위해 투명화 적용 + 팀 설정
+            // [수정] 본인 시점에서 반투명하게 보이게 하기 위해 투명화 적용 (Team.CanSeeFriendlyInvisibles=true 덕분에
+            // 반투명으로 보임)
             privateSlime.addPotionEffect(
                     new PotionEffect(PotionEffectType.INVISIBILITY,
                             PotionEffect.INFINITE_DURATION, 0, true, true));
+            // [추가] 화염 저항 적용 (사용자 요청)
+            // privateSlime.addPotionEffect(
+            // new PotionEffect(PotionEffectType.FIRE_RESISTANCE,
+            // PotionEffect.INFINITE_DURATION, 0, true, true));
 
             // [핵심] 다른 플레이어들에게는 Private Slime을 숨김
             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -305,7 +310,7 @@ public class Rimuru extends Ability {
                     online.hideEntity(plugin, privateSlime);
                 }
             }
-            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함
+            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함 -> 투명화 제거했으므로 팀은 충돌 방지용
             team.addEntry(privateSlime.getUniqueId().toString());
 
             entities.add(privateSlime);
@@ -316,11 +321,16 @@ public class Rimuru extends Ability {
         publicSlime.setSize(2);
         publicSlime.setAI(false);
         publicSlime.setInvulnerable(false); // 타인은 때릴 수 있어야 함
-        publicSlime.setCollidable(false);
+        publicSlime.setCollidable(false); // [추가/확인] 본인이 밀리지 않도록 충돌 제거
         publicSlime.setSilent(true);
         publicSlime.setMaxHealth(100.0);
         publicSlime.setHealth(100.0);
         publicSlime.addScoreboardTag("RIMURU_PUBLIC");
+
+        // [추가] 화염 저항 적용 (사용자 요청)
+        publicSlime.addPotionEffect(
+                new PotionEffect(PotionEffectType.FIRE_RESISTANCE,
+                        PotionEffect.INFINITE_DURATION, 0, true, true));
 
         // [요청] 피격 가능한 슬라임을 30% 크게 설정 (Attribute.SCALE 활용)
         if (publicSlime.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null) {
@@ -329,6 +339,10 @@ public class Rimuru extends Ability {
 
         // [핵심] 본인에게는 Public Slime을 숨김
         p.hideEntity(plugin, publicSlime);
+
+        // [추가] 충돌 방지: Public Slime도 팀에 추가 (COLLISION_RULE.NEVER 적용)
+        team.addEntry(publicSlime.getUniqueId().toString());
+
         entities.add(publicSlime);
 
         if (activeEntities.containsKey(p.getUniqueId())) {
@@ -407,6 +421,12 @@ public class Rimuru extends Ability {
                             }
                         }
 
+                        // [추가] 안전장치: 플레이어가 공허(Y < -64)에 있거나 월드 보더 밖에 있으면 슬라임 생성 스킵
+                        // (무의미한 엔티티 생성 및 서버 부하 방지)
+                        if (p.getLocation().getY() < -64 || !p.getWorld().getWorldBorder().isInside(p.getLocation())) {
+                            continue;
+                        }
+
                         createVisualSlime(p);
 
                         int stackCount = damageStacks.getOrDefault(uuid, 0);
@@ -436,7 +456,9 @@ public class Rimuru extends Ability {
                     for (Slime slime : slimes) {
                         if (slime.isDead())
                             continue;
-                        slime.teleport(p.getLocation());
+
+                        // [수정] 텔레포트 전 월드 보더 체크 및 보정
+                        slime.teleport(clampLocationToBorder(p.getLocation()));
 
                         // 체력 동기화
                         double ownerHealth = Math.min(p.getHealth(), 100.0);
@@ -452,7 +474,7 @@ public class Rimuru extends Ability {
                             // [수정] 본인에게는 반투명하게 보여야 함 (팀 설정 + 은신)
                             p.showEntity(plugin, slime);
 
-                            // 은신 효과가 풀리지 않도록 유지
+                            // 은신 효과가 풀리지 않도록 유지 (반투명 유지를 위해 필수)
                             if (!slime.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
                                 slime.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,
                                         PotionEffect.INFINITE_DURATION, 0, true, true));
@@ -498,6 +520,7 @@ public class Rimuru extends Ability {
                     double searchRadius = mainSlime.getSize() * 0.8 + 2.0;
 
                     int stackCount = damageStacks.getOrDefault(p.getUniqueId(), 0);
+                    // [너프] 아이템 섭취 시 몸통 박치기 데미지 증가량 2로 변경 (기본 8 + 스택 * 2)
                     double damage = 8.0 + (stackCount * 2.0);
 
                     final List<Slime> finalSlimes = slimes;

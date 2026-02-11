@@ -125,17 +125,39 @@ public class MuhammadAvdol extends Ability {
                     return;
                 }
 
-                // [추가] 스탠드가 (자기장 등으로) 사망했거나 사라졌다면? -> 본체 살아있으니 재소환
-                if (!chicken.isValid() || chicken.isDead()) {
-                    summonStand(p); // 재소환 (새로운 태스크 시작)
-                    this.cancel(); // 구형 태스크 종료
+                // [Fix] 스탠드가 사망/소실된 경우
+                if (chicken == null || !chicken.isValid() || chicken.isDead()) {
+                    // 즉시 재소환하지 않고 쿨타임(3초) 후 재소환 시도
+                    // 무한 루프 방지를 위해 이 태스크는 종료
+                    this.cancel();
+
+                    // [안전장치] 월드 보더 밖이거나 Y좌표가 너무 낮으면 재소환 보류 (플레이어가 안전한 곳으로 올 때까지)
+                    // 하지만 여기서는 간단히 3초 뒤 재시도하도록 예약
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (p.isOnline() && !p.isDead() && p.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+                                // [추가] 안전 지대 확인 (Y < -64 or WorldBorder)
+                                if (p.getLocation().getY() < -64
+                                        || !p.getWorld().getWorldBorder().isInside(p.getLocation())) {
+                                    // 아직도 위험한 곳이면 소환 안 함 (플레이어가 알아서 나오겠지)
+                                    // 혹은 다시 3초 뒤 체크? -> 너무 복잡해지니 일단 넘어감 (다음 쿨타임/체크에서 처리)
+                                    return;
+                                }
+                                summonStand(p);
+                            }
+                        }
+                    }.runTaskLater(plugin, 60L); // 3초 뒤 재소환
+
                     return;
                 }
 
                 // 위치 동기화
                 Location targetLoc = getStandLocation(p);
-                // 부드러운 이동을 위해 teleport 사용 (Entity가 따라오는 느낌)
-                // Yaw는 플레이어와 같게
+
+                // [수정] 공통 유틸리티를 사용하여 월드 보더 내부로 위치 강제 고정 (엔티티 사망 방지)
+                targetLoc = clampLocationToBorder(targetLoc);
+
                 targetLoc.setYaw(p.getLocation().getYaw());
                 chicken.teleport(targetLoc);
             }

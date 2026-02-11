@@ -283,7 +283,9 @@ public class DIO extends Ability {
 
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, true, true, true));
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 5, 5, true, true, true));
-                        le.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 5, 255, true, true, true));
+                        if (le instanceof Player player) {
+                            applyJumpSilence(player, 5);
+                        }
                     }
 
                 }

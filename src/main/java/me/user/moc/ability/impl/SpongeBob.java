@@ -65,6 +65,7 @@ public class SpongeBob extends Ability {
 
         // [추가] 기본 지급되는 구운 소고기 제거 (요청사항)
         p.getInventory().remove(Material.COOKED_BEEF);
+        p.getInventory().remove(Material.IRON_SWORD);
     }
 
     @Override

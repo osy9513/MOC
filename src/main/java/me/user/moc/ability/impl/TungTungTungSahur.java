@@ -125,9 +125,20 @@ public class TungTungTungSahur extends Ability {
 
     }
 
+    // [추가] 변신 엔티티 직접 관리용 맵 (Cleanup 보장)
+    private final Map<UUID, BlockDisplay> disguises = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Override
     public void cleanup(Player p) {
         UUID uuid = p.getUniqueId();
+
+        // [핵심] 변신 엔티티 확실하게 제거
+        if (disguises.containsKey(uuid)) {
+            BlockDisplay display = disguises.remove(uuid);
+            if (display != null && display.isValid()) {
+                display.remove();
+            }
+        }
 
         // 맵 및 태스크 정리
         currentTargets.remove(uuid);
@@ -182,8 +193,9 @@ public class TungTungTungSahur extends Ability {
 
         display.setTransformation(transform);
 
-        // 등록 (Cleanup을 위해)
+        // 등록 (Cleanup을 위해 - 부모에도 등록하고, 로컬에도 등록)
         registerSummon(p, display);
+        disguises.put(p.getUniqueId(), display);
 
         // 3. 따라다니기 태스크
         BukkitTask task = new BukkitRunnable() {
@@ -193,6 +205,7 @@ public class TungTungTungSahur extends Ability {
                     this.cancel();
                     if (display.isValid())
                         display.remove();
+                    disguises.remove(p.getUniqueId()); // 맵에서도 제거
                     return;
                 }
 

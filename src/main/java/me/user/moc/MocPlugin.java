@@ -8,7 +8,13 @@ import me.user.moc.game.ClearManager;
 import me.user.moc.game.GameManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class MocPlugin extends JavaPlugin {
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import com.destroystokyo.paper.event.player.PlayerJumpEvent;
+
+public final class MocPlugin extends JavaPlugin implements Listener {
+
+    // ... (instance 및 필드 생략됨, TargetContent에서 유지)
 
     // 1. 전 세계 어디서든 이 플러그인을 찾을 수 있게 하는 '공식 명함'입니다.
     private static MocPlugin instance;
@@ -49,8 +55,10 @@ public final class MocPlugin extends JavaPlugin {
         // [순서 5번] 점수판 매니저 초기화 (시작은 하지 않음)
         this.scoreboardManager = new me.user.moc.game.ScoreboardManager(this);
 
-        // [순서 6번] 명령어 등록
-        // /moc 명령어를 처리할 담당자(MocCommand)를 등록합니다.
+        // [순서 6번] 이벤트 리스너 등록
+        getServer().getPluginManager().registerEvents(this, this);
+
+        // [순서 7번] 명령어 등록
         if (getCommand("moc") != null) {
             getCommand("moc").setExecutor(new MocCommand());
         }
@@ -70,7 +78,7 @@ public final class MocPlugin extends JavaPlugin {
         }
 
         // [중요] 플러그인 리로드 시 이벤트 리스너가 중복 등록되는 '좀비 리스너' 방지
-        org.bukkit.event.HandlerList.unregisterAll(this);
+        org.bukkit.event.HandlerList.unregisterAll((org.bukkit.plugin.Plugin) this);
         org.bukkit.Bukkit.getScheduler().cancelTasks(this);
 
         getLogger().info("MOC 플러그인이 꺼졌습니다.");
@@ -99,5 +107,13 @@ public final class MocPlugin extends JavaPlugin {
 
     public me.user.moc.game.ScoreboardManager getScoreboardManager() {
         return scoreboardManager;
+    }
+
+    @EventHandler
+    public void onPlayerJump(PlayerJumpEvent e) {
+        Long expireAt = AbilityManager.jumpSilenceExpirations.get(e.getPlayer().getUniqueId());
+        if (expireAt != null && System.currentTimeMillis() < expireAt) {
+            e.setCancelled(true);
+        }
     }
 }

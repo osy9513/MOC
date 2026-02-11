@@ -26,7 +26,7 @@ import java.util.Random;
 
 /**
  * [능력 코드: 019]
- * 이름: The King of Gockgang-E (왕 쩌는 곡갱이)
+ * 이름: The King of Gockgang-E (킹오곡)
  * 설명: 모든 블록(기반암 포함)을 즉시 파괴하며 범위 피해를 입힘.
  */
 public class TheKingOfGockgangE extends Ability {
@@ -52,7 +52,7 @@ public class TheKingOfGockgangE extends Ability {
     public List<String> getDescription() {
         List<String> list = new ArrayList<>();
         list.add("§f복합 ● The King of Gockgang-E(The King of Gockgang-E)");
-        list.add("§f왕 쩌는 곡갱이를 얻습니다.");
+        list.add("§f킹오곡을 얻습니다.");
         return list;
     }
 
@@ -61,11 +61,11 @@ public class TheKingOfGockgangE extends Ability {
         // 1. 기존 장비(철 검) 제거
         p.getInventory().remove(Material.IRON_SWORD);
 
-        // 2. 왕 쩌는 곡갱이 생성
+        // 2. 킹오곡 생성
         ItemStack pickaxe = new ItemStack(Material.NETHERITE_PICKAXE);
         ItemMeta meta = pickaxe.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§e왕 쩌는 곡갱이");
+            meta.setDisplayName("§e킹오곡");
             meta.setLore(Arrays.asList("§7블록 파괴 시 주변 적에게 피해를 입힙니다.", "§eShout Out TEAM PICKAXE"));
             meta.setUnbreakable(true); // 편의상 파괴 불가 설정
             // 내구성 인챈트 10 (요청사항: 내구성10)
@@ -88,13 +88,13 @@ public class TheKingOfGockgangE extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§e복합 ● The King of Gockgang-E(The King of Gockgang-E)");
         p.sendMessage("§f성급한 V를 상시 활성화 합니다.");
-        p.sendMessage("§f모든 블럭을 그리고 기반암까지 크리에이트처럼 때려 부수는 `왕 쩌는 곡갱이`를 얻습니다.");
-        p.sendMessage("§f왕 쩌는 곡갱이로 블럭을 부수면 주변에 3의 범위 피해를 줍니다.");
-        p.sendMessage("§f[제한] 블록을 30개 파괴하면 15초의 재충전 시간이 필요합니다.");
+        p.sendMessage("§f모든 블럭을 그리고 기반암까지 크리에이트처럼 때려 부수는 `킹오곡`를 얻습니다.");
+        p.sendMessage("§f킹오곡로 블럭을 부수면 주변에 3의 범위 피해를 줍니다.");
+        p.sendMessage("§f[제한] 블록을 30개 파괴하면 10초의 재충전 시간이 필요합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 15초(30개 파괴 시)");
+        p.sendMessage("§f쿨타임 : 10초(30개 파괴 시)");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 왕 쩌는 곡갱이(네더라이트곡갱이-내구성10)");
+        p.sendMessage("§f추가 장비 : 킹오곡(네더라이트곡갱이-내구성10)");
         p.sendMessage("§f장비 제거 : 철 검");
     }
 
@@ -126,7 +126,7 @@ public class TheKingOfGockgangE extends Ability {
         if (mainHand.getType() != Material.NETHERITE_PICKAXE)
             return;
         ItemMeta meta = mainHand.getItemMeta();
-        if (meta == null || !"§e왕 쩌는 곡갱이".equals(meta.getDisplayName()))
+        if (meta == null || !"§e킹오곡".equals(meta.getDisplayName()))
             return;
 
         // 3. 블록 즉시 파괴 로직
@@ -148,8 +148,8 @@ public class TheKingOfGockgangE extends Ability {
         int count = breakCounts.getOrDefault(p.getUniqueId(), 0) + 1;
         if (count >= 30) {
             breakCounts.put(p.getUniqueId(), 0);
-            setCooldown(p, 15);
-            p.sendMessage("§f왕 쩌는 곡갱이의 마력이 다했습니다! 15초간 재충전이 필요합니다.");
+            setCooldown(p, 10);
+            p.sendMessage("§f킹오곡의 마력이 다했습니다! 10초간 재충전이 필요합니다.");
             p.sendActionBar(net.kyori.adventure.text.Component.text("§c[게이지] ■■■■■ 30/30 (재충전 시작)"));
         } else {
             breakCounts.put(p.getUniqueId(), count);
@@ -179,7 +179,7 @@ public class TheKingOfGockgangE extends Ability {
 
         ItemStack hand = p.getInventory().getItemInMainHand();
         if (hand.getType() == Material.NETHERITE_PICKAXE && hand.hasItemMeta()) {
-            if ("§e왕 쩌는 곡갱이".equals(hand.getItemMeta().getDisplayName())) {
+            if ("§e킹오곡".equals(hand.getItemMeta().getDisplayName())) {
                 e.setDamage(6.0);
             }
         }

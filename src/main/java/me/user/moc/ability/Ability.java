@@ -39,6 +39,7 @@ public abstract class Ability implements Listener {
      * 능력이 해제되거나 게임이 끝날 때 호출되는 정리 메서드입니다.
      * 소환수 제거, 버프 해제 등의 로직을 구현합니다.
      */
+
     public void cleanup(Player p) {
         if (p == null)
             return;
@@ -75,6 +76,14 @@ public abstract class Ability implements Listener {
 
         // 4. 쿨타임 정보 제거 (죽으면 쿨타임 초기화 -> 부활해도 쿨타임 없이 시작 가능)
         cooldowns.remove(uuid);
+    }
+
+    /**
+     * [추가] 게임(라운드)이 종료되어 승자가 결정되었을 때 호출됩니다.
+     * 주로 토가 히미코 같은 변신 능력이 승리 메시지 출력 전에 본모습으로 돌아가야 할 때 사용합니다.
+     */
+    public void onGameEnd(Player p) {
+        // 기본적으로는 아무것도 하지 않음 (Override용)
     }
 
     // [중앙 집권형 상태 관리] 자식들이 개별 Map을 쓰지 않도록 부모가 통합 관리합니다.
@@ -164,6 +173,12 @@ public abstract class Ability implements Listener {
         MocPlugin moc = (MocPlugin) plugin;
         GameManager gm = moc.getGameManager();
 
+        // [추가] 능력 봉인 체크 (고죠 사토루 무량공처 등)
+        if (AbilityManager.silencedPlayers.contains(p.getUniqueId())) {
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c능력이 봉인되어 사용할 수 없습니다."));
+            return false;
+        }
+
         // 게임이 실행 중이 아니거나, 아직 무적(카운트다운) 상태라면
         if (gm == null || !gm.isBattleStarted()) {
             p.sendActionBar(net.kyori.adventure.text.Component.text("§c전투 시작 후에 사용할 수 있습니다."));
@@ -193,5 +208,57 @@ public abstract class Ability implements Listener {
 
     protected void registerTask(Player p, org.bukkit.scheduler.BukkitTask t) {
         activeTasks.computeIfAbsent(p.getUniqueId(), k -> new java.util.ArrayList<>()).add(t);
+    }
+
+    /**
+     * [추가] 월드 보더 경계 체크 및 위치 보정 유틸리티
+     * 지정된 위치가 월드 보더 밖이라면, 보더 내 가장 가까운 위치로 조정하여 반환합니다.
+     */
+    protected org.bukkit.Location clampLocationToBorder(org.bukkit.Location loc) {
+        if (loc == null || loc.getWorld() == null)
+            return loc;
+
+        org.bukkit.WorldBorder border = loc.getWorld().getWorldBorder();
+        if (border.isInside(loc))
+            return loc;
+
+        double size = border.getSize() / 2.0;
+        org.bukkit.Location center = border.getCenter();
+
+        double minX = center.getX() - size + 0.5;
+        double maxX = center.getX() + size - 0.5;
+        double minZ = center.getZ() - size + 0.5;
+        double maxZ = center.getZ() + size - 0.5;
+
+        double x = Math.max(minX, Math.min(maxX, loc.getX()));
+        double z = Math.max(minZ, Math.min(maxZ, loc.getZ()));
+
+        org.bukkit.Location clamped = loc.clone();
+        clamped.setX(x);
+        clamped.setZ(z);
+        return clamped;
+    }
+
+    /**
+     * [추가] 대상 플레이어의 점프를 특정 시간 동안 봉인합니다.
+     * (기존 Jump Boost 255 방식의 버그를 해결하기 위한 새로운 시스템)
+     */
+    protected void applyJumpSilence(Player p, long ticks) {
+        java.util.UUID uuid = p.getUniqueId();
+        long expireAt = System.currentTimeMillis() + (ticks * 50L);
+
+        // 기존 만료 시간보다 더 긴 경우에만 갱신
+        AbilityManager.jumpSilenceExpirations.merge(uuid, expireAt, Math::max);
+
+        // 메모리 관리를 위해 만료 후 제거 태스크 (선택 사항이나 권장)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                Long currentExpire = AbilityManager.jumpSilenceExpirations.get(uuid);
+                if (currentExpire != null && System.currentTimeMillis() >= currentExpire) {
+                    AbilityManager.jumpSilenceExpirations.remove(uuid);
+                }
+            }
+        }.runTaskLater(plugin, ticks + 1);
     }
 }

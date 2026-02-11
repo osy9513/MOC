@@ -265,7 +265,6 @@ public class Gaara extends Ability {
                     return; // 사망/관전 시 발동 불가
 
                 if (!checkCooldown(p)) {
-                    p.sendMessage("§c쿨타임이 남았습니다.");
                     return;
                 }
 
