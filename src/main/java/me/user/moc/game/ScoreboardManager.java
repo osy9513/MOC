@@ -91,9 +91,9 @@ public class ScoreboardManager {
         }
 
         // 타이틀 업데이트 (애니메이션 가능하지만 일단 고정)
-        // [마오캐 버전 - 0.0.1] -> config에서 버전 가져오거나 고정
-        // 공간 제약으로 인해 짧게 표기
-        obj.setDisplayName("§e§l[ 마오캐 - 0.1.1 ]");
+        // [마오캐 버전 - 동적 로딩]
+        String version = plugin.getDescription().getVersion();
+        obj.setDisplayName("§e§l[ 마오캐 - " + version + " ]");
 
         // 라인 관리 (스코어보드는 라인 수정이 번거로우므로, Entry 이름을 변경하는 방식 사용)
         // 여기서는 매번 싹 지우고 다시 세팅하는 방식은 깜빡임이 있을 수 있으나,
