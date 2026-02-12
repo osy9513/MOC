@@ -79,6 +79,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/trafalgarlaw"
                 }
+            },
+            {
+                "threshold": 12,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/beyblade"
+                }
             }
         ],
         "fallback": {
