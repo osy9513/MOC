@@ -52,8 +52,9 @@ public final class MocPlugin extends JavaPlugin implements Listener {
         // [순서 4번] 게임 관리자에게 능력 관리자를 소개시켜 줍니다.
         this.gameManager.setAbilityManager(abilityManager);
 
-        // [순서 5번] 점수판 매니저 초기화 (시작은 하지 않음)
+        // [순서 5번] 점수판 매니저 초기화 및 시작
         this.scoreboardManager = new me.user.moc.game.ScoreboardManager(this);
+        this.scoreboardManager.start(); // [Fix] 로비에서도 점수판/팀 동기화 가동
 
         // [순서 6번] 이벤트 리스너 등록
         getServer().getPluginManager().registerEvents(this, this);

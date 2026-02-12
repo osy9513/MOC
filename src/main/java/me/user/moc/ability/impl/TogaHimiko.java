@@ -272,7 +272,36 @@ public class TogaHimiko extends Ability {
         OriginalState state = new OriginalState();
         state.profile = p.getPlayerProfile();
         state.abilityCode = am.getPlayerAbilities().get(p.getUniqueId()); // 현재 능력 코드 (047)
-        state.inventory = p.getInventory().getContents();
+
+        // [수정] 인벤토리 저장 시, 현재 마시고 있는 포션(손에 들고 있는 것)은 제외하고 저장
+        // 원인: 변신 해제 시 이 저장된 인벤토리가 덮어씌워지는데, 마시기 전 상태(포션 있음)로 저장되어 포션이 복구됨.
+        ItemStack[] contents = p.getInventory().getContents();
+        ItemStack handItem = p.getInventory().getItemInMainHand();
+
+        // 메인 핸드 아이템이 혈액 포션인지 확인 (이름 등으로 대략 확인)
+        if (handItem.getType() == Material.POTION && handItem.getItemMeta() != null) {
+            // 간단하게 현재 손으 슬롯을 찾아서 그 부분만 수량을 줄이거나 제거한 배열을 만듦
+            // 인벤토리 복사본 생성
+            contents = new ItemStack[p.getInventory().getContents().length];
+            for (int i = 0; i < p.getInventory().getContents().length; i++) {
+                ItemStack it = p.getInventory().getContents()[i];
+                if (it != null) {
+                    contents[i] = it.clone();
+                }
+            }
+
+            // 메인 핸드 슬롯 찾기
+            int slot = p.getInventory().getHeldItemSlot();
+            if (contents[slot] != null && contents[slot].isSimilar(handItem)) {
+                if (contents[slot].getAmount() > 1) {
+                    contents[slot].setAmount(contents[slot].getAmount() - 1);
+                } else {
+                    contents[slot] = null;
+                }
+            }
+        }
+
+        state.inventory = contents;
         state.armor = p.getInventory().getArmorContents();
         state.health = p.getHealth();
         state.maxHealth = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
@@ -338,11 +367,23 @@ public class TogaHimiko extends Ability {
         if (targetAbCode != null) {
             // [Fix] 능력 교체 시 cleanup이 호출되는데, 이때 revertTask가 취소되거나 즉시 원복되는 것을 방지
             ignoringCleanup.add(p.getUniqueId());
-            am.changeAbilityTemporary(p, targetAbCode);
+
+            // [주입] 토가 히미코 전용 격리 코드 처리
+            String actualCodeToGive = targetAbCode;
+            if (targetAbCode.equals("018")) { // 리무루
+                actualCodeToGive = "TH018";
+            } else if (targetAbCode.equals("028")) { // 북극곰
+                actualCodeToGive = "TH028";
+            } else if (targetAbCode.equals("016")) { // 퉁퉁퉁사후르
+                actualCodeToGive = "TH016";
+            }
+
+            am.changeAbilityTemporary(p, actualCodeToGive);
             ignoringCleanup.remove(p.getUniqueId());
 
             // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
-            Ability newAbility = am.getAbility(targetAbCode);
+            // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
+            Ability newAbility = am.getAbility(actualCodeToGive);
             if (newAbility != null) {
                 newAbility.giveItem(p);
                 // giveItem이 인벤토리를 건드리지만, 아래에서 타겟 인벤토리로 덮어씌웁니다.

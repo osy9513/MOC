@@ -226,30 +226,54 @@ public class Ulquiorra extends Ability {
                 // 2. 이동 전 위치 저장
                 Location prevLoc = currentLoc.clone();
 
-                // 3. 기반암 충돌 및 슬라이딩 로직
+                // 3. 기반암 및 월드보더 충돌 및 슬라이딩 로직
                 // 다음 위치 예측
                 Location nextLoc = currentLoc.clone().add(currentDir.clone().multiply(currentSpeed));
+                boolean hitsBorder = false;
 
-                // 블럭 체크 (Based on Material)
-                if (nextLoc.getBlock().getType() == Material.BEDROCK) {
+                // [추가] 월드보더 충돌 체크
+                WorldBorder border = currentLoc.getWorld().getWorldBorder();
+                double size = border.getSize() / 2.0;
+                double centerX = border.getCenter().getX();
+                double centerZ = border.getCenter().getZ();
+
+                double minX = centerX - size;
+                double maxX = centerX + size;
+                double minZ = centerZ - size;
+                double maxZ = centerZ + size;
+
+                // X축 보더 충돌?
+                if (nextLoc.getX() < minX || nextLoc.getX() > maxX) {
+                    currentDir.setX(-currentDir.getX() * 0.5);
+                    hitsBorder = true;
+                }
+                // Z축 보더 충돌?
+                if (nextLoc.getZ() < minZ || nextLoc.getZ() > maxZ) {
+                    currentDir.setZ(-currentDir.getZ() * 0.5);
+                    hitsBorder = true;
+                }
+
+                // 블럭 체크 (Based on Material) OR 월드보더 충돌
+                if (nextLoc.getBlock().getType() == Material.BEDROCK || hitsBorder) {
                     // 기반암 충돌: 슬라이딩 (반사 혹은 미끄러짐)
-                    // 충돌 면 계산을 위해 각 축별로 검사
-                    // X축 충돌?
-                    Location testX = currentLoc.clone().add(currentDir.getX() * currentSpeed, 0, 0);
-                    if (testX.getBlock().getType() == Material.BEDROCK) {
-                        currentDir.setX(-currentDir.getX() * 0.5); // 반사 (또는 0으로 만들어서 슬라이딩)
-                        // '얼음에 돌 던진 것 처럼 미끄러짐' -> 반사보다는 튕겨나가는 느낌으로 속도 유지
-                        // 여기서는 반사하되 속도를 살짝 줄임
-                    }
-                    // Y축 충돌?
-                    Location testY = currentLoc.clone().add(0, currentDir.getY() * currentSpeed, 0);
-                    if (testY.getBlock().getType() == Material.BEDROCK) {
-                        currentDir.setY(-currentDir.getY() * 0.5); // 바닥/천장은 반사
-                    }
-                    // Z축 충돌?
-                    Location testZ = currentLoc.clone().add(0, 0, currentDir.getZ() * currentSpeed);
-                    if (testZ.getBlock().getType() == Material.BEDROCK) {
-                        currentDir.setZ(-currentDir.getZ() * 0.5);
+                    // 충돌 면 계산을 위해 각 축별로 검사 (보더 충돌이 아닐 때만 블록 검사 수행)
+
+                    if (!hitsBorder) {
+                        // X축 충돌?
+                        Location testX = currentLoc.clone().add(currentDir.getX() * currentSpeed, 0, 0);
+                        if (testX.getBlock().getType() == Material.BEDROCK) {
+                            currentDir.setX(-currentDir.getX() * 0.5);
+                        }
+                        // Y축 충돌?
+                        Location testY = currentLoc.clone().add(0, currentDir.getY() * currentSpeed, 0);
+                        if (testY.getBlock().getType() == Material.BEDROCK) {
+                            currentDir.setY(-currentDir.getY() * 0.5);
+                        }
+                        // Z축 충돌?
+                        Location testZ = currentLoc.clone().add(0, 0, currentDir.getZ() * currentSpeed);
+                        if (testZ.getBlock().getType() == Material.BEDROCK) {
+                            currentDir.setZ(-currentDir.getZ() * 0.5);
+                        }
                     }
 
                     // 방향이 바뀌었으니, 갱신된 방향으로 이동

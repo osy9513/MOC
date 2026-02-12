@@ -61,6 +61,8 @@ public class ScoreboardManager {
                 // 하지만 "참가 인원 수" 등을 보여달라고 했으므로 로비에서도 보여주는 게 좋을 수 있음.
                 // 일단 항상 보여주도록 처리.
                 updateScoreboard(p);
+                // [Fix] 로비에서도 팀 동기화 실행 (능력 테스트 등을 위해 필수)
+                syncTeams(p);
             }
             return;
         }
@@ -152,7 +154,12 @@ public class ScoreboardManager {
         lines.add("  "); // 공백 (중복 방지 위해 공백 개수 조절)
 
         // 3. 탑 5 스코어
-        lines.add("§e[ 탑 5 점수 ]");
+        // 3. 탑 5 스코어
+        int targetScore = 40;
+        if (plugin.getConfigManager() != null) {
+            targetScore = plugin.getConfigManager().win_value;
+        }
+        lines.add("§e[ 탑 5 ] §f목표: " + targetScore);
 
         // 점수 정렬
         List<Map.Entry<UUID, Integer>> top5 = getTopScores();
@@ -220,17 +227,31 @@ public class ScoreboardManager {
 
             // 옵션 동기화
             try {
-                userTeam.setDisplayName(mainTeam.getDisplayName());
-                userTeam.setPrefix(mainTeam.getPrefix());
-                userTeam.setSuffix(mainTeam.getSuffix());
-                userTeam.setColor(mainTeam.getColor());
-                userTeam.setAllowFriendlyFire(mainTeam.allowFriendlyFire());
-                userTeam.setCanSeeFriendlyInvisibles(mainTeam.canSeeFriendlyInvisibles());
-                userTeam.setOption(Team.Option.NAME_TAG_VISIBILITY,
-                        mainTeam.getOption(Team.Option.NAME_TAG_VISIBILITY));
-                userTeam.setOption(Team.Option.COLLISION_RULE, mainTeam.getOption(Team.Option.COLLISION_RULE));
-                userTeam.setOption(Team.Option.DEATH_MESSAGE_VISIBILITY,
-                        mainTeam.getOption(Team.Option.DEATH_MESSAGE_VISIBILITY));
+                // [Centralized Fix] 북극곰 전용 강제 설정 (반투명 가시성 보장)
+                if (mainTeam.getName().startsWith("POLAR_") || mainTeam.getName().startsWith("TH_POLAR_")) {
+                    userTeam.setDisplayName(mainTeam.getDisplayName());
+                    userTeam.setPrefix(mainTeam.getPrefix());
+                    userTeam.setSuffix(mainTeam.getSuffix());
+                    userTeam.setColor(mainTeam.getColor());
+                    userTeam.setAllowFriendlyFire(false);
+                    userTeam.setCanSeeFriendlyInvisibles(true); // [핵심] 무조건 True
+                    userTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER); // [핵심] 이름표 숨김
+                    userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER); // [핵심] 충돌 방지
+                    userTeam.setOption(Team.Option.DEATH_MESSAGE_VISIBILITY, Team.OptionStatus.NEVER);
+                } else {
+                    // 일반 팀 동기화
+                    userTeam.setDisplayName(mainTeam.getDisplayName());
+                    userTeam.setPrefix(mainTeam.getPrefix());
+                    userTeam.setSuffix(mainTeam.getSuffix());
+                    userTeam.setColor(mainTeam.getColor());
+                    userTeam.setAllowFriendlyFire(mainTeam.allowFriendlyFire());
+                    userTeam.setCanSeeFriendlyInvisibles(mainTeam.canSeeFriendlyInvisibles());
+                    userTeam.setOption(Team.Option.NAME_TAG_VISIBILITY,
+                            mainTeam.getOption(Team.Option.NAME_TAG_VISIBILITY));
+                    userTeam.setOption(Team.Option.COLLISION_RULE, mainTeam.getOption(Team.Option.COLLISION_RULE));
+                    userTeam.setOption(Team.Option.DEATH_MESSAGE_VISIBILITY,
+                            mainTeam.getOption(Team.Option.DEATH_MESSAGE_VISIBILITY));
+                }
             } catch (Exception e) {
                 // 버전 차이 등으로 인한 예외 무시
             }

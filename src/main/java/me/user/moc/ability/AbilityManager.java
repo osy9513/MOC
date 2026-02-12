@@ -79,7 +79,7 @@ public class AbilityManager {
         addAbility(new Windbreaker(plugin)); // 윈드브레이커(메이플) 등록
         addAbility(new Pantheon(plugin)); // 빵테온 등록
         addAbility(new TheKingOfGockgangE(plugin)); // 왕 쩌는 곡갱이 등록
-        addAbility(new Rimuru(plugin)); // 리무르 등록
+        addAbility(new Rimuru(plugin)); // 리무루 등록
         addAbility(new Kaneki(plugin)); // 카네키 켄 등록
         addAbility(new PaulPhoenix(plugin)); // 폴 피닉스 등록
         addAbility(new Jjanggu(plugin)); // 짱구 등록
@@ -114,6 +114,11 @@ public class AbilityManager {
         addAbility(new SpongeBob(plugin)); // 051 스펀지밥
         addAbility(new GojoSatoru(plugin)); // 059 고죠 사토루
         addAbility(new AmanoHina(plugin)); // 056 아마노 히나
+
+        // [추가] 토가 히미코 전용 격리 능력 등록 (랜덤 뽑기 제외 대상)
+        addAbility(new TH_Rimuru(plugin)); // TH018
+        addAbility(new TH_PolarBearAbility(plugin)); // TH028
+        addAbility(new TH_TungTungTungSahur(plugin)); // TH016
     }
 
     private void addAbility(Ability ability) {
@@ -141,6 +146,9 @@ public class AbilityManager {
             // removeIf를 쓰면 조건에 맞는 녀석들을 리스트에서 싹 지워줍니다.
             allCodes.removeIf(code -> code.toUpperCase().startsWith("H"));
         }
+
+        // [추가] 토가 히미코 전용 능력(TH_)은 절대 랜덤으로 나오면 안 됨!
+        allCodes.removeIf(code -> code.toUpperCase().startsWith("TH"));
 
         return allCodes;
     }
