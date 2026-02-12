@@ -584,6 +584,12 @@ public class ArenaManager implements Listener {
     /**
      * 자기장 밖 대미지 처리를 시작합니다.
      */
+    // [추가] 자기장 밖 체류 시간 관리 (Entity UUID -> Ticks)
+    private final java.util.Map<java.util.UUID, Integer> outsideTicks = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 자기장 밖 처리를 시작합니다. (3초 카운트다운 후 즉사/삭제)
+     */
     public void startBorderDamage() {
         if (gameCenter == null)
             return;
@@ -593,92 +599,124 @@ public class ArenaManager implements Listener {
 
         WorldBorder border = world.getWorldBorder();
 
-        // 1. [핵심] 마인크래프트 자체 장벽 대미지 설정 (가장 정확함)
-        // [수정] 안전거리(버퍼)를 2.0칸으로 늘려서 억울한 죽음 방지 (텔포 오차 등)
-        border.setDamageBuffer(2.0);
-        // 초당 대미지 설정 (한 칸 나갈 때마다 추가 대미지)
-        border.setDamageAmount(2.0); // 3.0 -> 1.0으로 하향 조정 (즉사 방지)
+        // 1. 바닐라 대미지 비활성화 (우리가 직접 제어함)
+        border.setDamageBuffer(0);
+        border.setDamageAmount(0);
 
-        // 2. [메시지 알림 전용] 0.25초마다 검사하여 즉각 경고 메시지 전송
         if (borderDamageTask != null)
             borderDamageTask.cancel(); // 중복 방지
 
-        borderDamageTask = new BukkitRunnable() {
-            int tickCount = 0; // [최적화] 엔티티 청소 주기 관리용 카운터
-            int graceSeconds = 5; // [추가] 초기 5초간 대미지 무시 (유예 시간)
+        // 상태 맵 초기화
+        outsideTicks.clear();
 
+        borderDamageTask = new BukkitRunnable() {
             @Override
             public void run() {
-                // 게임이 끝났으면 태스크 종료 (중요)
+                // 게임이 끝났으면 태스크 종료
                 if (!gm.isRunning()) {
                     this.cancel();
                     return;
                 }
 
-                // 초기 유예 시간 체크
-                if (graceSeconds > 0) {
-                    if (tickCount % 4 == 0) { // 1초마다 감소
-                        graceSeconds--;
-                    }
-                    tickCount++;
-                    return; // 아직은 대미지 로직 실행 안 함
-                }
-
                 double size = border.getSize() / 2.0;
                 Location center = border.getCenter();
+                double safeRadius = size + 0.5; // 약간의 오차 허용
 
-                // 1. 플레이어 대미지 및 경고 처리 (기존 로직 유지 - 0.25초마다 실행)
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.getWorld().equals(world))
+                // 월드의 모든 엔티티 검사 (Player, Monster, Item, Projectile 등)
+                for (org.bukkit.entity.Entity entity : world.getEntities()) {
+                    // 유효하지 않거나 죽은 객체 패스
+                    if (!entity.isValid()) {
+                        outsideTicks.remove(entity.getUniqueId());
                         continue;
-
-                    // 관전자는 무시
-                    if (p.getGameMode() == GameMode.SPECTATOR)
-                        continue;
-
-                    Location loc = p.getLocation();
-                    // 3. [수학적 계산] 장벽 중심에서 플레이어의 거리가 장벽 반지름보다 큰지 확인
-                    if (Math.abs(loc.getX() - center.getX()) > size || Math.abs(loc.getZ() - center.getZ()) > size) {
-                        // 액션바에 경고 표시 (메시지 도배 방지)
-                        p.sendActionBar(net.kyori.adventure.text.Component.text("!!! 자기장 구역 밖입니다 !!!")
-                                .color(net.kyori.adventure.text.format.NamedTextColor.RED)
-                                .decorate(net.kyori.adventure.text.format.TextDecoration.BOLD));
-
-                        // [추가] 2초당 1뎀씩 수동 부여 (버퍼랑 별개로 확실하게 아프게 하기 위해)
-                        if (tickCount % 8 == 0) {
-                            p.damage(1.0);
-                        }
                     }
-                }
 
-                // 2. [추가] 자기장 밖 생명체(플레이어 제외) 삭제 처리 (1초마다 실행)
-                if (tickCount++ % 4 == 0) {
-                    int removedCount = 0;
-                    // [중요] ConcurrentModificationException 방지를 위해 리스트 복사본 사용
-                    List<org.bukkit.entity.LivingEntity> entities = new ArrayList<>(world.getLivingEntities());
+                    // [예외] 관전자는 제외
+                    if (entity instanceof Player p && p.getGameMode() == GameMode.SPECTATOR) {
+                        outsideTicks.remove(entity.getUniqueId());
+                        continue;
+                    }
 
-                    for (org.bukkit.entity.LivingEntity entity : entities) {
-                        // 플레이어는 건드리지 않음
-                        if (entity instanceof Player)
-                            continue;
-                        if (!entity.isValid())
-                            continue; // 이미 죽거나 소멸된 엔티티 패스
+                    // [예외] 일부 특수 엔티티(전장 마커 등)는 제외할 수도 있음
+                    if (entity.getScoreboardTags().contains("MOC_MARKER")) {
+                        continue;
+                    }
 
-                        // [추가] 보스몹이나 중요 엔티티는 예외 처리? (일단 보류)
+                    Location loc = entity.getLocation();
+                    boolean isOutside = Math.abs(loc.getX() - center.getX()) > safeRadius
+                            || Math.abs(loc.getZ() - center.getZ()) > safeRadius;
 
-                        Location loc = entity.getLocation();
-                        // 자기장 밖인지 검사 (약간의 여유 0.5칸 줌)
-                        if (Math.abs(loc.getX() - center.getX()) > size + 0.5
-                                || Math.abs(loc.getZ() - center.getZ()) > size + 0.5) {
-                            // [수정] 확실한 제거를 위해 체력을 0으로 만들어 '사망' 처리 후 삭제
-                            entity.setHealth(0);
-                            entity.remove();
-                            removedCount++;
+                    if (isOutside) {
+                        // 밖이면 카운트 증가
+                        int ticks = outsideTicks.getOrDefault(entity.getUniqueId(), 0) + 1;
+                        outsideTicks.put(entity.getUniqueId(), ticks);
+
+                        // 플레이어 알림 (Title & Particles)
+                        if (entity instanceof Player p) {
+                            // 5틱(0.25초)마다 실행되므로 4번 = 1초
+                            // 3초 카운트다운: 3 (0~3), 2 (4~7), 1 (8~11), 0 (12)
+
+                            // 남은 시간 계산 (3초 - 현재시간)
+                            // ticks=1 (0.25초) -> 2.75
+                            // ticks=12 (3.0초) -> 0
+                            double timeLeft = 3.0 - (ticks * 0.25);
+
+                            if (timeLeft > 0) {
+                                // 정수로 떨어질 때만 타이틀 표시, 혹은 매번 소수점 표시?
+                                // 1초 단위로 큼직하게 표시 (3, 2, 1)
+                                if (ticks == 1 || ticks == 5 || ticks == 9) {
+                                    int sec = (int) Math.ceil(timeLeft);
+                                    p.showTitle(net.kyori.adventure.title.Title.title(
+                                            net.kyori.adventure.text.Component.text("§c" + sec),
+                                            net.kyori.adventure.text.Component.text("§7자기장 밖입니다! 돌아오세요!"),
+                                            net.kyori.adventure.title.Title.Times.times(
+                                                    java.time.Duration.ofMillis(0),
+                                                    java.time.Duration.ofMillis(1000),
+                                                    java.time.Duration.ofMillis(500))));
+                                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 2f);
+                                }
+                                // 지속적인 경고음
+                                if (ticks % 2 == 0) {
+                                    p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 1f, 2f);
+                                }
+                            }
+                        }
+
+                        // 3초 (12틱 * 0.25s = 3s) 경과 시 처형
+                        if (ticks >= 12) {
+                            killOrRemove(entity);
+                            outsideTicks.remove(entity.getUniqueId()); // 처리 후 맵에서 제거
+                        }
+
+                    } else {
+                        // 안이면 카운트 초기화 (잠깐 나갔다 들어오면 삼)
+                        if (outsideTicks.containsKey(entity.getUniqueId())) {
+                            outsideTicks.remove(entity.getUniqueId());
+                            if (entity instanceof Player p) {
+                                p.sendMessage("§a안전지대로 돌아왔습니다.");
+                                p.clearTitle();
+                            }
                         }
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0, 5L); // 5틱(0.25초)마다 검사해서 반응 속도 4배 향상!
+        }.runTaskTimer(plugin, 0, 5L); // 0.25초(5틱) 마다 실행
+    }
+
+    private void killOrRemove(org.bukkit.entity.Entity entity) {
+        // [이펙트]
+        entity.getWorld().spawnParticle(org.bukkit.Particle.EXPLOSION_EMITTER, entity.getLocation(), 1);
+        entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+
+        if (entity instanceof org.bukkit.entity.Damageable d) {
+            // 생명체(플레이어, 몹)는 '사망' 처리 (이벤트를 위해 setHealth 0)
+            d.setHealth(0);
+            if (entity instanceof Player p) {
+                p.sendMessage("§c자기장에서 너무 오래 머물러 사망했습니다.");
+            }
+        } else {
+            // 아이템, 화살 등은 그냥 삭제
+            entity.remove();
+        }
     }
 
     /**
@@ -713,9 +751,19 @@ public class ArenaManager implements Listener {
      * [추가] 중앙 마커(텍스트 디스플레이) 제거
      */
     public void removeCenterMarker() {
+        // 1. 변수로 참조하고 있는 마커 제거
         if (centerMarker != null && !centerMarker.isDead()) {
             centerMarker.remove();
             centerMarker = null;
+        }
+
+        // 2. [추가] 월드 전체에서 태그 기반으로 스캔하여 제거 (참조 잃어버린 경우 대비)
+        if (gameCenter != null && gameCenter.getWorld() != null) {
+            for (org.bukkit.entity.Entity e : gameCenter.getWorld().getEntities()) {
+                if (e.getScoreboardTags().contains("MOC_MARKER")) {
+                    e.remove();
+                }
+            }
         }
     }
 
@@ -746,6 +794,9 @@ public class ArenaManager implements Listener {
 
             // 발광 효과 (멀리서도 테두리 보임)
             display.setGlowing(true);
+
+            // [추가] 관리용 태그 추가 (게임 종료 시 확실한 제거를 위함)
+            display.addScoreboardTag("MOC_MARKER");
 
             // 크기 조정 (잘 보이게) - Transformation 클래스 호환성 문제로 잠시 제거 (기본 크기 사용)
             // display.setTransformation(new org.bukkit.util.transformation.Transformation(

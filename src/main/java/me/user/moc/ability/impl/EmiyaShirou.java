@@ -127,12 +127,22 @@ public class EmiyaShirou extends Ability {
         }.runTaskTimer(plugin, 20L, 20L); // 1초마다 체크
     }
 
+    // [Fix] 카운트다운 중인지 확인하는 맵
+    private final Map<UUID, BukkitTask> countdownTasks = new HashMap<>();
+
     private void checkAndTrigger(Player p) {
         UUID uuid = p.getUniqueId();
-        // [Fix] 이미 발동했거나 진행 중이면 패스
+
+        // 1. 이미 발동했으면 패스
         if (hasTriggered.getOrDefault(uuid, false))
             return;
+
+        // 2. 이미 영창 중이거나 능력이 활성화 상태면 패스
         if (isChanting.getOrDefault(uuid, false) || isActive.getOrDefault(uuid, false))
+            return;
+
+        // 3. 이미 카운트다운이 진행 중이면 패스 (중복 실행 방지 핵심)
+        if (countdownTasks.containsKey(uuid))
             return;
 
         // 전투 시작 여부 확인
@@ -145,22 +155,27 @@ public class EmiyaShirou extends Ability {
                 return;
             }
 
-            // [핵심] 여기서 true로 만들어서 중복 진입 차단
-            hasTriggered.put(uuid, true);
+            // [핵심] 여기서 미리 true로 만들면 카운트다운 중에 죽거나 했을 때 꼬일 수 있음.
+            // 하지만 hasTriggered는 "발동 시도 완료"의 의미로 쓰고,
+            // 카운트다운 중복 방지는 countdownTasks 맵으로 해결함.
 
-            // 15초 카운트다운 후 영창 시작
-            new BukkitRunnable() {
+            // 15초 카운트다운 시작
+            BukkitTask task = new BukkitRunnable() {
                 int timeLeft = 15;
 
                 @Override
                 public void run() {
                     // [수정] 체크 강화
                     if (!p.isOnline() || p.isDead() || p.getGameMode() == GameMode.SPECTATOR) {
+                        countdownTasks.remove(uuid); // 태스크 맵에서 제거
                         this.cancel();
                         return;
                     }
 
                     if (timeLeft <= 0) {
+                        // 카운트다운 종료 -> 영창 시작
+                        countdownTasks.remove(uuid); // 태스크 맵에서 제거
+                        hasTriggered.put(uuid, true); // 발동 완료 처리
                         startChant(p);
                         this.cancel();
                         return;
@@ -174,6 +189,8 @@ public class EmiyaShirou extends Ability {
                     timeLeft--;
                 }
             }.runTaskTimer(plugin, 0L, 20L);
+
+            countdownTasks.put(uuid, task); // 태스크 저장
         }
     }
 
@@ -240,6 +257,10 @@ public class EmiyaShirou extends Ability {
                         }
                     }.runTaskTimer(plugin, 0L, 20L); // 1초 간격으로 3번 실행 + 종료
 
+                    // [수정] 영창 완료 시 상태 변경 (무한 반복 방지 핵심)
+                    isActive.put(p.getUniqueId(), true);
+                    isChanting.put(p.getUniqueId(), false);
+
                     startUBW(p);
                     this.cancel();
                 }
@@ -264,7 +285,7 @@ public class EmiyaShirou extends Ability {
 
     private void startUBW(Player p) {
         UUID uuid = p.getUniqueId();
-        // 검 생성 스케줄러 (1초마다 1개씩, 무제한)
+        // 검 생성 스케줄러 (1초마다 3개씩, 무제한)
         BukkitTask spawnTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -274,41 +295,45 @@ public class EmiyaShirou extends Ability {
                     return;
                 }
 
-                // [수정] 실시간 플레이어 위치 추적하여 주변에 소환
-                Location center = p.getLocation();
-                // 5x5 범위 (반경 2.5) 내 랜덤 위치
-                double dx = (Math.random() * 5.0) - 2.5;
-                double dz = (Math.random() * 5.0) - 2.5;
+                // [수정] 한 번에 2개씩 소환
+                for (int k = 0; k < 2; k++) {
+                    // 실시간 플레이어 위치 추적하여 주변에 소환
+                    Location center = p.getLocation();
+                    // 5x5 범위 (반경 2.5) 내 랜덤 위치
+                    double dx = (Math.random() * 5.0) - 2.5;
+                    double dz = (Math.random() * 5.0) - 2.5;
 
-                // [Fix] Y좌표 보정: getHighestBlockYAt은 실내에서 천장을 잡거나 땅굴에서 지상을 잡는 문제가 있음
-                // 따라서 플레이어의 Y좌표 기준으로 아래로 탐색하여 바닥을 찾음
-                int targetY = center.getBlockY();
-                // 플레이어 발밑부터 아래로 5칸 탐색
-                for (int i = 0; i < 5; i++) {
-                    Location check = center.clone().add(dx, -i, dz);
-                    if (check.getBlock().getType().isSolid()) {
-                        targetY = check.getBlockY();
-                        break;
-                    }
-                }
-                // 만약 위쪽으로 바닥이 있을 수도 있음 (반블록 등) -> 위로 2칸 탐색
-                if (targetY == center.getBlockY()) { // 아래에서 못 찾았거나 바로 발밑인 경우
-                    for (int i = 1; i <= 2; i++) {
-                        Location check = center.clone().add(dx, i, dz);
+                    // [Fix] Y좌표 보정: getHighestBlockYAt은 실내에서 천장을 잡거나 땅굴에서 지상을 잡는 문제가 있음
+                    // 따라서 플레이어의 Y좌표 기준으로 아래로 탐색하여 바닥을 찾음
+                    int targetY = center.getBlockY();
+                    // 플레이어 발밑부터 아래로 5칸 탐색
+                    for (int i = 0; i < 5; i++) {
+                        Location check = center.clone().add(dx, -i, dz);
                         if (check.getBlock().getType().isSolid()) {
-                            targetY = check.getBlockY(); // 더 높은 바닥이 있으면 거기로
+                            targetY = check.getBlockY();
+                            break;
                         }
                     }
-                }
+                    // 만약 위쪽으로 바닥이 있을 수도 있음 (반블록 등) -> 위로 2칸 탐색
+                    if (targetY == center.getBlockY()) { // 아래에서 못 찾았거나 바로 발밑인 경우
+                        for (int i = 1; i <= 2; i++) {
+                            Location check = center.clone().add(dx, i, dz);
+                            if (check.getBlock().getType().isSolid()) {
+                                targetY = check.getBlockY(); // 더 높은 바닥이 있으면 거기로
+                            }
+                        }
+                    }
 
-                // 바닥 + 1.2 (약간 위)
-                Location spawnLoc = new Location(p.getWorld(), center.getX() + dx, targetY + 1.2, center.getZ() + dz);
-                // 혹시 블록 속에 묻히면 안 되니까
-                if (spawnLoc.getBlock().getType().isSolid()) {
-                    spawnLoc.add(0, 1, 0);
-                }
+                    // 바닥 + 1.2 (약간 위)
+                    Location spawnLoc = new Location(p.getWorld(), center.getX() + dx, targetY + 1.2,
+                            center.getZ() + dz);
+                    // 혹시 블록 속에 묻히면 안 되니까
+                    if (spawnLoc.getBlock().getType().isSolid()) {
+                        spawnLoc.add(0, 1, 0);
+                    }
 
-                spawnRisingSwordAction(p, spawnLoc);
+                    spawnRisingSwordAction(p, spawnLoc);
+                }
             }
         }.runTaskTimer(plugin, 0L, 20L); // 1초마다 실행
 
@@ -319,6 +344,8 @@ public class EmiyaShirou extends Ability {
         // 1. ItemDisplay 생성 (땅 속에 박힌 상태로 시작)
         // 시작 높이: 목표 높이보다 1.5칸 아래
         Location startLoc = targetLoc.clone().add(0, -1.5, 0);
+        // [수정] 랜덤한 방향(Yaw) 설정
+        startLoc.setYaw((float) (Math.random() * 360.0));
 
         ItemDisplay display = owner.getWorld().spawn(startLoc, ItemDisplay.class);
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
@@ -367,7 +394,7 @@ public class EmiyaShirou extends Ability {
                     }
                 } else {
                     // 3. 조준 및 발사 대기
-                    if (tick > 100) { // 5초 동안 적 못 찾으면 삭제
+                    if (tick > 600) { // [수정] 30초 동안 적 못 찾으면 삭제 (기존 5초 -> 30초로 대폭 상향)
                         display.remove();
                         this.cancel();
                         return;

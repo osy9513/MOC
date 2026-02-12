@@ -237,6 +237,7 @@ public class Gintoki extends Ability {
                 base.getWorld().playSound(base, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
                 // 눈송이 발사 (각 블록당 10개, 총 50개)
+                List<Snowball> snowballs = new ArrayList<>(); // 추적용 리스트
                 for (Location loc : blockLocs) {
                     for (int i = 0; i < 10; i++) {
                         Snowball ball = loc.getWorld().spawn(loc, Snowball.class);
@@ -252,10 +253,77 @@ public class Gintoki extends Ability {
 
                         // 메타데이터나 커스텀 이름으로 긴토키의 눈송이임을 표시 (데미지 계산용)
                         ball.setCustomName("GintokiSnowball");
+                        snowballs.add(ball);
                     }
                 }
+
+                // [추가] 유도 로직 태스크 실행 (최대 3초간 유도)
+                new BukkitRunnable() {
+                    int tick = 0;
+
+                    @Override
+                    public void run() {
+                        if (tick >= 60 || snowballs.isEmpty()) { // 3초 경과 또는 모든 눈송이 소멸 시 종료
+                            this.cancel();
+                            return;
+                        }
+
+                        // 죽은 눈송이 제거
+                        snowballs.removeIf(b -> !b.isValid());
+
+                        if (snowballs.isEmpty()) {
+                            this.cancel();
+                            return;
+                        }
+
+                        // 각 눈송이마다 유도 처리
+                        for (Snowball ball : snowballs) {
+                            if (ball.isValid()) {
+                                LivingEntity target = findNearestEnemy(ball.getLocation(), p, 15.0);
+                                if (target != null) {
+                                    Vector currentDir = ball.getVelocity();
+                                    Location targetLoc = target.getEyeLocation();
+                                    Vector targetDir = targetLoc.toVector().subtract(ball.getLocation().toVector())
+                                            .normalize();
+
+                                    // [수정] 유도 성능 상향 (기존 20% -> 50%로 대폭 상향)
+                                    Vector newDir = currentDir.clone().normalize().multiply(0.5)
+                                            .add(targetDir.multiply(0.5)).normalize();
+
+                                    // 속도 유지 또는 약간 가속 (너무 빠르면 못 맞출 수 있으니 적절히)
+                                    ball.setVelocity(newDir.multiply(1.8));
+                                }
+                            }
+                        }
+                        tick++;
+                    }
+                }.runTaskTimer(plugin, 0L, 1L); // 매 틱 실행
             }
         }.runTaskLater(plugin, 60L); // 3초 (20틱 * 3)
+    }
+
+    // [추가] 가장 가까운 적 찾기 유틸
+    private LivingEntity findNearestEnemy(Location loc, Player owner, double range) {
+        LivingEntity closest = null;
+        double minDistance = range * range; // 제곱 비교
+
+        for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, range, range, range)) {
+            if (e instanceof LivingEntity le && e != owner) {
+                if (le instanceof Player pTarget
+                        && (pTarget.getGameMode() == org.bukkit.GameMode.SPECTATOR || pTarget.isDead()))
+                    continue; // 관전, 사망 제외
+
+                // 팀이 같으면 제외하는 로직이 필요하다면 추가 (현재는 모든 생명체 대상)
+                // if (AbilityManager.isSameTeam(owner, pTarget)) continue;
+
+                double distSq = e.getLocation().distanceSquared(loc);
+                if (distSq < minDistance) {
+                    minDistance = distSq;
+                    closest = le;
+                }
+            }
+        }
+        return closest;
     }
 
     @EventHandler

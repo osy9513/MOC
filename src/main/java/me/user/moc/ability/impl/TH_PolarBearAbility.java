@@ -17,7 +17,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.PolarBear;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -25,10 +24,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
-// import org.bukkit.inventory.EquipmentSlot; // unused
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-// import org.bukkit.inventory.meta.components.FoodComponent; // [삭제] unused
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -39,23 +36,29 @@ import org.bukkit.scoreboard.Team;
 
 import me.user.moc.ability.Ability;
 
-public class PolarBearAbility extends Ability {
+/**
+ * [능력 코드: TH028]
+ * 이름: 북극곰 (토가 히미코 변신 전용)
+ * 설명: 토가 히미코가 북극곰으로 변신했을 때 사용하는 격리된 클래스입니다.
+ * 주의: PolarBearAbility.java의 로직 수정 시, 이 파일도 반드시 함께 수정해야 합니다.
+ */
+public class TH_PolarBearAbility extends Ability {
 
     // 현재 플레이어의 배고픔 상태 (true: 배부름, false: 배고픔)
     private final Map<UUID, Boolean> isSatiated = new HashMap<>();
 
-    public PolarBearAbility(JavaPlugin plugin) {
+    public TH_PolarBearAbility(JavaPlugin plugin) {
         super(plugin);
     }
 
     @Override
     public String getCode() {
-        return "028";
+        return "TH028"; // 토가 히미코 전용 코드
     }
 
     @Override
     public String getName() {
-        return "북극곰";
+        return "북극곰"; // 이름 유지
     }
 
     @Override
@@ -78,7 +81,7 @@ public class PolarBearAbility extends Ability {
             }
             p.setHealth(71.0);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[PolarBear] 체력 설정 중 오류 발생: " + e.getMessage());
+            Bukkit.getLogger().warning("[TH_PolarBear] 체력 설정 중 오류 발생: " + e.getMessage());
         }
 
         // [추가] 구운 소고기 제거 및 생고기 지급
@@ -93,17 +96,12 @@ public class PolarBearAbility extends Ability {
             meta.setDisplayName("§f곰 손톱");
             meta.setLore(Arrays.asList("§7북극곰의 날카로운 손톱입니다."));
             // 1. 데미지 설정 (기존 유지)
-            // 주의: 아이템에 AttributeModifier를 추가하면 기본 스탯(돌칼 5데미지)은 사라지고 이것만 남습니다.
-            // 따라서 기존 염소뿔때와 동일한 데미지가 적용됩니다.
             AttributeModifier damageMod = new AttributeModifier(
-                    new org.bukkit.NamespacedKey(plugin, "polar_bear_damage"),
+                    new org.bukkit.NamespacedKey(plugin, "th_polar_bear_damage"), // 키 변경
                     3.0,
                     AttributeModifier.Operation.ADD_NUMBER,
-                    org.bukkit.inventory.EquipmentSlotGroup.HAND // [1.21 변경] EquipmentSlot -> EquipmentSlotGroup 권장
-            );
+                    org.bukkit.inventory.EquipmentSlotGroup.HAND);
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, damageMod);
-
-            // [삭제] 염소뿔 소리 제거용 FoodComponent 로직 삭제 (돌칼은 소리가 안나므로)
 
             claw.setItemMeta(meta);
         }
@@ -116,7 +114,7 @@ public class PolarBearAbility extends Ability {
         isSatiated.put(p.getUniqueId(), true);
 
         // 투명화
-        // [수정] 투명화 파티클 제거 (본인 시점 방해 방지)
+        // [수정] 투명화 파티클 제거 (1인칭 시점 방해 방지 및 위치 노출 방지)
         p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false,
                 false, true));
 
@@ -152,14 +150,14 @@ public class PolarBearAbility extends Ability {
             if (p.getHealth() > 20.0)
                 p.setHealth(20.0);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[PolarBear] Cleanup 체력 복구 중 오류 발생: " + e.getMessage());
+            Bukkit.getLogger().warning("[TH_PolarBear] Cleanup 체력 복구 중 오류 발생: " + e.getMessage());
         }
 
         isSatiated.remove(p.getUniqueId());
 
         // 팀 해제
         Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
-        Team team = sb.getTeam("POLAR_" + p.getUniqueId().toString().substring(0, 8));
+        Team team = sb.getTeam("TH_POLAR_" + p.getUniqueId().toString().substring(0, 8));
         if (team != null) {
             team.unregister();
         }
@@ -169,7 +167,7 @@ public class PolarBearAbility extends Ability {
         p.removePotionEffect(PotionEffectType.SPEED);
         p.removePotionEffect(PotionEffectType.STRENGTH);
 
-        // [Fix] 플레이어 다시 보이기 (딜레이 추가)
+        // [Fix] 플레이어 다시 보이기 (딜레이 추가로 확실하게 적용)
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -190,9 +188,6 @@ public class PolarBearAbility extends Ability {
             return;
 
         Material type = e.getItem().getType();
-
-        // [수정] 돌 칼은 섭취 불가능하므로 체크 불필요하지만 안전하게 놔둬도 무관.
-        // 다만 GOAT_HORN 체크는 삭제.
 
         if (type != Material.BEEF) {
             e.setCancelled(true);
@@ -218,7 +213,6 @@ public class PolarBearAbility extends Ability {
         Player p = e.getPlayer();
 
         ItemStack item = e.getItem();
-        // [수정] 염소 뿔 -> 돌 칼
         if (item == null || item.getType() != Material.STONE_SWORD)
             return;
 
@@ -226,9 +220,6 @@ public class PolarBearAbility extends Ability {
             return;
 
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            // [수정] 먹는 모션 취소 로직은 필요 없지만, 소리 재생을 위해 이벤트 감지
-
-            // [추가] 곰 울음 소리 재생
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_POLAR_BEAR_AMBIENT, 1f, 1f);
         }
     }
@@ -242,7 +233,10 @@ public class PolarBearAbility extends Ability {
         Player owner = null;
         for (Map.Entry<UUID, List<Entity>> entry : activeEntities.entrySet()) {
             if (entry.getValue().contains(bear)) {
-                owner = Bukkit.getPlayer(entry.getKey());
+                try {
+                    owner = Bukkit.getPlayer(entry.getKey());
+                } catch (Exception ex) {
+                } // 안전처리
                 break;
             }
         }
@@ -274,7 +268,7 @@ public class PolarBearAbility extends Ability {
     private void createVisualBear(Player p) {
         List<Entity> entities = new ArrayList<>();
         Scoreboard sb = Bukkit.getScoreboardManager().getMainScoreboard();
-        String teamName = "POLAR_" + p.getUniqueId().toString().substring(0, 8);
+        String teamName = "TH_POLAR_" + p.getUniqueId().toString().substring(0, 8);
         Team team = sb.getTeam(teamName);
         if (team == null)
             team = sb.registerNewTeam(teamName);
@@ -296,31 +290,34 @@ public class PolarBearAbility extends Ability {
             privateBear.addScoreboardTag("POLAR_PRIVATE");
 
             // [수정] 본인에게는 반투명하게 보여야 함 (Team.CanSeeFriendlyInvisibles=true 덕분에 반투명으로 보임)
-            privateBear.addPotionEffect(
-                    new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+            // 투명화 포션 다시 복구 (반투명 효과 위해)
+            // 파티클은 제거 (hideParticles = true)
+            privateBear.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION,
+                    0, false, false, true));
 
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (!online.getUniqueId().equals(p.getUniqueId())) {
                     online.hideEntity(plugin, privateBear);
-                    online.hideEntity(plugin, p); // [Fix] 본체 숨김
+                    online.hideEntity(plugin, p); // [Fix] 플레이어 본체 숨기기 (떠다니는 칼/파티클 제거)
                 }
             }
-
-            entities.add(privateBear);
+            // [추가] 본인과 같은 팀에 넣어 반투명하게 보이게 함
+            String entry = privateBear.getUniqueId().toString();
+            if (!team.hasEntry(entry)) {
+                team.addEntry(entry);
+            }
 
             // [Immediate Sync Restore] Private Bear
             try {
                 Scoreboard userSb = p.getScoreboard();
                 if (userSb != null && !userSb.equals(sb)) {
-                    // teamName is already defined in this method scope
                     Team userTeam = userSb.getTeam(teamName);
                     if (userTeam == null)
                         userTeam = userSb.registerNewTeam(teamName);
 
-                    userTeam.setCanSeeFriendlyInvisibles(true);
+                    userTeam.setCanSeeFriendlyInvisibles(true); // [핵심]
                     userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
 
-                    String entry = privateBear.getUniqueId().toString();
                     if (!userTeam.hasEntry(entry))
                         userTeam.addEntry(entry);
                     if (!userTeam.hasEntry(p.getName()))
@@ -328,6 +325,8 @@ public class PolarBearAbility extends Ability {
                 }
             } catch (Exception e) {
             }
+
+            entities.add(privateBear);
         }
 
         // 타인용 (Public)
@@ -343,29 +342,80 @@ public class PolarBearAbility extends Ability {
 
         p.hideEntity(plugin, publicBear);
 
-        entities.add(publicBear);
+        // [추가] 충돌 방지: Public Bear도 팀에 추가 (COLLISION_RULE.NEVER 적용) - 메인 스코어보드
+        String publicEntry = publicBear.getUniqueId().toString();
+        if (!team.hasEntry(publicEntry)) {
+            team.addEntry(publicEntry);
+        }
 
-        // [Immediate Sync Restore] Public Bear
+        // [Immediate Sync Restore] ScoreboardManager 딜레이(1초) 방지를 위한 즉시 동기화
         try {
             Scoreboard userSb = p.getScoreboard();
             if (userSb != null && !userSb.equals(sb)) {
-                // teamName is already defined in this method scope
                 Team userTeam = userSb.getTeam(teamName);
-                if (userTeam == null)
+                if (userTeam == null) {
                     userTeam = userSb.registerNewTeam(teamName);
+                }
+                userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+                userTeam.setCanSeeFriendlyInvisibles(true); // [핵심]
 
-                String publicEntry = publicBear.getUniqueId().toString();
-                if (!userTeam.hasEntry(publicEntry))
-                    userTeam.addEntry(publicEntry);
+                if (!userTeam.hasEntry(p.getName()))
+                    userTeam.addEntry(p.getName());
+
+                // Bears added to entities list below, but we can add them to team now if we
+                // have ref
+                // Private Bear logic handled above? No, wait.
             }
         } catch (Exception e) {
         }
+
+        entities.add(publicBear);
 
         if (activeEntities.containsKey(p.getUniqueId())) {
             activeEntities.get(p.getUniqueId()).addAll(entities);
         } else {
             activeEntities.put(p.getUniqueId(), entities);
         }
+
+        // [추가] 0.5초 뒤에 한 번 더 개인 스코어보드 동기화 (초기화 타이밍 이슈 방지)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!p.isOnline() || !activeEntities.containsKey(p.getUniqueId()))
+                    return;
+                try {
+                    Scoreboard userSb = p.getScoreboard();
+                    // 메인보드와 같지 않을 때만 (개인 보드 사용 시)
+                    if (userSb != null && !userSb.equals(sb)) {
+                        Team userTeam = userSb.getTeam(teamName);
+                        if (userTeam == null) {
+                            userTeam = userSb.registerNewTeam(teamName);
+                        }
+                        userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+                        userTeam.setCanSeeFriendlyInvisibles(true);
+
+                        if (!userTeam.hasEntry(p.getName()))
+                            userTeam.addEntry(p.getName());
+                        for (Entity e : entities) {
+                            if (e instanceof PolarBear
+                                    && ((PolarBear) e).getScoreboardTags().contains("POLAR_PRIVATE")) {
+                                String entry = e.getUniqueId().toString();
+                                if (!userTeam.hasEntry(entry))
+                                    userTeam.addEntry(entry);
+                            }
+                            // Public Bear도 충돌 방지 위해 추가
+                            if (e instanceof PolarBear
+                                    && ((PolarBear) e).getScoreboardTags().contains("POLAR_PUBLIC")) {
+                                String entry = e.getUniqueId().toString();
+                                if (!userTeam.hasEntry(entry))
+                                    userTeam.addEntry(entry);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }.runTaskLater(plugin, 10L); // 10 ticks = 0.5 sec
     }
 
     private List<PolarBear> getVisualBears(Player p) {
@@ -453,6 +503,10 @@ public class PolarBearAbility extends Ability {
                         createVisualBear(p);
                         bears = getVisualBears(p);
                     }
+
+                    // [Flickering Fix] Removed brute-force sync every tick.
+                    // Instead, we rely on ScoreboardManager and the initial setup in
+                    // createVisualBear.
 
                     if (bears.isEmpty())
                         continue;

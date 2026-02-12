@@ -34,11 +34,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * [능력 코드: 018]
- * 이름: 리무루 템페스트
- * 설명: 슬라임으로 변신하며, 아이템을 먹어 성장하고 몸통 박치기로 공격함.
+ * [능력 코드: TH018]
+ * 이름: 리무루 템페스트 (토가 히미코 변신 전용)
+ * 설명: 토가 히미코가 리무루로 변신했을 때 사용하는 격리된 클래스입니다.
+ * 주의: Rimuru.java의 로직 수정 시, 이 파일도 반드시 함께 수정해야 합니다.
  */
-public class Rimuru extends Ability {
+public class TH_Rimuru extends Ability {
 
     private final Set<UUID> waterState = new HashSet<>();
     private final Map<UUID, Integer> damageStacks = new HashMap<>();
@@ -46,18 +47,18 @@ public class Rimuru extends Ability {
     // 몸통 박치기 데미지 판정 중인지 확인 (이벤트 캔슬 방지용)
     private final Set<UUID> isSlamming = new HashSet<>();
 
-    public Rimuru(JavaPlugin plugin) {
+    public TH_Rimuru(JavaPlugin plugin) {
         super(plugin);
     }
 
     @Override
     public String getCode() {
-        return "018";
+        return "TH018"; // 토가 히미코 전용 코드
     }
 
     @Override
     public String getName() {
-        return "리무루 템페스트";
+        return "리무루 템페스트"; // 이름은 원본과 동일하게 유지
     }
 
     @Override
@@ -87,7 +88,7 @@ public class Rimuru extends Ability {
             }
             p.setHealth(70.0);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Rimuru] 체력 설정 중 오류 발생: " + e.getMessage());
+            Bukkit.getLogger().warning("[TH_Rimuru] 체력 설정 중 오류 발생: " + e.getMessage());
         }
 
         p.addPotionEffect(
@@ -146,7 +147,7 @@ public class Rimuru extends Ability {
             if (p.getHealth() > 20.0)
                 p.setHealth(20.0);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[Rimuru] Cleanup 체력 복구 중 오류 발생: " + e.getMessage());
+            Bukkit.getLogger().warning("[TH_Rimuru] Cleanup 체력 복구 중 오류 발생: " + e.getMessage());
         }
 
         p.removePotionEffect(PotionEffectType.JUMP_BOOST);
@@ -190,8 +191,6 @@ public class Rimuru extends Ability {
 
         grow(p);
     }
-
-    // ... (중략: onSlimeDamage 등은 변경 없음) ...
 
     private void grow(Player p) {
         damageStacks.put(p.getUniqueId(), damageStacks.getOrDefault(p.getUniqueId(), 0) + 1);
