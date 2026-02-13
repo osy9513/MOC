@@ -177,7 +177,7 @@ public class TH_PolarBearAbility extends Ability {
                     }
                 }
             }
-        }.runTaskLater(plugin, 2L);
+        }.runTaskLater(plugin, 5L); // [Fix] 2L -> 5L (TogaRevert와 충돌 방지 및 확실한 처리)
     }
 
     // [로직 2] 음식 섭취 제한 (곰 손톱 예외 처리 추가)
@@ -275,9 +275,10 @@ public class TH_PolarBearAbility extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
-        if (!team.hasEntry(p.getName())) {
-            team.addEntry(p.getName());
-        }
+        team.setAllowFriendlyFire(true); // [Fix] 아군 공격 허용 (토가-곰 vs 진짜-곰 데미지 처리를 위해 필수)
+        // [Fix] 메인 스코어보드 팀에는 플레이어를 추가하지 않음!
+        // 토가는 Private Scoreboard를 사용하므로, 메인 스코어보드 팀에 들어가면 안 됨(진짜 유저 충돌 방지).
+        // if (!team.hasEntry(p.getName())) { team.addEntry(p.getName()); }
 
         // 본인용 (Private)
         for (int i = 0; i < 2; i++) {
@@ -316,12 +317,13 @@ public class TH_PolarBearAbility extends Ability {
                         userTeam = userSb.registerNewTeam(teamName);
 
                     userTeam.setCanSeeFriendlyInvisibles(true); // [핵심]
+                    userTeam.setAllowFriendlyFire(true); // [Fix]
                     userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
 
                     if (!userTeam.hasEntry(entry))
                         userTeam.addEntry(entry);
-                    if (!userTeam.hasEntry(p.getName()))
-                        userTeam.addEntry(p.getName());
+                    if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix] 프로필 이름 사용 (가시성 동기화)
+                        userTeam.addEntry(p.getPlayerProfile().getName());
                 }
             } catch (Exception e) {
             }
@@ -358,9 +360,10 @@ public class TH_PolarBearAbility extends Ability {
                 }
                 userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
                 userTeam.setCanSeeFriendlyInvisibles(true); // [핵심]
+                userTeam.setAllowFriendlyFire(true); // [Fix]
 
-                if (!userTeam.hasEntry(p.getName()))
-                    userTeam.addEntry(p.getName());
+                if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix]
+                    userTeam.addEntry(p.getPlayerProfile().getName());
 
                 // Bears added to entities list below, but we can add them to team now if we
                 // have ref
@@ -393,9 +396,10 @@ public class TH_PolarBearAbility extends Ability {
                         }
                         userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
                         userTeam.setCanSeeFriendlyInvisibles(true);
+                        userTeam.setAllowFriendlyFire(true); // [Fix]
 
-                        if (!userTeam.hasEntry(p.getName()))
-                            userTeam.addEntry(p.getName());
+                        if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix]
+                            userTeam.addEntry(p.getPlayerProfile().getName());
                         for (Entity e : entities) {
                             if (e instanceof PolarBear
                                     && ((PolarBear) e).getScoreboardTags().contains("POLAR_PRIVATE")) {

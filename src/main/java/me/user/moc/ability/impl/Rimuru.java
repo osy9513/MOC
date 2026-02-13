@@ -335,6 +335,7 @@ public class Rimuru extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
+        team.setAllowFriendlyFire(true); // [Fix] 아군(같은 슬라임)끼리 공격 허용
         if (!team.hasEntry(p.getName())) {
             team.addEntry(p.getName());
         }

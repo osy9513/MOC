@@ -494,6 +494,10 @@ public class AbilityManager {
         // 4. [반복문 실행]
         // 이제 'abilities'가 아니라, 위에서 정렬한 'sortedList'를 사용해야 에러가 안 납니다!
         for (Ability ability : sortedList) {
+            // [Fix] 토가 히미코 전용 능력(TH로 시작)은 리스트에서 숨김
+            if (ability.getCode().startsWith("TH")) {
+                continue;
+            }
             // 예: 001 | 우에키
             sender.sendMessage("§b" + ability.getCode() + " §f| §f" + ability.getName());
         }

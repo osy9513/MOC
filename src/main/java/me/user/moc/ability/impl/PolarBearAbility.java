@@ -281,6 +281,7 @@ public class PolarBearAbility extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
+        team.setAllowFriendlyFire(true); // [Fix] 아군(같은 곰)끼리 공격 허용
         if (!team.hasEntry(p.getName())) {
             team.addEntry(p.getName());
         }
@@ -318,6 +319,7 @@ public class PolarBearAbility extends Ability {
                         userTeam = userSb.registerNewTeam(teamName);
 
                     userTeam.setCanSeeFriendlyInvisibles(true);
+                    userTeam.setAllowFriendlyFire(true); // [Fix]
                     userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
 
                     String entry = privateBear.getUniqueId().toString();
