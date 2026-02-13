@@ -847,8 +847,9 @@ public class GameManager implements Listener {
         Player killer = victim.getKiller();
 
         // [디버그] 사망 로그 출력 (원인 파악용)
-        plugin.getLogger().info(
-                "[MocPlugin] Player died: " + victim.getName() + ", Cause: " + victim.getLastDamageCause().getCause());
+        org.bukkit.event.entity.EntityDamageEvent lastDamage = victim.getLastDamageCause();
+        String cause = (lastDamage != null) ? lastDamage.getCause().name() : "UNKNOWN";
+        plugin.getLogger().info("[MocPlugin] Player died: " + victim.getName() + ", Cause: " + cause);
 
         // 킬 점수 +1
         if (killer != null && !killer.equals(victim)) {

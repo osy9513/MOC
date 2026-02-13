@@ -334,9 +334,9 @@ public class TH_Rimuru extends Ability {
 
         team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         team.setCanSeeFriendlyInvisibles(true);
-        if (!team.hasEntry(p.getName())) {
-            team.addEntry(p.getName());
-        }
+        team.setAllowFriendlyFire(true); // [Fix] 아군 공격 허용
+        // [Fix] 메인 스코어보드 팀에는 플레이어를 추가하지 않음! (충돌 방지)
+        // if (!team.hasEntry(p.getName())) { team.addEntry(p.getName()); }
 
         // 1. Private Slime (본인용 - 나에게만 보여야 함)
         // [복구] 3중 겹치기로 농도 강화
@@ -373,6 +373,26 @@ public class TH_Rimuru extends Ability {
             }
 
             entities.add(privateSlime);
+
+            // [Immediate Sync Restore] Private Slime
+            try {
+                Scoreboard userSb = p.getScoreboard();
+                if (userSb != null && !userSb.equals(sb)) {
+                    Team userTeam = userSb.getTeam(teamName);
+                    if (userTeam == null)
+                        userTeam = userSb.registerNewTeam(teamName);
+
+                    userTeam.setCanSeeFriendlyInvisibles(true); // [핵심]
+                    userTeam.setAllowFriendlyFire(true); // [Fix]
+                    userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+
+                    if (!userTeam.hasEntry(entry))
+                        userTeam.addEntry(entry);
+                    if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix] 프로필 이름 사용
+                        userTeam.addEntry(p.getPlayerProfile().getName());
+                }
+            } catch (Exception e) {
+            }
         }
 
         // 2. Public Slime (타인용 - 남들에게만 보여야 함)
@@ -405,6 +425,24 @@ public class TH_Rimuru extends Ability {
             team.addEntry(publicEntry);
         }
 
+        // [Immediate Sync Restore] ScoreboardManager 딜레이 방지
+        try {
+            Scoreboard userSb = p.getScoreboard();
+            if (userSb != null && !userSb.equals(sb)) {
+                Team userTeam = userSb.getTeam(teamName);
+                if (userTeam == null) {
+                    userTeam = userSb.registerNewTeam(teamName);
+                }
+                userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+                userTeam.setCanSeeFriendlyInvisibles(true);
+                userTeam.setAllowFriendlyFire(true); // [Fix]
+
+                if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix]
+                    userTeam.addEntry(p.getPlayerProfile().getName());
+            }
+        } catch (Exception e) {
+        }
+
         entities.add(publicSlime);
 
         if (activeEntities.containsKey(p.getUniqueId())) {
@@ -412,6 +450,40 @@ public class TH_Rimuru extends Ability {
         } else {
             activeEntities.put(p.getUniqueId(), entities);
         }
+
+        // [추가] 0.5초 뒤에 한 번 더 개인 스코어보드 동기화 (초기화 타이밍 이슈 방지)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!p.isOnline() || !activeEntities.containsKey(p.getUniqueId()))
+                    return;
+                try {
+                    Scoreboard userSb = p.getScoreboard();
+                    // 메인보드와 같지 않을 때만 (개인 보드 사용 시)
+                    if (userSb != null && !userSb.equals(sb)) {
+                        Team userTeam = userSb.getTeam(teamName);
+                        if (userTeam == null) {
+                            userTeam = userSb.registerNewTeam(teamName);
+                        }
+                        userTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+                        userTeam.setCanSeeFriendlyInvisibles(true);
+                        userTeam.setAllowFriendlyFire(true); // [Fix]
+
+                        if (!userTeam.hasEntry(p.getPlayerProfile().getName())) // [Fix]
+                            userTeam.addEntry(p.getPlayerProfile().getName());
+                        for (Entity e : entities) {
+                            if (e instanceof Slime
+                                    && ((Slime) e).getScoreboardTags().contains("RIMURU_PRIVATE")) {
+                                String bent = e.getUniqueId().toString();
+                                if (!userTeam.hasEntry(bent))
+                                    userTeam.addEntry(bent);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }.runTaskLater(plugin, 10L);
     }
 
     private List<Slime> getVisualSlimes(Player p) {

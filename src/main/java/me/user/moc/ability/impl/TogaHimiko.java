@@ -351,7 +351,17 @@ public class TogaHimiko extends Ability {
     private void transformToTarget(Player p, Player target, AbilityManager am) {
         // 1. 프로필(스킨, 닉네임) 복사
         PlayerProfile targetProfile = target.getPlayerProfile();
-        p.setPlayerProfile(targetProfile);
+
+        // [Fix] UUID 충돌 방지: 내 UUID를 유지하되, 이름과 스킨만 대상의 것으로 변경
+        PlayerProfile newProfile = Bukkit.createProfile(p.getUniqueId(), target.getName());
+        newProfile.setProperties(targetProfile.getProperties()); // 스킨 텍스처 복사
+
+        p.setPlayerProfile(newProfile);
+
+        // [Fix] Private Scoreboard 적용
+        // 메인 스코어보드의 팀 충돌을 방지하기 위해, 변신 중에는 자신만의 스코어보드를 사용합니다.
+        // 이렇게 하면 자신의 반투명 곰을 위한 팀 설정이 진짜 유저(메인 스코어보드)에게 영향을 주지 않습니다.
+        p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
 
         // [버그 수정] 스킨 및 닉네임 변경 사항이 클라이언트에 즉시 반영되도록 리프레시
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -522,7 +532,10 @@ public class TogaHimiko extends Ability {
                         activeTasks.get(p.getUniqueId()).clear();
                     }
                 }
-            }.runTaskLater(plugin, 1L); // 1틱 지연
+            }.runTaskLater(plugin, 10L); // [Fix] 1틱 -> 10틱 (0.5초) 지연.
+
+            // [Fix] 메인 스코어보드로 복귀
+            p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         } else {
             // original이 없는 경우(거의 없겠지만) 그냥 상태만 지움
             savedStates.remove(p.getUniqueId());
