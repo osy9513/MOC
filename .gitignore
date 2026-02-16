@@ -20,6 +20,7 @@ out/
 .gradle/
 gradle/build-results/
 *.class
+.agent/
 
 ## --- 로그 및 운영체제 임시 파일 ---
 *.log
