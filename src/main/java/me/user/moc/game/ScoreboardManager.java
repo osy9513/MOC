@@ -44,8 +44,16 @@ public class ScoreboardManager {
             updateTask.cancel();
             updateTask = null;
         }
-        // 모든 플레이어 점수판 제거
+        // 모든 플레이어 점수판 제거 및 초기화
         for (Player p : Bukkit.getOnlinePlayers()) {
+            Scoreboard board = p.getScoreboard();
+            if (board != Bukkit.getScoreboardManager().getMainScoreboard()) {
+                // 커스텀 스코어보드라면 오브젝티브 제거
+                Objective obj = board.getObjective("MocScoreboard");
+                if (obj != null) {
+                    obj.unregister();
+                }
+            }
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
         }
     }

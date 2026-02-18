@@ -114,6 +114,7 @@ public class AbilityManager {
         addAbility(new SpongeBob(plugin)); // 051 스펀지밥
         addAbility(new GojoSatoru(plugin)); // 059 고죠 사토루
         addAbility(new AmanoHina(plugin)); // 056 아마노 히나
+        addAbility(new KumagawaMisogi(plugin)); // 053 쿠마가와 미소기
         addAbility(new Topblade(plugin)); // 055 탑블레이드
         addAbility(new Umamusume(plugin)); // 052 우마무스메
 
