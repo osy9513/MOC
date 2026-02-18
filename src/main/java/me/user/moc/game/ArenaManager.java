@@ -757,10 +757,57 @@ public class ArenaManager implements Listener {
             centerMarker = null;
         }
 
-        // 2. [추가] 월드 전체에서 태그 기반으로 스캔하여 제거 (참조 잃어버린 경우 대비)
+        // 2. [보강] 월드 전체 스캔 및 청크 로딩
         if (gameCenter != null && gameCenter.getWorld() != null) {
-            for (org.bukkit.entity.Entity e : gameCenter.getWorld().getEntities()) {
+            World world = gameCenter.getWorld();
+
+            // [중요] 해당 위치의 청크가 로드되지 않았다면 엔티티를 찾을 수 없으므로 강제 로드합니다.
+            if (!gameCenter.getChunk().isLoaded()) {
+                gameCenter.getChunk().load();
+            }
+
+            // [수정] 월드 전체 엔티티 스캔은 무거울 수 있으나, 확실한 제거를 위해 수행합니다.
+            // 대신 범위를 좁혀서(센터 주변 10블록) 먼저 찾고, 없으면 전체 스캔을 고려하는 게 좋지만
+            // "서버가 닫히고 난 뒤"라서 위치가 정확하지 않을 수 없으니,
+            // 텍스트 디스플레이는 보통 움직이지 않으므로 gameCenter 주변을 먼저 뒤집니다.
+
+            // 2-1. 센터 주변 탐색 (가장 효율적)
+            for (org.bukkit.entity.Entity e : world.getNearbyEntities(gameCenter, 10, 50, 10)) {
+                if (e instanceof org.bukkit.entity.TextDisplay textDisplay) {
+                    // 태그 확인
+                    if (e.getScoreboardTags().contains("MOC_MARKER")) {
+                        e.remove();
+                        continue;
+                    }
+                    // 내용 확인 ("CENTER"가 포함된 경우)
+                    net.kyori.adventure.text.Component component = textDisplay.text();
+                    String text = null;
+                    if (component != null) {
+                        text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                                .serialize(component);
+                    }
+                    if (text != null && (text.contains("CENTER") || text.contains("center"))) {
+                        e.remove();
+                    }
+                }
+            }
+
+            // 2-2. 혹시 모르니 월드 전체에서 태그 기반으로 한 번 더 스캔 (안전장치)
+            // (TextDisplay만 필터링)
+            for (org.bukkit.entity.TextDisplay e : world.getEntitiesByClass(org.bukkit.entity.TextDisplay.class)) {
                 if (e.getScoreboardTags().contains("MOC_MARKER")) {
+                    e.remove();
+                    continue; // 이미 지움
+                }
+                // 이름이나 텍스트 내용으로도 확인
+                net.kyori.adventure.text.Component component = e.text();
+                String text = null;
+                if (component != null) {
+                    text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                            .serialize(component);
+                }
+                if (text != null && text.contains("CENTER") && (e.getLocation().distanceSquared(gameCenter) < 10000)) { // 100블록
+                                                                                                                        // 이내만
                     e.remove();
                 }
             }
@@ -776,9 +823,14 @@ public class ArenaManager implements Listener {
         if (loc.getWorld() == null)
             return;
 
+        // [중요] 생성 전 청크 로드
+        if (!loc.getChunk().isLoaded()) {
+            loc.getChunk().load();
+        }
+
         centerMarker = loc.getWorld().spawn(loc, org.bukkit.entity.TextDisplay.class, display -> {
             // 텍스트 설정 (위아래좌우 공백을 넣어 기둥처럼 보이게 함)
-            display.setText("\n\n\n\n§a§l     CENTER     \n\n\n\n");
+            display.text(net.kyori.adventure.text.Component.text("\n\n\n\n§a§l     CENTER     \n\n\n\n"));
 
             // 항상 플레이어를 바라보도록 설정
             display.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
