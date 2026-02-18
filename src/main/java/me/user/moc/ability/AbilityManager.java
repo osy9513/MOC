@@ -116,11 +116,14 @@ public class AbilityManager {
         addAbility(new AmanoHina(plugin)); // 056 아마노 히나
         addAbility(new KumagawaMisogi(plugin)); // 053 쿠마가와 미소기
         addAbility(new Topblade(plugin)); // 055 탑블레이드
+        addAbility(new Umamusume(plugin)); // 052 우마무스메
 
         // [추가] 토가 히미코 전용 격리 능력 등록 (랜덤 뽑기 제외 대상)
         addAbility(new TH_Rimuru(plugin)); // TH018
         addAbility(new TH_PolarBearAbility(plugin)); // TH028
         addAbility(new TH_TungTungTungSahur(plugin)); // TH016
+        addAbility(new Tarnished(plugin)); // 058 빛바랜 자
+        addAbility(new Ddumbi(plugin)); // H06 뚜비
     }
 
     private void addAbility(Ability ability) {
@@ -382,6 +385,14 @@ public class AbilityManager {
         Collections.shuffle(pool); // 목록을 섞습니다.
         if (pool.isEmpty())
             return;
+
+        // [Fix] 리롤 시 기존 능력의 cleanup을 호출하여 소환수/버프 등을 제거합니다.
+        if (currentAbility != null) {
+            Ability oldAbility = abilities.get(currentAbility);
+            if (oldAbility != null) {
+                oldAbility.cleanup(p);
+            }
+        }
 
         Collections.shuffle(pool); // 목록을 섞습니다.
         String newAbility = pool.get(0); // 맨 앞의 것을 선택합니다.
