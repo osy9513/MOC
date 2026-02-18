@@ -54,3 +54,4 @@
 | **colors_cd_blue** (2) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_blue.json` |
 | **colors_cd_black** (3) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_black.json` |
 | **coffee** (1) | 물약 (`potion`) | 뚜비 (`Ddumbi.java`) | `models/item/coffee.json` |
+| **kumagawamisogi** (1) | 엔드 막대기 (`end_rod`) | 쿠마가와 미소기 (`KumagawaMisogi.java`) | `models/item/kumagawamisogi.json` |

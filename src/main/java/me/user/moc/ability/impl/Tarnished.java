@@ -64,7 +64,7 @@ public class Tarnished extends Ability {
 
         p.getInventory().addItem(sword);
 
-        p.sendMessage("§a빛바랜 자 : §f이 앞, 숨겨진 길 있다.");
+        plugin.getServer().broadcastMessage("§a빛바랜 자 : §f이 앞, 숨겨진 길 있다.");
         // 초기화
         killCount.put(p.getUniqueId(), 0);
         detailCheck(p);
@@ -73,7 +73,7 @@ public class Tarnished extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 빛바랜 자(엘든 링)");
-        p.sendMessage("§f쉬프트를 두 번 누르면 배고픔을 2.5칸 소모하여");
+        p.sendMessage("§f쉬프트를 두 번 누르면 배고픔을 1칸 소모하여");
         p.sendMessage("§f0.8초간 전방으로 구릅니다.");
         p.sendMessage("§f구르는 동안은 무적 상태입니다.");
         p.sendMessage("§f생명체를 처치하면 체력 4칸 회복 및 방어구가 강화됩니다.");
@@ -137,13 +137,13 @@ public class Tarnished extends Ability {
 
     private void performRoll(Player p) {
         // 1. 배고픔 체크
-        if (p.getFoodLevel() < 5) { // 2.5칸 = 5 포인트
+        if (p.getFoodLevel() < 2) { // 1칸 = 2 포인트
             p.sendActionBar(net.kyori.adventure.text.Component.text("§c배고픔이 부족합니다!"));
             return;
         }
 
         // 2. 소모 및 실행
-        p.setFoodLevel(p.getFoodLevel() - 5);
+        p.setFoodLevel(p.getFoodLevel() - 2);
 
         // 전방으로 구르기 (약 0.8초간 이동할 정도의 힘)
         // 냅다 슬라이딩: Y축 살짝 들어주고 전방 벡터 강화

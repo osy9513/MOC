@@ -271,7 +271,9 @@ public class GameManager implements Listener {
             }
 
             p.getInventory().clear();
-            p.setHealth(20); // 기본 체력으로 일단 리셋 (전투 시작 시 60으로 늘어남)
+            // [버그 수정] 체력 설정 시 최대 체력 범위 내에서 설정
+            double maxHealthVal = p.getAttribute(Attribute.MAX_HEALTH).getValue();
+            p.setHealth(Math.min(20.0, maxHealthVal)); // 기본 체력으로 일단 리셋
             p.setFoodLevel(20);
             // [추가] 피격 무적 시간 초기화 (버그 방지)
             p.setMaximumNoDamageTicks(20);

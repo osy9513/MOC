@@ -35,8 +35,8 @@ public class Umamusume extends Ability {
     // 플레이어 UUID -> 우승 여부
     private final Map<UUID, Boolean> hasWon = new HashMap<>();
 
-    // 목표 거리 (1000 블록, 기획서에는 3000이나 현실성을 위해 조정 가능하도록 상수 처리)
-    private static final double TARGET_DISTANCE = 1.0;
+    // 목표 거리 1 = 1블럭
+    private static final double TARGET_DISTANCE = 1500.0;
 
     public Umamusume(JavaPlugin plugin) {
         super(plugin);
@@ -61,10 +61,14 @@ public class Umamusume extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 초기화
-        cleanup(p);
-        hasWon.put(p.getUniqueId(), false);
+        // 초기화 (이미 소환된 말이 있다면 제거)
+        Horse oldHorse = myHorse.remove(p.getUniqueId());
+        if (oldHorse != null && !oldHorse.isDead()) {
+            oldHorse.remove();
+        }
+        // 데이터 초기화
         distanceTraveled.put(p.getUniqueId(), 0.0);
+        hasWon.put(p.getUniqueId(), false);
 
         detailCheck(p);
 
@@ -120,7 +124,7 @@ public class Umamusume extends Ability {
 
         p.sendMessage("§d[우마무스메] §f당신의 담당 우마무스메가 도착했습니다!");
         if (isGoldShip) {
-            p.sendMessage("§6[골드 쉽] §f앗! 이 녀석은 전설의 고루도싯푸?!");
+            p.sendMessage("§f앗! 이 녀석은 전설의 고루도싯푸?!");
         }
     }
 
@@ -284,7 +288,7 @@ public class Umamusume extends Ability {
         horse.getWorld().playSound(horse.getLocation(), Sound.ENTITY_HORSE_EAT, 1f, 1f);
 
         // 밥 준 사람에게 메시지
-        p.sendMessage("§a[SYSTEM] §f무럭무럭 자라라~! §7(현재 크기: " + String.format("%.0f", scale.getValue() * 100) + "%, 체력: "
+        p.sendMessage("§f무럭무럭 자라라~! §7(현재 크기: " + String.format("%.0f", scale.getValue() * 100) + "%, 체력: "
                 + String.format("%.1f", horse.getHealth()) + "/" + String.format("%.1f", health.getValue()) + ")");
     }
 

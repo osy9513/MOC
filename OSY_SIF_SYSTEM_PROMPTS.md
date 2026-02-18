@@ -281,6 +281,13 @@ public List<String> getDescription() {
 | **spongebob** (1) | 철 삽 (`iron_shovel`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob.json` |
 | **spongebob2** (1) | 구운 소고기 (`cooked_beef`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob2.json` |
 | **kinghassan_** (2) | 네더라이트 검 (`netherite_sword`) | 산의 노인 (`KingHassan.java`) | `models/item/kinghassan.json` |
+| **topblade** (1) | 철 검 (`iron_sword`) | 탑블레이드 (`Topblade.java`) | `models/item/beyblade.json` |
+| **tarnished_sword** (13) | 철 검 (`iron_sword`) | 빛바랜 자 (`Tarnished.java`) | `models/item/tarnished_sword.json` |
+| **colors_cd_pink** (1) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_pink.json` |
+| **colors_cd_blue** (2) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_blue.json` |
+| **colors_cd_black** (3) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_black.json` |
+| **coffee** (1) | 물약 (`potion`) | 뚜비 (`Ddumbi.java`) | `models/item/coffee.json` |
+| **kumagawamisogi** (1) | 엔드 막대기 (`end_rod`) | 쿠마가와 미소기 (`KumagawaMisogi.java`) | `models/item/kumagawamisogi.json` |
 
 ---
 

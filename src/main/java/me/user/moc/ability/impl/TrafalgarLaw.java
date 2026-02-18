@@ -31,7 +31,8 @@ public class TrafalgarLaw extends Ability {
     private final Map<UUID, Long> clickCooldown = new HashMap<>(); // 클릭 디바운스 (버그 수정)
 
     private static final int ROOM_RADIUS = 15;
-    private static final int ROOM_DURATION_SEC = 5;
+    // [버프] 지속시간 5초 -> 13초 (+8초)
+    private static final int ROOM_DURATION_SEC = 13;
     private static final int DAMAGE_AMOUNT = 10; // 체력 5칸
     private static final int COOLDOWN_SEC = 30;
 
@@ -58,7 +59,6 @@ public class TrafalgarLaw extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 기본 지급 아이템: 철 검 (있다면 지급 안 함)
         // 기본 지급 아이템: 철 검 (있다면 지급 안 함 -> 지급하고 Lore 추가)
         p.getInventory().remove(Material.IRON_SWORD);
         ItemStack sword = new ItemStack(Material.IRON_SWORD);
@@ -76,7 +76,7 @@ public class TrafalgarLaw extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 트라팔가 로우(원피스)");
-        p.sendMessage("§f웅크리기(Shift) + 검 우클릭 시 5초간 §bROOM§f을 전개합니다.");
+        p.sendMessage("§f웅크리기(Shift) + 검 우클릭 시 13초간 §bROOM§f을 전개합니다.");
         p.sendMessage("§fROOM 내부의 대상을 바라보고 우클릭 시 §e위치를 맞바꿉니다(샴블즈)§f.");
         p.sendMessage("§f교환된 대상에게는 10의 피해를 입힙니다.");
         p.sendMessage("§f룸 지속시간 동안 횟수 제한 없이 사용 가능합니다.");

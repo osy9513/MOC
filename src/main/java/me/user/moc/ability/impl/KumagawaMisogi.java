@@ -11,11 +11,15 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -31,14 +35,25 @@ import java.util.List;
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 public class KumagawaMisogi extends Ability {
 
-    // 북 메이커 활성화 여부를 저장하는 맵 (UUID -> 활성화 여부)
+    // 플레이어 UUID -> 북 메이커 활성화 여부
     private final Map<UUID, Boolean> bookMakerActive = new HashMap<>();
 
-    // 나사 엔티티(아머스탠드)가 누구 것인지 추적 (Screw Entity ID -> Owner UUID)
+    // 플레이어 UUID -> 북 메이커 발동 대기 중 (무적 상태)
+    private final Set<UUID> bookMakerPending = new HashSet<>();
+
+    // 플레이어 UUID -> 이펙트 태스크 (파티클)
+    private final Map<UUID, BukkitRunnable> effectTasks = new HashMap<>();
+
+    // 나사 투사체 ID -> 발사한 플레이어 UUID
     private final Map<Integer, UUID> screwProjectiles = new HashMap<>();
+
+    // 북 메이커 피격 대상 UUID -> 위더 머리 시각 효과 (ItemDisplay)
+    private final Map<UUID, ItemDisplay> witherVisuals = new HashMap<>();
 
     public KumagawaMisogi(JavaPlugin plugin) {
         super(plugin);
@@ -66,19 +81,27 @@ public class KumagawaMisogi extends Ability {
         // 기존 아이템 제거 (철 칼, 철 흉갑)
         p.getInventory().remove(Material.IRON_SWORD);
         p.getInventory().remove(Material.IRON_CHESTPLATE);
+        // [FIX] 장착 중인 아이템도 확실하게 제거
+        if (p.getInventory().getChestplate() != null
+                && p.getInventory().getChestplate().getType() == Material.IRON_CHESTPLATE) {
+            p.getInventory().setChestplate(null);
+        }
+        if (p.getInventory().getItemInMainHand().getType() == Material.IRON_SWORD) {
+            p.getInventory().setItemInMainHand(null);
+        }
 
         // 나사 (엔드 막대기) 지급
         ItemStack screw = new ItemStack(Material.END_ROD);
         ItemMeta meta = screw.getItemMeta();
         meta.displayName(Component.text("§f나사"));
         meta.setLore(List.of("§7우클릭 시 나사를 전방으로 발사합니다.", "§75의 데미지를 주며 15칸 날아갑니다."));
-        // meta.setCustomModelData(1); // 나중에 리소스팩 적용 시
+        meta.setCustomModelData(1); // 리소스팩 적용
         screw.setItemMeta(meta);
         p.getInventory().addItem(screw);
 
         // 최대 체력 초기화 (20HP / 1번 줄었다고 가정? 기획서엔 '체력이 1줄로 줄어듭니다'라고 되어 있음)
         // 마인크래프트 기본 체력은 20(하트 10칸)입니다. '체력 1줄'이 하트 10칸을 의미하는 것 같습니다.
-        // 기획서: "체력이 1줄로 줄어듭니다." -> 원래 20이니 그대로 둠.
+        // 기획서: "체력 1줄로 줄어듭니다." -> 원래 20이니 그대로 둠.
         // 하지만 "체력 10칸 = 체력 1줄"이라는 설명이 있으므로, 20HP로 설정.
         AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
@@ -93,12 +116,12 @@ public class KumagawaMisogi extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 쿠마가와 미소기(메다카 박스)");
-        p.sendMessage("§f체력이 1줄(20)로 시작합니다.");
+        p.sendMessage("§f체력이 1줄로 시작합니다.");
         p.sendMessage("§f사망에 이르는 피해를 입으면 '올 픽션'이 발동하여");
-        p.sendMessage("§f최대 체력이 1칸(2) 줄어든 상태로 부활합니다.");
-        p.sendMessage("§f최대 체력이 5칸(10)이 되면 5초 후 '북 메이커'가 활성화됩니다.");
+        p.sendMessage("§f최대 체력이 1칸 줄어든 상태로 부활합니다.");
+        p.sendMessage("§f최대 체력이 5칸이 되면 5초 후 '북 메이커'가 활성화됩니다.");
         p.sendMessage("§f북 메이커 활성화 시 나사로 생명체를 공격하면");
-        p.sendMessage("§f대상의 최대 체력을 5칸(10)으로 만들고 능력을 제거하며");
+        p.sendMessage("§f대상의 최대 체력을 5칸으로 만들고 능력을 제거하며");
         p.sendMessage("§f영구적으로 위더 상태를 부여합니다.");
         p.sendMessage("§f쿠마가와 미소기는 위더에 면역입니다.");
         p.sendMessage(" ");
@@ -110,9 +133,26 @@ public class KumagawaMisogi extends Ability {
 
     @Override
     public void cleanup(Player p) {
-        super.cleanup(p);
         bookMakerActive.remove(p.getUniqueId());
-        // 최대 체력 복구는 하지 않음 (게임 끝나면 알아서 리셋될 것)
+        bookMakerPending.remove(p.getUniqueId());
+        screwProjectiles.values().removeIf(uuid -> uuid.equals(p.getUniqueId()));
+        if (effectTasks.containsKey(p.getUniqueId())) {
+            effectTasks.get(p.getUniqueId()).cancel();
+            effectTasks.remove(p.getUniqueId());
+        }
+
+        // 내가 건 위더 비주얼 제거? (아니면 대상이 죽을 때 제거)
+        // cleanup은 플레이어(능력자)가 나갈 때 호출됨.
+        // 여기서는 위더 비주얼 맵을 정리하는 로직이 필요하지만, 위더 비주얼의 키는 '대상'임.
+        // 따라서 '나'의 cleanup 시점에서는 내가 건 비주얼을 추적할 수 없음 (설계상).
+        // 다만 기획 의도상 북 메이커는 '영구 지속'이므로, 내가 나가도 대상의 위더는 유지되어야 함이 맞을 수 있음.
+        // 만약 내가 '대상'인 경우라면?
+        if (witherVisuals.containsKey(p.getUniqueId())) {
+            ItemDisplay display = witherVisuals.remove(p.getUniqueId());
+            if (display != null && display.isValid()) {
+                display.remove();
+            }
+        }
     }
 
     @Override
@@ -120,6 +160,14 @@ public class KumagawaMisogi extends Ability {
         super.reset();
         bookMakerActive.clear();
         screwProjectiles.clear();
+
+        // 모든 위더 비주얼 제거
+        for (ItemDisplay display : witherVisuals.values()) {
+            if (display != null && display.isValid()) {
+                display.remove();
+            }
+        }
+        witherVisuals.clear();
     }
 
     // 나사(엔드 막대기) 설치 방지 및 발사 처리
@@ -155,7 +203,12 @@ public class KumagawaMisogi extends Ability {
             as.setGravity(false); // 중력 영향 X (직선 발사)
             as.setSmall(true);
             as.setMarker(true);
-            as.getEquipment().setHelmet(new ItemStack(Material.END_ROD));
+            as.setMarker(true);
+            ItemStack helmet = new ItemStack(Material.END_ROD);
+            ItemMeta meta = helmet.getItemMeta();
+            meta.setCustomModelData(1); // 리소스팩 적용
+            helmet.setItemMeta(meta);
+            as.getEquipment().setHelmet(helmet);
             // 진행 방향으로 머리 회전
             as.setHeadPose(getHeadPose(dir));
         });
@@ -167,8 +220,7 @@ public class KumagawaMisogi extends Ability {
         // 15칸(약 15틱 ~ 20틱) 날아가도록 스케줄러 실행
         new BukkitRunnable() {
             int tick = 0;
-            final int maxTick = 20; // 대충 15칸 거리 (속도 1.5 * 20 = 30칸? 좀 빠름. 1틱당 1.5칸 -> 10틱=15칸)
-            // 15칸 날라가며 -> 속도가 눈덩이(약 1.5) 정도라면 10틱이면 15칸 도달.
+            final int maxTick = 20;
 
             @Override
             public void run() {
@@ -228,10 +280,6 @@ public class KumagawaMisogi extends Ability {
         double dist = Math.sqrt(x * x + z * z);
         double pitch = Math.atan2(y, dist); // 마인크래프트는 위가 -pitch일 수 있음. 테스트 필요.
         double yaw = Math.atan2(-x, z);
-        // 아머스탠드 헤드포즈는 라디안 단위 (x=pitch, y=yaw, z=roll)
-        // 하지만 setHeadPose의 x는 수직 회전, y는 수평 회전
-        // 대략적인 방향만 맞춤. 엔드 막대기는 세로로 긴 형태라 회전이 중요.
-        // x축 회전(위아래)을 -pitch로 설정.
         return new org.bukkit.util.EulerAngle(-pitch + Math.PI / 2, 0, 0); // +90도 해서 눕힘
     }
 
@@ -241,11 +289,54 @@ public class KumagawaMisogi extends Ability {
             return;
 
         // "북 메이커 대상이 된 사람은 위더 1이 영구 지속됩니다."
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, PotionEffect.INFINITE_DURATION, 0));
+        // [New] 중복 적중 시 위더 레벨 강화
+        int amplifier = 0;
+        PotionEffect currentWither = target.getPotionEffect(PotionEffectType.WITHER);
+        if (currentWither != null) {
+            amplifier = Math.min(4, currentWither.getAmplifier() + 1); // 최대 4 (Wither V)
 
-        // "북 메이커에 걸린 대상은 또 북 메이커에 걸릴 수 없음."
-        // -> 위더 효과로 판별 가능하거나 별도 마킹 필요. 위더가 있으면 이미 걸린 걸로 간주?
-        // 기획상 "또 걸릴 수 없음"은 중복 적용 안된다는 뜻으로 해석. 그냥 덮어씌움.
+            // 강화 이펙트
+            target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, target.getEyeLocation(), 5, 0.2, 0.2, 0.2, 0.1);
+            target.getWorld().playSound(target.getLocation(), Sound.ENTITY_WITHER_HURT, 0.5f, 1.2f);
+
+            if (target instanceof Player pTarget) {
+                pTarget.sendMessage("§c§l[!] §c북 메이커가 더욱 강력하게 파고듭니다! (위더 레벨: " + (amplifier + 1) + ")");
+            }
+        }
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, PotionEffect.INFINITE_DURATION, amplifier));
+
+        // [New] 머리 위 위더 스켈레톤 해골 표시 (ItemDisplay)
+        if (!witherVisuals.containsKey(target.getUniqueId())) {
+            ItemDisplay display = target.getWorld().spawn(target.getEyeLocation().add(0, 0.5, 0), ItemDisplay.class,
+                    d -> {
+                        d.setItemStack(new ItemStack(Material.WITHER_SKELETON_SKULL));
+                        d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+                        // Transformation 관련 코드 제거 (API 호환성 문제)
+                    });
+            witherVisuals.put(target.getUniqueId(), display);
+
+            // 따라다니는 태스크
+            new BukkitRunnable() {
+                float yaw = 0;
+
+                @Override
+                public void run() {
+                    if (!target.isValid() || target.isDead() || !display.isValid()
+                            || !witherVisuals.containsKey(target.getUniqueId())) {
+                        if (display.isValid())
+                            display.remove();
+                        witherVisuals.remove(target.getUniqueId());
+                        this.cancel();
+                        return;
+                    }
+
+                    Location loc = target.getEyeLocation().add(0, 0.5, 0);
+                    loc.setYaw(yaw);
+                    display.teleport(loc);
+                    yaw += 5; // 빙글빙글 회전
+                }
+            }.runTaskTimer(plugin, 0L, 1L);
+        }
 
         // "해당 생명체의 최대 체력은 미소기와 동일하게 5칸(10)이 되고"
         if (target instanceof Player playerTarget) {
@@ -262,8 +353,9 @@ public class KumagawaMisogi extends Ability {
             // "만약 플레이어인 경우엔 능력이 제거됩니다."
             AbilityManager.getInstance().cleanup(playerTarget); // 능력 정리
             AbilityManager.getInstance().setPlayerAbility(playerTarget.getUniqueId(), null); // 능력 삭제
-            // 소환수 제거 로직
-            // "해당 플레이어의 소환된 소환수는 제거됨." -> cleanup에서 처리됨.
+
+            // 갑옷 제거 (투구, 흉갑, 레깅스, 부츠 -> null)
+            playerTarget.getInventory().setArmorContents(null);
 
             // 머리에 검은 가루 이펙트 (1.5초)
             new BukkitRunnable() {
@@ -296,6 +388,24 @@ public class KumagawaMisogi extends Ability {
         }
     }
 
+    // [New] 나사 평타 공격 시 북 메이커 발동
+    @EventHandler
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player attacker))
+            return;
+        if (!hasAbility(attacker))
+            return;
+        if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+
+        // 나사(END_ROD)로 공격했는지 확인
+        ItemStack mainHand = attacker.getInventory().getItemInMainHand();
+        if (mainHand.getType() == Material.END_ROD) {
+            // 북 메이커 로직 적용
+            applyBookMakerEffect(attacker, target);
+        }
+    }
+
     // 올 픽션 (사망 방지 및 부활)
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
@@ -304,12 +414,23 @@ public class KumagawaMisogi extends Ability {
         if (!hasAbility(p))
             return;
 
+        // [New] 북 메이커가 활성화된 상태라면 올 픽션 발동 불가 (일반 사망 처리)
+        if (bookMakerActive.getOrDefault(p.getUniqueId(), false)) {
+            return;
+        }
+
+        // [New] 북 메이커 발동 대기 중(각성 중)에는 무적
+        if (bookMakerPending.contains(p.getUniqueId())) {
+            e.setCancelled(true);
+            return;
+        }
+
         // 치명적인 데미지인지 확인
         if (p.getHealth() - e.getFinalDamage() <= 0) {
             e.setCancelled(true); // 사망 취소
 
             // "사망 시 올 픽션이 자동 발동되며"
-            plugin.getServer().broadcast(Component.text("§b올 픽션. 없던 걸로 했어."));
+            plugin.getServer().broadcast(Component.text("§b쿠마가와 미소기: 올 픽션. 없던 걸로 했어."));
 
             // "최대 체력 1칸(2)이 줄어든 채 제자리에서 되살아납니다."
             AttributeInstance maxHealthAttr = p.getAttribute(Attribute.MAX_HEALTH);
@@ -327,7 +448,8 @@ public class KumagawaMisogi extends Ability {
                 // "최대 체력이 5칸(10)이 되면 올 픽션이 사라지며,"
                 if (newMax <= 10.0) {
                     // "5초 뒤 북 메이커가 활성화 됩니다."
-                    if (!bookMakerActive.getOrDefault(p.getUniqueId(), false)) {
+                    if (!bookMakerActive.getOrDefault(p.getUniqueId(), false)
+                            && !bookMakerPending.contains(p.getUniqueId())) {
                         scheduleBookMakerActivation(p);
                     }
                 } else {
@@ -343,6 +465,17 @@ public class KumagawaMisogi extends Ability {
         if (e.getEntity() instanceof Player p && hasAbility(p)) {
             if (e.getNewEffect() != null && e.getNewEffect().getType() == PotionEffectType.WITHER) {
                 e.setCancelled(true);
+            }
+        }
+    }
+
+    // 대상 사망 시 위더 머리 제거
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent e) {
+        if (witherVisuals.containsKey(e.getEntity().getUniqueId())) {
+            ItemDisplay display = witherVisuals.remove(e.getEntity().getUniqueId());
+            if (display != null && display.isValid()) {
+                display.remove();
             }
         }
     }
@@ -368,20 +501,45 @@ public class KumagawaMisogi extends Ability {
     }
 
     private void scheduleBookMakerActivation(Player p) {
+        // 중복 방지
+        if (bookMakerPending.contains(p.getUniqueId()))
+            return;
+
+        bookMakerPending.add(p.getUniqueId());
+
         // "올 픽션이 사라질 때 아래의 메세지 전체 채팅에 출력."
         // "쿠마가와 미소기: 나는 나쁘지 않아"
-        // 5초 뒤 활성화 전에 미리 말하는게 자연스러움 or 활성화 시점에?
-        // 문맥상 "5칸이 되면... 사라지며, (즉시) 메시지 출력 -> 5초 뒤 활성화"로 해석됨.
-
         plugin.getServer().broadcast(Component.text("§c쿠마가와 미소기: 나는 나쁘지 않아"));
 
         new BukkitRunnable() {
             @Override
             public void run() {
+                // 대기 상태 해제
+                bookMakerPending.remove(p.getUniqueId());
+
                 if (p.isOnline() && hasAbility(p)) {
                     bookMakerActive.put(p.getUniqueId(), true);
                     p.sendMessage("§5[System] 북 메이커가 활성화되었습니다.");
                     p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.0f);
+
+                    // [New] 활성화 이펙트 (경험치 파티클) 태스크 시작
+                    BukkitRunnable task = new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (!p.isOnline() || !bookMakerActive.getOrDefault(p.getUniqueId(), false)) {
+                                this.cancel();
+                                return;
+                            }
+                            // [New] 몸에서 책이 떨어지는 이펙트
+                            // Enchantment Table 파티클 + 책 아이템 파티클 섞기
+                            p.getWorld().spawnParticle(Particle.ENCHANT, p.getLocation().add(0, 1, 0), 10, 0.5, 0.5,
+                                    0.5, 0.5);
+                            p.getWorld().spawnParticle(Particle.ITEM, p.getLocation().add(0, 2.5, 0), 3, 0.3, 0.3, 0.3,
+                                    0.1, new ItemStack(Material.BOOK));
+                        }
+                    };
+                    task.runTaskTimer(plugin, 0L, 5L); // 0.25초마다
+                    effectTasks.put(p.getUniqueId(), task);
                 }
             }
         }.runTaskLater(plugin, 100L); // 5초 = 100틱
@@ -389,5 +547,13 @@ public class KumagawaMisogi extends Ability {
 
     private boolean hasAbility(Player p) {
         return AbilityManager.getInstance().hasAbility(p, getCode());
+    }
+
+    // [New] 나사(End Rod) 설치 방지
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent e) {
+        if (hasAbility(e.getPlayer()) && e.getBlock().getType() == Material.END_ROD) {
+            e.setCancelled(true);
+        }
     }
 }
