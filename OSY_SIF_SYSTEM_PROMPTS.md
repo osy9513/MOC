@@ -239,74 +239,15 @@ public List<String> getDescription() {
 
 ---
 
-## 📝 Project Memory: Custom Model Data Registry
-**중복 모델 데이터 사용을 방지하기 위해 아래 표를 항상 최신 상태로 유지하십시오.**
-새로운 모델을 추가할 때마다 이 섹션을 업데이트해야 합니다.
-
-| 텍스처/모델명 (ID) | 바닐라 아이템 | 능력자 (MocPlugin) | 파일 경로 |
-| :--- | :--- | :--- | :--- |
-| **gom_hand** (1) | 돌 검 (`stone_sword`) | 알 수 없음 (추후 확인) | `models/item/gom_hand.json` |
-| **inuyasha** (1) | 철 검 (`iron_sword`) | 이누야샤 (`Inuyasha.java`) | `models/item/inuyasha.json` |
-| **mothership** (1) | 신호기 (`beacon`) | 모선 (`Mothership.java`) | `models/item/mothership.json` |
-| **dio** (1) | 시계 (`clock`) | DIO (`DIO.java`) | `models/item/dio.json` |
-| **deidara0** (1) | 점토 (`clay_ball`) | 데이다라 (`Deidara.java`) | `models/item/deidara0.json` |
-| **deidara1** (1) | 폭죽 탄약 (`firework_star`) | 데이다라 (`Deidara.java`) | `models/item/deidara1.json` |
-| **deidara2** (1) | 부싯돌 (`flint`) | 데이다라 (`Deidara.java`) | `models/item/deidara2.json` |
-| **kuma** (1) | 후렴과 (`popped_chorus_fruit`) | 바솔로뮤 쿠마 (`BartholomewKuma.java`) | `models/item/kuma.json` |
-| **singed** (1) | 네더 벽돌 울타리 (`nether_brick_fence`) | 신지드 (`Singed.java`) | `models/item/singed.json` |
-| **spiderman** (1) | 거미줄 (`cobweb`) | 스파이더맨 (`Spiderman.java`) | `models/item/spiderman.json` |
-| **jigsaw** (1) | 석재 절단기 (`stonecutter`) | 직쏘 (`Jigsaw.java`) | `models/item/jigsaw.json` |
-| **rooki** (2) | 철 검 (`iron_sword`) | 루키 (`Yesung.java`) | `models/item/rooki.json` |
-| **togahimiko** (3) | 철 검 (`iron_sword`) | 토가 히미코 (`TogaHimiko.java`) | `models/item/togahimiko.json` |
-| **gaara** (1) | 장식된 단지 (`decorated_pot`) | 가아라 (`Gaara.java`) | `models/item/gaara.json` |
-| **nanayashiki** (4) | 철 검 (`iron_sword`) | 나나야 시키 (`NanayaShiki.java`) | `models/item/nanayashiki.json` |
-| **misakamikoto1** (1) | 프리즈머린 수정 (`prismarine_crystals`) | 미사카 미코토 (`MisakaMikoto.java`) | `models/item/misakamikoto1.json` |
-| **misakamikoto2** (1) | 네더의 별 (`nether_star`) | 미사카 미코토 (`MisakaMikoto.java`) | `models/item/misakamikoto2.json` |
-| **aizensosuke** (5) | 철 검 (`iron_sword`) | 아이젠 소스케 (`AizenSosuke.java`) | `models/item/aizensosuke.json` |
-| **kurosakiichigo** (6) | 철 검 (`iron_sword`) | 쿠로사키 이치고 (`KurosakiIchigo.java`) | `models/item/kurosakiichigo.json` |
-| **kimdokja** (1) | 네더라이트 검 (`netherite_sword`) | 김독자 (`KimDokja.java`) | `models/item/kimdokja.json` |
-| **jjanggu** (1) | 쿠키 (`cookie`) | 짱구 (`Jjanggu.java`) | `models/item/jjanggu.json` |
-| **yugi0** (1) | 네더라이트 파편 (`netherite_scrap`) | 유희 (`Yugi.java`) | `models/item/yugi0.json` |
-| **yugi1** (1) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi1.json` |
-| **yugi2** (2) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi2.json` |
-| **yugi3** (3) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi3.json` |
-| **yugi4** (4) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi4.json` |
-| **yugi5** (5) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi5.json` |
-| **yugi6** (6) | 대장장이 형판 (`netherite_upgrade_smithing_template`) | 유희 (`Yugi.java`) | `models/item/yugi6.json` |
-| **thekingofgockgange** (1) | 네더라이트 곡괭이 (`netherite_pickaxe`) | 왕 쩌는 곡갱이 (`TheKingOfGockgangE.java`) | `models/item/thekingofgockgange.json` |
-| **cuchulainn** (1) | 네더라이트 창 (`netherite_spear`) | 쿠 훌린 (`CuChulainn.java`) | `models/item/cuchulainn.json` |
-| **naruto** (1) | 주황색 현수막 (`orange_banner`) | 나루토 (`Naruto.java`) | `models/item/naruto.json` |
-| **magnus** (1) | 광산 수레 (`minecart`) | 매그너스 (`Magnus.java`) | `models/item/magnus.json` |
-| **ulquiorra** (1) | 삼지창 (`trident`) | 우르키오라 (`Ulquiorra.java`) | `models/item/ulquiorra.json` |
-| **olaf** (1) | 철 도끼 (`iron_axe`) | 올라프 (`Olaf.java`) | `models/item/olaf.json` |
-| **byakuya** (7) | 철 검 (`iron_sword`) | 쿠치키 뱌쿠야 (`Byakuya.java`) | `models/item/byakuya.json` |
-| **meliodas** (8) | 철 검 (`iron_sword`) | 멜리오다스 (`Meliodas.java`) | `models/item/meliodas.json` |
-| **zenitsu** (9) | 철 검 (`iron_sword`) | 아가츠마 젠이츠 (`Zenitsu.java`) | `models/item/zenitsu.json` |
-| **emiyashirou** (10) | 철 검 (`iron_sword`) | 에미야 시로 (`EmiyaShirou.java`) | `models/item/emiyashirou.json` |
-| **trafalgarlaw** (11) | 철 검 (`iron_sword`) | 트라팔가 로우 (`TrafalgarLaw.java`) | `models/item/trafalgarlaw.json` |
-| **windbreaker** (1) | 활 (`bow`) | 윈드브레이커 (`WindBreaker.java`) | `models/item/windbreaker.json` |
-| **gojo** (1) | 검은색 양털 (`black_wool`) | 고죠 사토루 (`GojoSatoru.java`) | `models/item/gojo.json` |
-| **spongebob** (1) | 철 삽 (`iron_shovel`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob.json` |
-| **spongebob2** (1) | 구운 소고기 (`cooked_beef`) | 스펀지밥 (`SpongeBob.java`) | `models/item/spongebob2.json` |
-| **kinghassan_** (2) | 네더라이트 검 (`netherite_sword`) | 산의 노인 (`KingHassan.java`) | `models/item/kinghassan.json` |
-| **topblade** (1) | 철 검 (`iron_sword`) | 탑블레이드 (`Topblade.java`) | `models/item/beyblade.json` |
-| **tarnished_sword** (13) | 철 검 (`iron_sword`) | 빛바랜 자 (`Tarnished.java`) | `models/item/tarnished_sword.json` |
-| **colors_cd_pink** (1) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_pink.json` |
-| **colors_cd_blue** (2) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_blue.json` |
-| **colors_cd_black** (3) | 철 조각 (`iron_nugget`) | 뚜비 (`Ddumbi.java`) | `models/item/colors_cd_black.json` |
-| **coffee** (1) | 물약 (`potion`) | 뚜비 (`Ddumbi.java`) | `models/item/coffee.json` |
-| **kumagawamisogi** (1) | 엔드 막대기 (`end_rod`) | 쿠마가와 미소기 (`KumagawaMisogi.java`) | `models/item/kumagawamisogi.json` |
-
----
-
 ## [A1] Deep Reasoning Strategy (Thought Process)
 코드를 생성하기 전, `thought` 블록에서 다음 단계를 거칩니다:
 
 1.  **Dependency Check:** 신규 기능이 어떤 매니저(`GameManager`, `AbilityManager` 등)와 상호작용해야 하는지 분석.
 2.  **Code Consistency:** 새로운 능력 추가 시 중복되지 않는 코드 번호(예: `014`) 할당 및 `AbilityManager.registerAbilities()` 등록 위치 확인. 리소스팩 CustomModelData 중복 확인.
-3.  **Resource Cleanup:** 능력이 소환수나 반복 작업을 사용하는 경우, `cleanup()` 또는 `reset()`에서 해제 로직이 포함되었는지 검토.
-4.  **UX/UI Flow:** 플레이어에게 보여지는 채팅 메시지나 액션바 출력이 기존 양식과 일치하는지 확인.
-5.  **Resource Pack Sync:** 새로운 아이템이 필요한 경우, `MOC_ResourcePack` 파일 수정 계획을 동시에 수립.
+3.  **Creative Mode Exception:** 테스트 편의성을 위해 플레이어가 크리에이티브 모드일 경우 `setCooldown()` 또는 개별 쿨타임 설정 로직이 작동하지 않도록(`if (p.getGameMode() == GameMode.CREATIVE) return;`) 예외 처리를 반드시 포함해야 함.
+4.  **Resource Cleanup:** 능력이 소환수나 반복 작업을 사용하는 경우, `cleanup()` 또는 `reset()`에서 해제 로직이 포함되었는지 검토.
+5.  **UX/UI Flow:** 플레이어에게 보여지는 채팅 메시지나 액션바 출력이 기존 양식과 일치하는지 확인.
+6.  **Resource Pack Sync:** 새로운 아이템이 필요한 경우, `MOC_ResourcePack` 파일 수정 계획을 동시에 수립.
 
 ---
 
@@ -321,7 +262,11 @@ public List<String> getDescription() {
     -   (예: 토가 히미코가 에렌 예거로 변신했다가 해제된 후, 에렌 예거의 `revertTitan`이 뒤늦게 실행되어 토가의 인벤토리를 날리는 것을 방지)
 4.  **관전자(Spectator) 처리 (필수):**
     -   **능력 발동 금지:** 관전자는 능력발동을 절대 할 수 없다.
-    -   **타겟팅 금지:** 능력자는 관전자는 관전자를 대상으로 능력을 발동할 수 없다.
+    -   **타겟팅 금지:** 능력자는 관전자를 대상으로 능력을 발동할 수 없다.
+5.  **크리에이티브 모드 쿨타임 면제 (테스트 편의성):**
+    -   **쿨타임 무시:** 플레이어가 크리에이티브 모드일 경우, `checkCooldown`에서 항상 `true`를 반환하고 `setCooldown`에서는 쿨타임을 설정하지 않아야 한다. 이를 통해 알림 도배 없이 기술을 무한 연사하며 테스트할 수 있도록 보장한다.
+6.  **킬 판정 귀속 (Kill Attribution):**
+    -   **MOC_LastKiller 활용:** 소환수, 투사체, 설치물 등이 적을 처치할 경우 킬 포인트가 원본 능력자에게 귀속되도록 `MOC_LastKiller` 메타데이터(능력자의 UUID String)를 반드시 설정해야 한다. 이는 `GameManager`의 킬 스코어보드 시스템과 연동되는 핵심 로직이다.
 
 ---
 
@@ -351,6 +296,12 @@ public List<String> getDescription() {
 - **자기장 수정:** `ArenaManager.startBorderShrink`의 타이밍이나 대미지 값을 조정하십시오. (초당 1블록 수축 로직)
 - **라운드 로직:** `GameManager`을 참고하세요. `config.yml`의 `test` 옵션으로 솔로 테스트 및 시작 시 크리에이티브 모드 자동 전환 기능 지원.
 - **리소스팩 관리:** **Custom Model Data Registry**를 항상 최신으로 유지하세요.
+
+---
+
+## 📝 리소스팩/텍스처팩 작업 로그: Custom Model Data Registry
+**중복 모델 데이터 사용을 방지하기 위해 아래 표를 항상 최신 상태로 유지하십시오.**
+새로운 모델을 추가할 때마다 CustomModelDataRegistry.md 파일을 업데이트해야 합니다.
 
 ---
 
