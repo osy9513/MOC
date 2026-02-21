@@ -63,3 +63,4 @@
 | **beyblade** (12) | 철 검 (`iron_sword`) | 탑블레이드 (`Topblade.java`) | `models/item/beyblade.json` |
 | **tarnished_sword** (13) | 철 검 (`iron_sword`) | 빛바랜 자 (`Tarnished.java`) | `models/item/tarnished_sword.json` |
 | **sololeveling** (14) | 철 검 (`iron_sword`) | 성진우 (`SungJinWoo.java`) | `models/item/sololeveling.json` |
+| **pyro_flamethrower** (1) | 부싯돌과 부스러기 (`flint_and_steel`) | 파이로 (`Pyro.java`) | `models/item/pyro_flamethrower.json` |
