@@ -99,6 +99,10 @@ public class Ddangkong extends Ability {
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
 
+        // [추가] 침묵 체크
+        if (isSilenced(p))
+            return;
+
         ItemStack item = e.getItem();
         if (item == null)
             return;

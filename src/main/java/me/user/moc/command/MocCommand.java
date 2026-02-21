@@ -176,18 +176,22 @@ public class MocCommand implements CommandExecutor {
                 if (args.length == 1) {
                     p.sendMessage(" ");
                     p.sendMessage("§6[ MOC 설정 목록 ]");
-                    p.sendMessage("§e spawn_tf (시작 스폰 티피 활성화 - true/false): §f" + cm.spawn_tf);
-                    p.sendMessage("§e peace_time (평화 시간 - 초): §f" + cm.peace_time);
+                    p.sendMessage("기본 설정");
+                    p.sendMessage("§e win_value (승리 목표 점수 - 숫자): §f" + cm.win_value);
+                    p.sendMessage("§e spawn_tf (라운드 시작 시 티피 활성화 - true/false): §f" + cm.spawn_tf);
                     p.sendMessage("§e re_point (능력 리롤 횟수 - 숫자): §f" + cm.re_point);
                     p.sendMessage("§e start_time (능력 추첨 시간 - 초): §f" + cm.start_time);
-                    p.sendMessage("§e final_fight (최종 자기장 활성화 - true/false): §f" + cm.final_fight);
-                    p.sendMessage("§e final_time (최종 자기장 활성화 시간 - 초): §f" + cm.final_time);
+                    p.sendMessage("§e peace_time (능력 추첨 후 평화 시간 - 초): §f" + cm.peace_time);
+                    p.sendMessage("");
+                    p.sendMessage("전장 설정");
                     p.sendMessage("§e map_size (맵 크기 - 숫자): §f" + cm.map_size);
-                    p.sendMessage("§e win_value (승리 점수 - 숫자): §f" + cm.win_value);
-                    // p.sendMessage("§e teammod (팀전 모드): §f" + cm.teammod);
+                    p.sendMessage("§e battle_map (맵 크기에 맞춰 전장 활성화 - true/false): §f" + cm.battle_map);
+                    p.sendMessage("§e random_map (전장의 랜덤 요소 활성화 - true/false): §f" + cm.random_map);
+                    p.sendMessage("§e final_fight (맵 끝 자기장 축소 여부 - true/false): §f" + cm.final_fight);
+                    p.sendMessage("§e final_time (맵 끝 자기장 축소 시간 - 초): §f" + cm.final_time);
+                    p.sendMessage("");
+                    p.sendMessage("기타 설정");
                     p.sendMessage("§e hidden (히든 캐릭터 활성화): §f" + cm.hidden);
-                    p.sendMessage("§e battle_map (전장 바닥 생성 - true/false): §f" + cm.battle_map);
-                    p.sendMessage("§e random_map (자연 전장 생성 - true/false): §f" + cm.random_map);
                     p.sendMessage("§e test (테스트 모드 - true/false): §f" + cm.test); // [추가]
                     p.sendMessage("§6 ※참고: 테스트 모드 시 자동으로 크리에이티브 모드로 전환됩니다. 크리에이티브 모드 일 땐 노쿨로 능력 사용 가능");
                     p.sendMessage(" ");

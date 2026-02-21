@@ -63,7 +63,7 @@ public class EmiyaShirou extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● 에미야 시로(FATE)",
-                "§f라운드 시작 15초 후 무한의 검제 영창을 전개합니다.");
+                "§f라운드 시작 30초 후 무한의 검제 영창을 전개합니다.");
     }
 
     @Override
@@ -73,7 +73,7 @@ public class EmiyaShirou extends Ability {
         org.bukkit.inventory.meta.ItemMeta meta = sword.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§c막야");
-            meta.setLore(List.of("§7라운드 시작 15초 후 무한의 검제를 전개합니다."));
+            meta.setLore(List.of("§7라운드 시작 30초 후 무한의 검제를 전개합니다."));
             meta.setCustomModelData(10); // 리소스팩: emiyashirou
             sword.setItemMeta(meta);
         }
@@ -85,7 +85,7 @@ public class EmiyaShirou extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● 에미야 시로(FATE)");
-        p.sendMessage("§f라운드 시작 후 무적 시간이 끝난 배틀 시간이 되었을 때 15초 후");
+        p.sendMessage("§f라운드 시작 후 무적 시간이 끝난 배틀 시간이 되었을 때 30초 후");
         p.sendMessage("§f기존의 무한 검제 영창을 자동으로 시작합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f[무한의 검제]");
@@ -159,9 +159,9 @@ public class EmiyaShirou extends Ability {
             // 하지만 hasTriggered는 "발동 시도 완료"의 의미로 쓰고,
             // 카운트다운 중복 방지는 countdownTasks 맵으로 해결함.
 
-            // 15초 카운트다운 시작
+            // 30초 카운트다운 시작
             BukkitTask task = new BukkitRunnable() {
-                int timeLeft = 15;
+                int timeLeft = 30;
 
                 @Override
                 public void run() {

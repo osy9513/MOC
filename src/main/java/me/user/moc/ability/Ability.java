@@ -162,7 +162,27 @@ public abstract class Ability implements Listener {
         cooldownNotifyTasks.put(p.getUniqueId(), task);
     }
 
+    /**
+     * 플레이어가 현재 침묵(능력 봉인) 상태인지 확인합니다.
+     * 
+     * @param p 확인할 플레이어
+     * @return 침묵 상태이면 true, 아니면 false
+     */
+    public boolean isSilenced(Player p) {
+        if (AbilityManager.silencedPlayers.contains(p.getUniqueId())) {
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c능력이 봉인되어 사용할 수 없습니다."));
+            return true;
+        }
+        return false;
+    }
+
     protected boolean checkCooldown(Player p) {
+        // [추가] 능력 봉인 체크 (고죠 사토루 무량공처 등)
+        // 침묵은 크리에이티브 모드보다 우선순위가 높아야 함 (테스트 중에도 침묵은 작동해야 함)
+        if (isSilenced(p)) {
+            return false;
+        }
+
         // [긴급 수정] 크리에이티브 모드라면 쿨타임 및 제한 무시 (테스트 편의성)
         if (p.getGameMode() == org.bukkit.GameMode.CREATIVE) {
             return true;
@@ -177,12 +197,6 @@ public abstract class Ability implements Listener {
         // [게임 상태 확인] 전투 전에는 능력 사용 불가
         MocPlugin moc = (MocPlugin) plugin;
         GameManager gm = moc.getGameManager();
-
-        // [추가] 능력 봉인 체크 (고죠 사토루 무량공처 등)
-        if (AbilityManager.silencedPlayers.contains(p.getUniqueId())) {
-            p.sendActionBar(net.kyori.adventure.text.Component.text("§c능력이 봉인되어 사용할 수 없습니다."));
-            return false;
-        }
 
         // 게임이 실행 중이 아니거나, 아직 무적(카운트다운) 상태라면
         if (gm == null || !gm.isBattleStarted()) {

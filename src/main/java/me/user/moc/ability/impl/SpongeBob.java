@@ -117,6 +117,10 @@ public class SpongeBob extends Ability {
             if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
                 return;
 
+            // [추가] 침묵 체크
+            if (isSilenced(p))
+                return;
+
             ItemStack item = e.getItem();
             if (item != null && item.getType() == Material.COOKED_BEEF && item.hasItemMeta()
                     && "§f게살버거".equals(item.getItemMeta().getDisplayName())) {
@@ -241,6 +245,10 @@ public class SpongeBob extends Ability {
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+            return;
+
+        // [추가] 침묵 체크
+        if (isSilenced(p))
             return;
 
         if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)

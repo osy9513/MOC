@@ -288,6 +288,11 @@ public class TungTungTungSahur extends Ability {
             return;
         }
 
+        // [추가] 침묵 체크
+        if (isSilenced(p)) {
+            return;
+        }
+
         UUID sahurUUID = p.getUniqueId();
 
         // 최대 중첩(9) 도달 시 스케줄링 중단? 아니면 계속 체크?
