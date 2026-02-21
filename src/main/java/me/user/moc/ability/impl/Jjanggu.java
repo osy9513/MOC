@@ -117,6 +117,13 @@ public class Jjanggu extends Ability {
 
         dashingPlayers.add(p.getUniqueId());
 
+        // [추가] 5% 확률로 배고픔 1칸(2포인트) 감소 페널티
+        if (Math.random() < 0.05) {
+            int currentFood = p.getFoodLevel();
+            p.setFoodLevel(Math.max(0, currentFood - 2));
+            p.sendMessage("§f짱구: 아이 배고프당");
+        }
+
         // 1. 신속 효과 부여 (0.2초 = 4틱)
         // 신속 30 정도면 매우 빠름. 화면이 확 줌인되는 효과도 있음.
         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 30, true, true, true));
