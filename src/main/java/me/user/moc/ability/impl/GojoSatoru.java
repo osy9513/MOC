@@ -56,7 +56,7 @@ public class GojoSatoru extends Ability {
         p.sendMessage("§f자신을 기준 16x16x16까지 2초에 걸쳐 점점 커지는");
         p.sendMessage("§f영역에 닿은 상대는 무량공처에 맞습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f무량공처에 맞은 상대는 7초간 행동할 수 없으며,");
+        p.sendMessage("§f무량공처에 맞은 상대는 3초간 행동할 수 없으며,");
         p.sendMessage("§f지속 시간 동안 능력이 봉인됩니다.");
         p.sendMessage("§f이후 6초간 능력이 추가로 봉인됩니다.");
         p.sendMessage(" ");
@@ -215,7 +215,7 @@ public class GojoSatoru extends Ability {
     }
 
     private void applyStun(LivingEntity target) {
-        int duration = 140; // 7초 * 20
+        int duration = 60; // 3초 * 20
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 5, true, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 250, true, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 250, true, true, true));
@@ -231,7 +231,7 @@ public class GojoSatoru extends Ability {
 
             @Override
             public void run() {
-                if (target.isDead() || ticks >= 140) {
+                if (target.isDead() || ticks >= 60) {
                     this.cancel();
 
                     // 스턴 종료 후 6초간 봉인 유지

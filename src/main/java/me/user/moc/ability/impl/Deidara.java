@@ -32,6 +32,9 @@ public class Deidara extends Ability {
     // 플레이어별 관리 중인 TNT 목록 (기폭용, C0는 즉발이라 관리 안 함)
     private final java.util.Map<UUID, List<TNTPrimed>> managedTNTs = new java.util.HashMap<>();
 
+    // [추가] 부싯돌 기폭 쿨타임 (3초)
+    private final java.util.Map<UUID, Long> detonateCooldowns = new java.util.HashMap<>();
+
     public Deidara(JavaPlugin plugin) {
         super(plugin);
     }
@@ -89,7 +92,7 @@ public class Deidara extends Ability {
         p.sendMessage("§c전투 ● 데이다라(나루토)");
         p.sendMessage("§f[점토] 우클릭 시 폭죽 탄약 1개를 생성합니다.");
         p.sendMessage("§f[폭죽 탄약] 우클릭 시 소모하며 점화된 TNT를 발사합니다. (터지지 않음)");
-        p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다.");
+        p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다. (쿨타임: 3초)");
         p.sendMessage(" ");
         p.sendMessage("§c[C0 - 자폭]");
         p.sendMessage("§f인벤토리에 폭죽 탄약이 20개 이상일 때 부싯돌을 우클릭하면 발동.");
@@ -183,6 +186,15 @@ public class Deidara extends Ability {
     }
 
     private void detonateAll(Player p) {
+        // [추가] 기폭 쿨타임 3초 체크
+        long now = System.currentTimeMillis();
+        long lastUse = detonateCooldowns.getOrDefault(p.getUniqueId(), 0L);
+        if (now - lastUse < 3000) {
+            long remaining = 3000 - (now - lastUse);
+            p.sendMessage("§c[!] 부싯돌 기폭 쿨타임 중입니다. (" + String.format("%.1f", remaining / 1000.0) + "초)");
+            return;
+        }
+
         List<TNTPrimed> tnts = managedTNTs.get(p.getUniqueId());
         if (tnts == null || tnts.isEmpty()) {
             p.sendMessage("§c설치된 예술품이 없습니다.");
@@ -203,6 +215,8 @@ public class Deidara extends Ability {
         p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.8f);
         if (count > 0) {
             p.sendMessage("§e" + count + "개의 예술을 완성했습니다.!");
+            // [추가] 성공적으로 기폭을 한 경우에만 쿨타임을 걸어줍니다.
+            detonateCooldowns.put(p.getUniqueId(), System.currentTimeMillis());
         }
     }
 
@@ -299,5 +313,6 @@ public class Deidara extends Ability {
     public void reset() {
         super.reset();
         managedTNTs.clear();
+        detonateCooldowns.clear();
     }
 }

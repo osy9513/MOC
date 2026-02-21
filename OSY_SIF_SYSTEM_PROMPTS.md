@@ -153,6 +153,14 @@ public List<String> getDescription() {
    - **상태 관리:** 반드시 `Map<UUID, 값>` 형태를 사용하여 플레이어별로 상태를 관리해야 합니다.
    - **Cleanup 필수:** `cleanup(Player p)` 메서드에서 해당 플레이어의 모든 Map 데이터와 스케줄러를 반드시 제거/취소해야 합니다. 토가 히미코가 능력을 해제할 때 이 메서드가 호출됩니다.
 
+- **킬 판정 신뢰성 (Kill Attribution) (중요):**
+   - **소환수 킬러 연동:** 소환수(Zombie, Skeleton 등)를 생성할 때는 반드시 주인의 정보를 메타데이터로 주입해야 합니다.
+     - 예: `summon.setMetadata("SungJinWooOwner", new FixedMetadataValue(plugin, owner.getUniqueId().toString()));`
+     - 이후 `GameManager.java`의 `onSummonerDamage` 이벤트 핸들러에 해당 능력을 추가하여 자동으로 `MOC_LastKiller`가 갱신되도록 하십시오.
+   - **특수 피해/즉사 로직 연동:** `target.setHealth(0)` 또는 `target.damage(999, p)`와 같이 직접적인 피해 로직을 사용할 경우, 피해를 입히기 직전에 피해자에게 킬러의 정보를 담은 `MOC_LastKiller` 메타데이터를 주입해야 합니다.
+     - 예: `target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, p.getUniqueId().toString()));`
+   - 이는 시스템이 `PlayerDeathEvent`에서 킬러를 찾지 못할 때(null)를 대비한 필수 안전 장치입니다.
+
 ### 4. 능력 상세 정보(detailCheck) 작성 규칙
 모든 능력 파일의 `detailCheck(Player p)` 메서드는 다음 포맷을 엄격히 준수해야 합니다.
 1. **첫 줄 (헤더):** `[색상코드][유형] ● [이름]([원작 이름])`

@@ -136,6 +136,10 @@ public class MisakaMikoto extends Ability {
         }
 
         if (result != null && result.getHitEntity() instanceof LivingEntity target) {
+            // [추가] 킬 판정 지원
+            target.setMetadata("MOC_LastKiller",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
+
             target.damage(8.0, p);
             // FLASH는 Color 데이터가 필수입니다.
             target.getWorld().spawnParticle(Particle.FLASH, target.getLocation(), 1, Color.YELLOW);
@@ -291,6 +295,10 @@ public class MisakaMikoto extends Ability {
             if (nearby instanceof LivingEntity target && target != shooter) {
                 if (target instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
                     continue;
+                // [추가] 킬 판정 지원
+                target.setMetadata("MOC_LastKiller",
+                        new org.bukkit.metadata.FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
+
                 // 전력 데미지
                 target.damage(28.0, shooter);
             }

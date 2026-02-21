@@ -709,10 +709,11 @@ public class ArenaManager implements Listener {
 
         if (entity instanceof org.bukkit.entity.Damageable d) {
             // 생명체(플레이어, 몹)는 '사망' 처리 (이벤트를 위해 setHealth 0)
-            d.setHealth(0);
             if (entity instanceof Player p) {
+                p.setMetadata("border_death", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
                 p.sendMessage("§c자기장에서 너무 오래 머물러 사망했습니다.");
             }
+            d.setHealth(0);
         } else {
             // 아이템, 화살 등은 그냥 삭제
             entity.remove();

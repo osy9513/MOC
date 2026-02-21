@@ -83,7 +83,7 @@ public class Ddangkong extends Ability {
         p.sendMessage("§f총알을 우클릭 하여 발사합니다. (데미지10)");
         p.sendMessage("§f훈련용 수류탄을 우클릭 하여 3초 뒤 폭발하는 TNT를 던집니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f총알과 수류탄 능력 발동 중 40% 확률로 선임에게 전화가 옵니다.");
+        p.sendMessage("§f총알과 수류탄 능력 발동 중 20% 확률로 선임에게 전화가 옵니다.");
         p.sendMessage("§f전화가 올 경우 시전한 능력이 불발되고, 10초간 구속 5, 저항 2가 걸립니다.");
         p.sendMessage("§f또한 통화 중에는 능력을 사용할 수 없습니다.");
         p.sendMessage(" ");
@@ -249,12 +249,12 @@ public class Ddangkong extends Ability {
     }
 
     /**
-     * 전화 찬스 로직 (40% 확률)
+     * 전화 찬스 로직 (20% 확률)
      * 
      * @return true면 전화 걸림(능력 불발), false면 정상 진행
      */
     private boolean tryPhoneCall(Player p) {
-        if (random.nextInt(100) < 40) { // 40%
+        if (random.nextInt(100) < 20) { // 20%
             // 전화 상태 설정
             UUID uuid = p.getUniqueId();
             isCalling.add(uuid);

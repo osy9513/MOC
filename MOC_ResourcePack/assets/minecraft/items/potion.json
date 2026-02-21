@@ -9,11 +9,24 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/coffee"
                 }
+            },
+            {
+                "threshold": 2,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/health_potion"
+                }
             }
         ],
         "fallback": {
             "type": "minecraft:model",
-            "model": "minecraft:item/potion"
+            "model": "minecraft:item/potion",
+            "tints": [
+                {
+                    "type": "minecraft:potion",
+                    "default": 16253176
+                }
+            ]
         }
     }
 }

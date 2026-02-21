@@ -62,6 +62,7 @@ public class GameManager implements Listener {
     private BukkitTask selectionTask; // 능력 추첨 타이머
     private BukkitTask startGameTask; // [추가] 게임 시작 카운트다운 타이머
     private BukkitTask borderStartTask; // [추가] 자기장 시작 대기 타이머
+    private BukkitTask mobLimitTask; // [추가] 무분별한 전투 중 몬스터 스폰 방지 타이머
 
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
@@ -190,6 +191,7 @@ public class GameManager implements Listener {
             return;
         round++;
         readyPlayers.clear();
+        isRoundEnding = false; // [버그 수정] 새 라운드 시작 시 라운드 종료 잠금 해제
 
         // [추가] 라운드 시작 시마다 랜덤 전장 재생성 (새로운 지형 설치)
         if (configManager.spawn_point != null) {
@@ -243,8 +245,12 @@ public class GameManager implements Listener {
             Bukkit.getLogger().warning("AbilityManager가 연결되지 않아 덱을 생성하지 못했습니다.");
         }
 
-        // 덱 섞기
-        Collections.shuffle(deck);
+        // 덱 섞기 (단순 셔플이 아닌 아직 한 번도 안뽑힌 능력을 10% 더 잘 나오도록 가중치 셔플 적용)
+        if (abilityManager != null) {
+            abilityManager.shuffleDeckWeighted(deck);
+        } else {
+            Collections.shuffle(deck);
+        }
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (isAfk(p.getName())) {
@@ -388,7 +394,6 @@ public class GameManager implements Listener {
                 // 능력 정보 출력
                 abilityManager.showAbilityInfo(p, abilityCode, 0);
             }
-            deckIndex++;
             deckIndex++;
         }
 
@@ -655,6 +660,48 @@ public class GameManager implements Listener {
 
         // 자기장 대미지 체크 태스크 시작 (ArenaManager 기능 활용 권장)
         arenaManager.startBorderDamage();
+
+        // [추가] 게임 시작 직후부터 월드의 자연 스폰 엔티티 수 3마리 유지 태스크 가동
+        if (mobLimitTask != null) {
+            mobLimitTask.cancel();
+        }
+        mobLimitTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!isRunning) {
+                    this.cancel();
+                    return;
+                }
+                if (Bukkit.getOnlinePlayers().isEmpty())
+                    return;
+
+                org.bukkit.World world = Bukkit.getOnlinePlayers().iterator().next().getWorld();
+                List<org.bukkit.entity.LivingEntity> naturals = new ArrayList<>();
+
+                for (org.bukkit.entity.LivingEntity entity : world.getLivingEntities()) {
+                    if (entity instanceof Player || entity instanceof org.bukkit.entity.ArmorStand)
+                        continue;
+                    // 이름(네임택)이 있거나 커스텀 생성된 능력물(란가, 요뽀뽀 등) 보호
+                    if (entity.customName() != null || entity.isCustomNameVisible())
+                        continue;
+
+                    // 자연스폰일 확률이 높은 몬스터나 동물 카운팅
+                    if (entity instanceof org.bukkit.entity.Monster || entity instanceof org.bukkit.entity.Animals
+                            || entity instanceof org.bukkit.entity.WaterMob
+                            || entity instanceof org.bukkit.entity.Ambient) {
+                        naturals.add(entity);
+                    }
+                }
+
+                // 지정된 수를 초과하면 남는 수만큼 삭제
+                if (naturals.size() > 3) {
+                    java.util.Collections.shuffle(naturals);
+                    for (int i = 3; i < naturals.size(); i++) {
+                        naturals.get(i).remove();
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 20L); // 1초(20틱)마다 갱신
     }
 
     // [추가] 무적 상태일 때 대미지 막기
@@ -668,6 +715,42 @@ public class GameManager implements Listener {
         // 단, 낙사나 공허는 죽을 수도 있으니 놔둘까요? -> 보통 평화 시간에는 완전 무적을 원함.
         if (isInvincible) {
             if (e.getEntity() instanceof Player) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    // [추가] 슬라임 스폰 완벽 차단 및 자연 스폰 제어 보조
+    @EventHandler
+    public void onCreatureSpawn(org.bukkit.event.entity.CreatureSpawnEvent e) {
+        if (!isRunning)
+            return; // 게임 중일 때만 개입
+
+        // 슬라임은 게임의 변수를 크게 훼손하므로 무조건 자연 생성(및 분열) 금지
+        if (e.getEntityType() == org.bukkit.entity.EntityType.SLIME) {
+            if (e.getSpawnReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
+                    e.getSpawnReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SLIME_SPLIT) {
+                e.setCancelled(true);
+                return;
+            }
+        }
+
+        // 추가로, 생성 직전에 이미 3마리가 넘어가면 스폰 이벤트 자체를 취소시킴
+        if (e.getSpawnReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL) {
+            org.bukkit.World world = e.getEntity().getWorld();
+            int naturalCount = 0;
+            for (org.bukkit.entity.LivingEntity entity : world.getLivingEntities()) {
+                if (entity instanceof Player || entity instanceof org.bukkit.entity.ArmorStand)
+                    continue;
+                if (entity.customName() != null || entity.isCustomNameVisible())
+                    continue;
+                if (entity instanceof org.bukkit.entity.Monster || entity instanceof org.bukkit.entity.Animals
+                        || entity instanceof org.bukkit.entity.WaterMob
+                        || entity instanceof org.bukkit.entity.Ambient) {
+                    naturalCount++;
+                }
+            }
+            if (naturalCount >= 3) {
                 e.setCancelled(true);
             }
         }
@@ -694,6 +777,7 @@ public class GameManager implements Listener {
             // 커스텀 이펙트로 정확히 1분(1200틱), 레벨 1(amplifier 0) 부여
             meta.addCustomEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 60, 0), true);
             meta.setDisplayName("§d재생의 물약 (1분)");
+            meta.setCustomModelData(2); // 리소스팩: health_potion
             regenPotion.setItemMeta(meta);
         }
         p.getInventory().addItem(regenPotion);
@@ -741,6 +825,12 @@ public class GameManager implements Listener {
         if (borderStartTask != null) {
             borderStartTask.cancel();
             borderStartTask = null;
+        }
+
+        // [추가] 몬스터 제한 태스크 강제 취소 (게임 끝나면 맘대로 나오게)
+        if (mobLimitTask != null) {
+            mobLimitTask.cancel();
+            mobLimitTask = null;
         }
 
         if (selectionTask != null)
@@ -834,6 +924,61 @@ public class GameManager implements Listener {
     }
 
     // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
+    // 라운드 동시 종료(러브샷) 중복 처리 방지 플래그
+    private boolean isRoundEnding = false;
+
+    // ==========================================
+    // [추가] 통합 소환수/투사체 데미지 킬러 판정 추적기
+    // ==========================================
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onSummonerDamage(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getEntity() instanceof Player victim))
+            return;
+
+        Entity damager = e.getDamager();
+        Player realKiller = null;
+
+        if (damager.hasMetadata("NarutoOwner")) {
+            try {
+                realKiller = Bukkit.getPlayer(UUID.fromString(damager.getMetadata("NarutoOwner").get(0).asString()));
+            } catch (Exception ignored) {
+            }
+        } else if (damager.hasMetadata("SungJinWooOwner")) {
+            try {
+                realKiller = Bukkit
+                        .getPlayer(UUID.fromString(damager.getMetadata("SungJinWooOwner").get(0).asString()));
+            } catch (Exception ignored) {
+            }
+        } else if (damager.hasMetadata("YopopoOwner")) {
+            try {
+                realKiller = Bukkit.getPlayer(UUID.fromString(damager.getMetadata("YopopoOwner").get(0).asString()));
+            } catch (Exception ignored) {
+            }
+        } else if (damager instanceof org.bukkit.entity.TNTPrimed tnt && tnt.hasMetadata("GaaraShooter")) {
+            try {
+                realKiller = Bukkit.getPlayer(UUID.fromString(tnt.getMetadata("GaaraShooter").get(0).asString()));
+            } catch (Exception ignored) {
+            }
+        } else if (damager instanceof org.bukkit.entity.Projectile proj) {
+            if (proj.getShooter() instanceof Player shooter) {
+                realKiller = shooter;
+            } else if (proj.getShooter() instanceof Entity shooterEnt) {
+                if (shooterEnt.hasMetadata("SungJinWooOwner")) {
+                    try {
+                        realKiller = Bukkit.getPlayer(
+                                UUID.fromString(shooterEnt.getMetadata("SungJinWooOwner").get(0).asString()));
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+
+        if (realKiller != null && !realKiller.equals(victim)) {
+            victim.setMetadata("MOC_LastKiller",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, realKiller.getUniqueId().toString()));
+        }
+    }
+
     // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
@@ -848,20 +993,45 @@ public class GameManager implements Listener {
         Player victim = e.getEntity();
         Player killer = victim.getKiller();
 
+        // [추가] 소환수 투사체나 특수 데미지로 인한 킬러 식별 시스템 연동
+        if (killer == null && victim.hasMetadata("MOC_LastKiller")) {
+            try {
+                String killerUuidStr = victim.getMetadata("MOC_LastKiller").get(0).asString();
+                killer = Bukkit.getPlayer(UUID.fromString(killerUuidStr));
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (victim.hasMetadata("MOC_LastKiller")) {
+            victim.removeMetadata("MOC_LastKiller", plugin);
+        }
+
         // [디버그] 사망 로그 출력 (원인 파악용)
         org.bukkit.event.entity.EntityDamageEvent lastDamage = victim.getLastDamageCause();
         String cause = (lastDamage != null) ? lastDamage.getCause().name() : "UNKNOWN";
-        plugin.getLogger().info("[MocPlugin] Player died: " + victim.getName() + ", Cause: " + cause);
+        plugin.getLogger().info("[MocPlugin] Player died: " + victim.getName() + ", Cause: " + cause + ", Killer: "
+                + (killer != null ? killer.getName() : "None"));
 
-        // 킬 점수 +1
+        // 킬 점수 +1 및 더욱 상세해진 킬로그 출력
         if (killer != null && !killer.equals(victim)) {
             scores.put(killer.getUniqueId(), scores.getOrDefault(killer.getUniqueId(), 0) + 1);
+            // 살인자에게만 집중 점수 메시지
             killer.sendMessage("§e[MOC] §f적을 처치하여 +1점!");
+            // 전체 킬로그 방송
+            Bukkit.broadcastMessage("§c☠ §f" + victim.getName() + " 사망! §e👑 §f" + killer.getName() + " +1점");
+        } else {
+            // [추가] 자기장에 의해 사망한 경우 (ArenaManager에서 세팅한 메타데이터 확인)
+            if (victim.hasMetadata("border_death")) {
+                Bukkit.broadcastMessage("§c☠ §f" + victim.getName() + " 자기장에 의해 폭발되었습니다!");
+                victim.removeMetadata("border_death", plugin);
+            } else {
+                // 자살, 낙사, 기타 사인일 경우
+                Bukkit.broadcastMessage("§c☠ §f" + victim.getName() + "님이 탈락했습니다.");
+            }
         }
 
         // e.setDrops(Collections.emptyList()); // 아이템 떨구기 방지 (깔끔하게)
         e.setDeathMessage(null); // 기본 데스메시지 끄기
-        Bukkit.broadcastMessage("§c☠ §f" + victim.getName() + "님이 탈락했습니다.");
         // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
         // 1. 즉시 리스폰 및 관전 모드 전환 (1틱 뒤 실행)
         new BukkitRunnable() {
@@ -883,8 +1053,13 @@ public class GameManager implements Listener {
 
                 // 최후의 1인 확인
                 // [수정] 낙사 등 자가 사망 시에도 1명만 남으면 라운드가 종료되도록 설정
-                // 테스트 모드여도 1명이 남으면 라운드를 종료하여 결과를 보여줍니다.
+                // [중요 수정] 동시 사망 시 중복으로 엔드 라운드가 실행되는 것을 차단
                 if (survivors.size() <= 1) {
+                    if (isRoundEnding) {
+                        return; // 이미 다른 사람의 사망 이벤트가 처리 중이면 무시
+                    }
+                    isRoundEnding = true; // 문 닫음
+
                     Player winner = survivors.isEmpty() ? null : survivors.get(0);
                     if (winner != null) {
                         endRound(java.util.Collections.singletonList(winner));
@@ -1100,6 +1275,9 @@ public class GameManager implements Listener {
                     abilityName = ab.getName();
                 }
                 usage = abilityManager.getUsageCount(abilityCode);
+            } else {
+                // 게임에 참여하지 않아 능력이 배정되지 않은 유저(AFK, 관전 등)는 통계에서 제외합니다.
+                continue;
             }
 
             // 승자 여부 체크
@@ -1235,7 +1413,15 @@ public class GameManager implements Listener {
             return;
         if (!readyPlayers.contains(p.getUniqueId())) {
             readyPlayers.add(p.getUniqueId());
-            p.sendMessage("§a[MOC] 준비 완료!");
+
+            // [추가] 레디 안 한 사람 수 계산
+            long unreadyCount = Bukkit.getOnlinePlayers().stream()
+                    .filter(op -> !afkPlayers.contains(op.getName()) && !readyPlayers.contains(op.getUniqueId()))
+                    .count();
+
+            // [추가] 전체 플레이어에게 레디 상태 알림
+            Bukkit.broadcastMessage("§a" + p.getName() + " 레디! (레디 안 한 사람 수 : " + unreadyCount + ")");
+
             p.sendMessage(" ");
             p.sendMessage(" ");
             p.sendMessage(" ");

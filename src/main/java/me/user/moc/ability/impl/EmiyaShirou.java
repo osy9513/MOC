@@ -440,7 +440,7 @@ public class EmiyaShirou extends Ability {
         BukkitTask fireTask = new BukkitRunnable() {
             Location currentLoc = display.getLocation().clone();
             Vector dir = target.getEyeLocation().subtract(currentLoc).toVector().normalize();
-            double speed = 1.5; // 투사체 속도
+            double speed = 0.75; // 투사체 속도 (기존 1.5에서 50% 너프)
             double distanceTraveled = 0;
             double maxDistance = 30;
 

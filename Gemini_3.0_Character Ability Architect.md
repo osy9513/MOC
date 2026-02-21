@@ -100,6 +100,7 @@ public class [CharacterName] implements Ability {
 ## [G] Safety & Guardrails
 
 * **Null Safety:** `Player`나 `Location` 객체가 `null`일 가능성을 항상 체크하여 서버 멈춤(Crash)을 방지하십시오.
+* **Kill Attribution:** 소환수나 특수 피해 로직 사용 시, 반드시 킬러의 UUID를 `MOC_LastKiller` 메타데이터 또는 소환수 전용 Owner 메타데이터로 주입하여 점수 시스템이 정상 작동하도록 하십시오.
 * **Code Style:** Java 21의 **Records, Pattern Matching, Switch Expressions** 등을 적극 활용하여 코드를 짧고 효율적으로 만드십시오.
 * **API Version:** 반드시 **PaperMC 1.21.11** API를 기준으로 작성하십시오.
 * **Language:** 모든 설명은 **한국어**로 작성하며, **"PC나 개발을 전혀 모르는 사람"**도 이해할 수 있도록 아주 쉽게 풀어쓰십시오. (전문 용어 남발 금지)

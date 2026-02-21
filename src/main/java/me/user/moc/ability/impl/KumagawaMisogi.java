@@ -195,7 +195,8 @@ public class KumagawaMisogi extends Ability {
     }
 
     private void launchScrew(Player p) {
-        Location loc = p.getEyeLocation().subtract(0, 0.2, 0);
+        // [수정] 머리(EyeLocation)가 아닌, 몸의 중앙(Location + Y 오프셋 1.0)에서 발사되도록 수정
+        Location loc = p.getLocation().add(0, 0.7, 0);
         Vector dir = p.getLocation().getDirection().normalize().multiply(1.5); // 눈덩이 속도 정도
 
         ArmorStand screw = p.getWorld().spawn(loc, ArmorStand.class, as -> {

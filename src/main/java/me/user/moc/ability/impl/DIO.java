@@ -106,7 +106,7 @@ public class DIO extends Ability {
         p.sendMessage("§f멈춘 시간 동안 공격한 데미지는 시간이 다시 흐를 때");
         p.sendMessage("§f한꺼번에 들어갑니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 20초");
+        p.sendMessage("§f쿨타임 : 28초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 더 월드");
         p.sendMessage("§f장비 제거 : 없음");
@@ -142,7 +142,7 @@ public class DIO extends Ability {
 
         // *주의*: 다른 사람이 멈췄을 때 내가 쓸 수 있는가?
         // 기획상 "유일하게 플레이어중 DIO만 움직일 수 있습니다" -> DIO는 움직일 수 있음.
-        // 그리고 쿨타임이 20초.
+        // 그리고 쿨타임이 28초.
         // 내가 멈춘게 아니면 쓸 수 있게 해줘야 함 (중첩 가능).
 
         if (!checkCooldown(p))
@@ -302,7 +302,7 @@ public class DIO extends Ability {
         timeStoppers.remove(caster.getUniqueId());
 
         // 쿨타임 적용 (끝나고 적용)
-        setCooldown(caster, 20);
+        setCooldown(caster, 28);
 
         // 아직 다른 DIO가 시간을 멈추고 있다면? 완전히 풀지 않음.
         if (!timeStoppers.isEmpty()) {

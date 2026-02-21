@@ -141,8 +141,8 @@ public class Jjanggu extends Ability {
 
                 // 2칸 대미지 충돌 판정
                 // 플레이어 주변 2칸 내의 엔티티 검색 (속도가 빨라 범위 상향)
-                // [밸런스 패치] 범위 추가 축소 1.0 -> 0.8 (적중률 상향)
-                for (Entity target : p.getNearbyEntities(0.8, 0.8, 0.8)) {
+                // [밸런스 패치] 범위 20% 추가 축소 (0.8 -> 0.64)
+                for (Entity target : p.getNearbyEntities(0.64, 0.64, 0.64)) {
                     if (target instanceof LivingEntity livingTarget && target != p) {
                         if (livingTarget instanceof Player pl && pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)
                             continue;

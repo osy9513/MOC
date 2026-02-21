@@ -391,18 +391,16 @@ public class TogaHimiko extends Ability {
             am.changeAbilityTemporary(p, actualCodeToGive);
             ignoringCleanup.remove(p.getUniqueId());
 
-            // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
+            // 3. 인벤토리 복사 (중요: giveItem 보다 먼저 수행해야 새로 받은 고유 아이템이 덮어씌워지지 않음)
+            p.getInventory().setContents(target.getInventory().getContents());
+            p.getInventory().setArmorContents(target.getInventory().getArmorContents());
+
             // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
             Ability newAbility = am.getAbility(actualCodeToGive);
             if (newAbility != null) {
                 newAbility.giveItem(p);
-                // giveItem이 인벤토리를 건드리지만, 아래에서 타겟 인벤토리로 덮어씌웁니다.
-                // 핵심은 giveItem 내부의 사이드 이펙트(소환, 태스크 등)를 실행하는 것입니다.
+                // 요뽀뽀 책처럼 자신에게만 필요한 아이템도 이제 지워지지 않고 남습니다.
             }
-
-            // 3. 인벤토리 복사
-            p.getInventory().setContents(target.getInventory().getContents());
-            p.getInventory().setArmorContents(target.getInventory().getArmorContents());
 
             // [고도화 1] 변경된 능력 상세 설명 출력
             if (newAbility != null) {

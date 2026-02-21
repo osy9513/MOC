@@ -1,4 +1,4 @@
-{
+﻿{
     "model": {
         "type": "minecraft:range_dispatch",
         "property": "minecraft:custom_model_data",
@@ -13,7 +13,7 @@
         ],
         "fallback": {
             "type": "minecraft:model",
-            "model": "minecraft:item/nether_brick_fence"
+            "model": "minecraft:block/nether_brick_fence_inventory"
         }
     }
 }

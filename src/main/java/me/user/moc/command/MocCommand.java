@@ -255,7 +255,24 @@ public class MocCommand implements CommandExecutor {
                 return true;
             }
 
-            default -> {
+            case "score" -> { // [디버깅 용도] 점수 확인
+                if (!p.isOp())
+                    return true;
+                p.sendMessage("§e=== 현재 점수판 데이터 ===");
+                for (java.util.UUID uuid : gm.getTopScores().stream().map(java.util.Map.Entry::getKey)
+                        .collect(java.util.stream.Collectors.toList())) {
+                    String name = Bukkit.getOfflinePlayer(uuid).getName();
+                    p.sendMessage("§f" + name + " : §a" + gm.getScore(uuid));
+                }
+                if (gm.getTopScores().isEmpty()) {
+                    p.sendMessage("§c저장된 점수가 없습니다.");
+                }
+                return true;
+            }
+
+            default ->
+
+            {
                 p.sendMessage("§c알 수 없는 명령어입니다. /moc help 를 입력하세요.");
             }
         }

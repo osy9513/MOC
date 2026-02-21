@@ -24,9 +24,6 @@ import java.util.*;
 
 public class Ddumbi extends Ability {
 
-    private final Map<UUID, Long> cooldownPink = new HashMap<>(); // 이렇게 좋은 날
-    private final Map<UUID, Long> cooldownBlue = new HashMap<>(); // 그 겨울, 우리
-    private final Map<UUID, Long> cooldownBlack = new HashMap<>(); // 널 처음 본 순간
     // Coffee consumption is limited by item count (15), no specific cooldown
     // mentioned but usually instant or item usage speed.
     // "Cooltime: CD per 10s". Coffee doesn't mention cooldown, just consume.
@@ -181,7 +178,9 @@ public class Ddumbi extends Ability {
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        p.setFoodLevel(Math.min(20, p.getFoodLevel() + 10)); // 5 drumsticks = 10 food points
+                        // 황금 당근 수준의 회복 (배고픔 6칸(3칸짜리), 포만감 14.4)
+                        p.setFoodLevel(Math.min(20, p.getFoodLevel() + 6));
+                        p.setSaturation(Math.min(p.getFoodLevel(), p.getSaturation() + 14.4f));
                         p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 200, 2)); // Level 3 = Amp 2
                         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 2)); // Level 3 = Amp 2
                         p.sendMessage("§6뚜비 : §f커피를 마셔 힘이 넘칩니다!");
@@ -192,9 +191,9 @@ public class Ddumbi extends Ability {
     }
 
     private void usePinkCd(Player p) {
-        if (checkCooldown(p, cooldownPink, 10))
+        if (!checkCooldown(p))
             return;
-        setCooldown(p, cooldownPink);
+        setCooldown(p, 10);
 
         broadcast(p, "§d뚜비 : §f이렇게 좋은 날");
 
@@ -242,9 +241,9 @@ public class Ddumbi extends Ability {
     }
 
     private void useBlueCd(Player p) {
-        if (checkCooldown(p, cooldownBlue, 10))
+        if (!checkCooldown(p))
             return;
-        setCooldown(p, cooldownBlue);
+        setCooldown(p, 10);
 
         broadcast(p, "§b뚜비 : §f그 겨울, 우리");
 
@@ -284,9 +283,9 @@ public class Ddumbi extends Ability {
     }
 
     private void useBlackCd(Player p) {
-        if (checkCooldown(p, cooldownBlack, 10))
+        if (!checkCooldown(p))
             return;
-        setCooldown(p, cooldownBlack);
+        setCooldown(p, 10);
 
         broadcast(p, "§8뚜비 : §f널 처음 본 순간");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 1.0f, 0.5f);
@@ -467,24 +466,6 @@ public class Ddumbi extends Ability {
         }
     }
 
-    private boolean checkCooldown(Player p, Map<UUID, Long> cooldownMap, int seconds) {
-        if (cooldownMap.containsKey(p.getUniqueId())) {
-            long now = System.currentTimeMillis();
-            long endTime = cooldownMap.get(p.getUniqueId()) + (seconds * 1000L);
-            if (now < endTime) {
-                double left = (endTime - now) / 1000.0;
-                p.sendActionBar(
-                        net.kyori.adventure.text.Component.text("§c쿨타임이 " + String.format("%.1f", left) + "초 남았습니다."));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void setCooldown(Player p, Map<UUID, Long> cooldownMap) {
-        cooldownMap.put(p.getUniqueId(), System.currentTimeMillis());
-    }
-
     // Broadcast message helper since it's used multiple times
     private void broadcast(Player p, String msg) {
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -497,9 +478,6 @@ public class Ddumbi extends Ability {
         if (activeTasks != null) {
             // Basic Ability cleanup clears this, but specific logic check
         }
-        cooldownPink.remove(p.getUniqueId());
-        cooldownBlue.remove(p.getUniqueId());
-        cooldownBlack.remove(p.getUniqueId());
         super.cleanup(p); // Clears activeTasks and activeEntities
     }
 }

@@ -112,7 +112,7 @@ public class AsuiTsuyu extends Ability {
         p.sendMessage("§f- 점프 : 대상에게 빠르게 날아갑니다.");
         p.sendMessage("§f- 쉬프트 : 대상을 내 쪽으로 당겨옵니다. (블록인 경우 아이템화)");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 14초");
+        p.sendMessage("§f쿨타임 : 11초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
@@ -215,8 +215,8 @@ public class AsuiTsuyu extends Ability {
         shootTongue(p);
 
         // 쿨타임은 혀 발사 시 바로 적용? 아니면 액션 후?
-        // "쿨타임 : 14초" -> 보통 발사 시 적용.
-        setCooldown(p, 14);
+        // "쿨타임 : 11초" -> 보통 발사 시 적용.
+        setCooldown(p, 11);
 
         // 전체 메시지
         Bukkit.broadcastMessage("§a아스이 츠유 : 개굴");

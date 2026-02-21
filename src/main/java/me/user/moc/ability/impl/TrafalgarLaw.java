@@ -33,7 +33,7 @@ public class TrafalgarLaw extends Ability {
     private static final int ROOM_RADIUS = 15;
     // [버프] 지속시간 5초 -> 13초 (+8초)
     private static final int ROOM_DURATION_SEC = 13;
-    private static final int DAMAGE_AMOUNT = 10; // 체력 5칸
+    private static final int DAMAGE_AMOUNT = 8; // 체력 4칸 (기존 10에서 20% 너프)
     private static final int COOLDOWN_SEC = 30;
 
     public TrafalgarLaw(JavaPlugin plugin) {
@@ -78,7 +78,7 @@ public class TrafalgarLaw extends Ability {
         p.sendMessage("§c전투 ● 트라팔가 로우(원피스)");
         p.sendMessage("§f웅크리기(Shift) + 검 우클릭 시 13초간 §bROOM§f을 전개합니다.");
         p.sendMessage("§fROOM 내부의 대상을 바라보고 우클릭 시 §e위치를 맞바꿉니다(샴블즈)§f.");
-        p.sendMessage("§f교환된 대상에게는 10의 피해를 입힙니다.");
+        p.sendMessage("§f교환된 대상에게는 8의 피해를 입힙니다.");
         p.sendMessage("§f룸 지속시간 동안 횟수 제한 없이 사용 가능합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 30초");
@@ -340,7 +340,7 @@ public class TrafalgarLaw extends Ability {
         p.getWorld().playSound(p.getLocation(), "moc.law.shambles", 1.0f, 1.0f);
 
         // 피해 및 상태이상
-        target.damage(DAMAGE_AMOUNT, p); // 10 데미지 (하트 5칸)
+        target.damage(DAMAGE_AMOUNT, p); // 8 데미지 (하트 4칸)
         // target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 0)); //
         // 멀미 2초 (40 ticks)
 

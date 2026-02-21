@@ -369,15 +369,21 @@ public class Ulquiorra extends Ability {
         // 추가 이펙트
         loc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, loc, 1);
 
-        // 2. 데미지 처리 (수정됨: 40 -> 20)
+        // 2. 데미지 처리 (20 고정 피해)
         for (Entity e : targets) {
             if (e instanceof LivingEntity living) {
-                applyTrueDamage(living, 0); // 5뎀
+                applyTrueDamage(living, 20.0, attacker);
             }
         }
     }
 
-    private void applyTrueDamage(LivingEntity target, double damage) {
+    private void applyTrueDamage(LivingEntity target, double damage, Player attacker) {
+        // [추가] 킬 판정 연동
+        if (attacker != null) {
+            target.setMetadata("MOC_LastKiller",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, attacker.getUniqueId().toString()));
+        }
+
         // 방어력 무시 로직
         double currentHealth = target.getHealth();
         double newHealth = currentHealth - damage;

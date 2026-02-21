@@ -275,13 +275,21 @@ public class Singed extends Ability {
         Player p = e.getPlayer();
         ItemStack item = e.getItem();
 
+        // 게임중이고, 해당 아이템 이름이 방독면일 때만 장착되게 조건 추가
         if (item == null || item.getType() != Material.NETHER_BRICK_FENCE)
+            return;
+
+        if (!item.hasItemMeta() || item.getItemMeta().getCustomModelData() != 1
+                || !"§5방독면".equals(item.getItemMeta().getDisplayName()))
+            return;
+
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
             return;
 
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)
             return;
 
-        // 착용 로직 (전투 전에도 착용 가능하도록 여기엔 전투 체크 안 넣음)
+        // 착용 로직
         e.setCancelled(true);
 
         ItemStack currentHelmet = p.getInventory().getHelmet();
