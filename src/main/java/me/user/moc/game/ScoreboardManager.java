@@ -38,13 +38,8 @@ public class ScoreboardManager {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
-    // 점수판 가동 중지
-    public void stop() {
-        if (updateTask != null && !updateTask.isCancelled()) {
-            updateTask.cancel();
-            updateTask = null;
-        }
-        // 모든 플레이어 점수판 제거 및 초기화
+    // 모든 플레이어 점수판 제거 및 초기화
+    private void clearScoreboards() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             Scoreboard board = p.getScoreboard();
             if (board != Bukkit.getScoreboardManager().getMainScoreboard()) {
@@ -58,17 +53,21 @@ public class ScoreboardManager {
         }
     }
 
+    // 점수판 가동 중지
+    public void stop() {
+        if (updateTask != null && !updateTask.isCancelled()) {
+            updateTask.cancel();
+            updateTask = null;
+        }
+        clearScoreboards();
+    }
+
     // 모든 플레이어에게 점수판 업데이트
     private void updateAllPlayers() {
-        // 게임 중이 아니면 점수판을 띄우지 않음 (또는 로비용 점수판을 띄울 수도 있음)
+        // 게임 중이 아니면 점수판을 띄우지 않음
         if (!gameManager.isRunning()) {
-            // 게임 중이 아닐 때는 메인 점수판이나 빈 것을 보여줌
+            clearScoreboards();
             for (Player p : Bukkit.getOnlinePlayers()) {
-                // 만약 로비에서도 보여주고 싶다면 조건문 수정 필요.
-                // 여기서는 게임 중에만 보여주는 것으로 가정.
-                // 하지만 "참가 인원 수" 등을 보여달라고 했으므로 로비에서도 보여주는 게 좋을 수 있음.
-                // 일단 항상 보여주도록 처리.
-                updateScoreboard(p);
                 // [Fix] 로비에서도 팀 동기화 실행 (능력 테스트 등을 위해 필수)
                 syncTeams(p);
             }

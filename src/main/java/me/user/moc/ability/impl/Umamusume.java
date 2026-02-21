@@ -36,7 +36,7 @@ public class Umamusume extends Ability {
     private final Map<UUID, Boolean> hasWon = new HashMap<>();
 
     // 목표 거리 1 = 1블럭
-    private static final double TARGET_DISTANCE = 1500.0;
+    private static final double TARGET_DISTANCE = 500.0;
 
     public Umamusume(JavaPlugin plugin) {
         super(plugin);
@@ -61,6 +61,10 @@ public class Umamusume extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        // [수정] 우마무스메는 소고기 대신 당근을 받습니다.
+        p.getInventory().remove(Material.COOKED_BEEF);
+        p.getInventory().addItem(new ItemStack(Material.CARROT, 64));
+
         // 초기화 (이미 소환된 말이 있다면 제거)
         Horse oldHorse = myHorse.remove(p.getUniqueId());
         if (oldHorse != null && !oldHorse.isDead()) {
@@ -223,7 +227,7 @@ public class Umamusume extends Ability {
             pSpeed.setBaseValue(speed);
         }
 
-        p.sendMessage("§d[SYSTEM] §f우마무스메가 명예의 전당에 올랐습니다! 우승자 버프를 획득합니다.");
+        p.sendMessage("§f우마무스메가 명예의 전당에 올랐습니다! 우승자 버프를 획득합니다.");
     }
 
     @EventHandler
@@ -344,8 +348,8 @@ public class Umamusume extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f추가 장비 : 당근 64개");
+        p.sendMessage("§f장비 제거 : 구운 소고기 64개");
     }
 
     @Override

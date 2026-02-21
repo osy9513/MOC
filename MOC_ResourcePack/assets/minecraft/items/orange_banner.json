@@ -1,4 +1,4 @@
-{
+﻿{
     "model": {
         "type": "minecraft:range_dispatch",
         "property": "minecraft:custom_model_data",
@@ -12,8 +12,12 @@
             }
         ],
         "fallback": {
-            "type": "minecraft:model",
-            "model": "minecraft:item/orange_banner"
+            "type": "minecraft:special",
+            "base": "minecraft:item/template_banner",
+            "model": {
+                "type": "minecraft:banner",
+                "color": "orange"
+            }
         }
     }
 }

@@ -56,6 +56,7 @@ public class AbilityManager {
      */
     private void registerAbilities() {
         // [수정 3] 여기서 능력을 등록할 때 getName()이 아니라 getCode()로 등록합니다.
+        addAbility(new GonFreecss(plugin)); // 곤 프릭스 (060) 신규 등록
         addAbility(new Ueki(plugin)); // 우에키 등록
         addAbility(new Olaf(plugin)); // 올라프 등록
         addAbility(new Midas(plugin)); // 미다스 등록
@@ -87,6 +88,7 @@ public class AbilityManager {
         addAbility(new Yugi(plugin)); // 유희 등록
         addAbility(new Spiderman(plugin)); // 030 스파이더맨
         addAbility(new Gaara(plugin)); // 036 가아라
+        addAbility(new Yopopo(plugin)); // 054 요뽀뽀
         addAbility(new MisakaMikoto(plugin)); // 034 미사카 미코토
         addAbility(new NanayaShiki(plugin)); // 035 나나야 시키
         addAbility(new AizenSosuke(plugin)); // 037 아이젠 소스케
@@ -117,13 +119,20 @@ public class AbilityManager {
         addAbility(new KumagawaMisogi(plugin)); // 053 쿠마가와 미소기
         addAbility(new Topblade(plugin)); // 055 탑블레이드
         addAbility(new Umamusume(plugin)); // 052 우마무스메
+        addAbility(new Frieren(plugin)); // 061 프리렌
+        addAbility(new Tarnished(plugin)); // 058 빛바랜 자
+        addAbility(new Ddumbi(plugin)); // H06 뚜비
+        addAbility(new LeeSeulbi(plugin)); // 057 이슬비
+        addAbility(new Isaac(plugin)); // 064 아이작
+        addAbility(new SungJinWoo(plugin)); // 063 성진우
 
+        //
+        //
+        //
         // [추가] 토가 히미코 전용 격리 능력 등록 (랜덤 뽑기 제외 대상)
         addAbility(new TH_Rimuru(plugin)); // TH018
         addAbility(new TH_PolarBearAbility(plugin)); // TH028
         addAbility(new TH_TungTungTungSahur(plugin)); // TH016
-        addAbility(new Tarnished(plugin)); // 058 빛바랜 자
-        addAbility(new Ddumbi(plugin)); // H06 뚜비
     }
 
     private void addAbility(Ability ability) {
@@ -216,7 +225,8 @@ public class AbilityManager {
         rerollCounts.clear();
         silencedPlayers.clear(); // [추가] 봉인 상태도 초기화
         jumpSilenceExpirations.clear(); // [추가] 점프 봉인 상태도 초기화
-        gameUsageCounts.clear(); // [추가] 통계 초기화 (필요 시 유지할 수도 있지만 일단 초기화)
+        // gameUsageCounts는 게임 전체 통계이므로 라운드마다 초기화하지 않습니다. (startGame에만 초기화)
+        // gameUsageCounts.clear(); // [추가] 통계 초기화 (필요 시 유지할 수도 있지만 일단 초기화)
     }
 
     /**
@@ -231,6 +241,40 @@ public class AbilityManager {
      */
     public int getUsageCount(String code) {
         return gameUsageCounts.getOrDefault(code, 0);
+    }
+
+    /**
+     * [추가] 0회 사용된 능력에 가중치(1.1)를 주어 랜덤으로 하나를 뽑습니다.
+     */
+    public String drawWeightedRandomAbility(List<String> pool) {
+        if (pool == null || pool.isEmpty())
+            return null;
+        double totalWeight = 0;
+        for (String code : pool) {
+            totalWeight += getUsageCount(code) == 0 ? 1.1 : 1.0;
+        }
+        double randomVal = Math.random() * totalWeight;
+        for (String code : pool) {
+            double weight = getUsageCount(code) == 0 ? 1.1 : 1.0;
+            randomVal -= weight;
+            if (randomVal <= 0) {
+                return code;
+            }
+        }
+        return pool.get(pool.size() - 1);
+    }
+
+    /**
+     * [추가] 덱을 섞을 때 0회 사용된 능력이 앞쪽에 올 확률을 10% 높입니다.
+     */
+    public void shuffleDeckWeighted(List<String> deck) {
+        List<String> original = new ArrayList<>(deck);
+        deck.clear();
+        while (!original.isEmpty()) {
+            String choice = drawWeightedRandomAbility(original);
+            original.remove(choice);
+            deck.add(choice);
+        }
     }
 
     // GameManager에서 플레이어에게 능력을 강제로 설정할 때 사용합니다.
@@ -394,8 +438,8 @@ public class AbilityManager {
             }
         }
 
-        Collections.shuffle(pool); // 목록을 섞습니다.
-        String newAbility = pool.get(0); // 맨 앞의 것을 선택합니다.
+        // [수정] 단순 셔플 대신 가중치 적용 추첨
+        String newAbility = drawWeightedRandomAbility(pool);
 
         // 3. 새로운 능력을 저장하고 리롤 횟수를 1 차감합니다.
         playerAbilities.put(p.getUniqueId(), newAbility);

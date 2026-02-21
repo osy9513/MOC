@@ -93,6 +93,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/tarnished_sword"
                 }
+            },
+            {
+                "threshold": 14,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/sololeveling"
+                }
             }
         ],
         "fallback": {

@@ -9,6 +9,13 @@
           "type": "minecraft:model",
           "model": "minecraft:item/tungtung_bat"
         }
+      },
+      {
+        "threshold": 2,
+        "model": {
+          "type": "minecraft:model",
+          "model": "minecraft:item/frieren"
+        }
       }
     ],
     "fallback": {

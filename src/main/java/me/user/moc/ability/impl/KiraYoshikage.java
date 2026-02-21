@@ -87,10 +87,10 @@ public class KiraYoshikage extends Ability {
         sha.setRemoveWhenFarAway(false);
         sha.setInvulnerable(true); // 무적
 
-        // [수정] 이동 속도 설정 (0.26 -> 0.312, 약 20% 증가)
+        // [수정] 이동 속도 설정 (기본 0.26 -> 0.39, 약 50% 증가)
         // GENERIC_MOVEMENT_SPEED -> MOVEMENT_SPEED (프로젝트 API 버전 호환)
         if (sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null) {
-            sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.312);
+            sha.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).setBaseValue(0.39);
         }
 
         // 좀벌레 이름표는 숨김
@@ -340,6 +340,15 @@ public class KiraYoshikage extends Ability {
 
                 le.damage(10.0, owner);
                 le.sendMessage("§c이쪽을 봐라!");
+
+                // 폭발에 맞은 대상을 3~5칸 정도 튕겨내는 강력한 넉백 적용
+                org.bukkit.util.Vector kb = le.getLocation().toVector().subtract(sha.getLocation().toVector());
+                // 거리가 너무 가까워서 0에 수렴할 경우 대비
+                if (kb.lengthSquared() < 0.01) {
+                    kb = new org.bukkit.util.Vector(Math.random() - 0.5, 0, Math.random() - 0.5);
+                }
+                kb = kb.normalize().multiply(1.8).setY(0.7); // 수평 1.8배, 수직 0.7 배율로 강하게 날림
+                le.setVelocity(kb);
             }
         }
     }

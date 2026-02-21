@@ -126,6 +126,12 @@ public class Ranga extends Ability {
             ranga.getAttribute(Attribute.SCALE).setBaseValue(2.0);
         }
 
+        // 속성 설정: 이동 속도 15% 증가 (기본값 대비 1.15배)
+        if (ranga.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+            double baseSpeed = ranga.getAttribute(Attribute.MOVEMENT_SPEED).getBaseValue();
+            ranga.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(baseSpeed * 1.15);
+        }
+
         // 버프
         ranga.addPotionEffect(
                 new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1, true, true));

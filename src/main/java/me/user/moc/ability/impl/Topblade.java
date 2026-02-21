@@ -153,40 +153,60 @@ public class Topblade extends Ability {
                 if (collided) {
                     // 반대 방향으로 튕기기 (단순 반전)
                     currentVelocity.multiply(-1);
+                    // [수정] 사람과 부딪친 것과 같은 이팩트 출력
                     p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
-                    p.spawnParticle(Particle.LAVA, p.getLocation(), 10);
+                    p.getWorld().spawnParticle(Particle.EXPLOSION, p.getLocation(), 1);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
                 }
 
                 // 이동 적용 (충돌 후 방향 반영)
-                p.setVelocity(currentVelocity);
+                // [수정] 반드시 앞으로 이동하도록, 플레이어가 멈추지 않게 약간의 중력을 둔 XZ 강제 고정
+                Vector applyVel = currentVelocity.clone();
+                applyVel.setY(p.getVelocity().getY() - 0.04);
+                p.setVelocity(applyVel);
 
                 // 3. 엔티티 충돌 처리
                 // 자신 제외, 관전자 제외
-                for (Entity entity : p.getNearbyEntities(0.8, 0.8, 0.8)) { // 범위를 1 -> 0.8로 약간 줄여 정밀도 높임
+                for (Entity entity : p.getNearbyEntities(1.2, 1.2, 1.2)) { // 범위를 약간 늘림 (충돌 원활)
                     if (entity instanceof LivingEntity && entity != p) {
                         LivingEntity target = (LivingEntity) entity;
 
-                        // 관전자 제외
+                        // [수정] 관전자 완벽 제외
                         if (target instanceof Player
-                                && !AbilityManager.getInstance().hasAbility((Player) target, "관전자어쩌구...")) {
-                            if (((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
-                                continue;
+                                && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                            continue;
                         }
 
-                        // 데미지 및 넉백
+                        // 데미지
                         target.damage(8, p);
 
-                        // 타겟 넉백
-                        target.setVelocity(currentVelocity.clone().normalize().multiply(1.5).setY(0.5));
+                        // [수정] 10칸 이상 날리는 초강력 넉백
+                        // damage() 메서드가 넉백 이벤트를 덮어씌우지 않게 1틱 지연 적용
+                        final Vector knockbackDir = currentVelocity.clone().normalize().multiply(-1).setY(0); // 현재
+                                                                                                              // currentVelocity는
+                                                                                                              // 튕겨나가기
+                                                                                                              // 전이므로 타겟
+                                                                                                              // 쪽 방향
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (target.isValid() && !target.isDead()) {
+                                    // 3.5 배율에 Y 1.2 정도면 10칸 이상 저 멀리 날아감
+                                    target.setVelocity(knockbackDir.multiply(-4.0).setY(1.3));
+                                }
+                            }
+                        }.runTaskLater(plugin, 1L);
 
                         // 본인 튕겨나감
                         currentVelocity.multiply(-1);
-                        p.setVelocity(currentVelocity);
+                        p.setVelocity(currentVelocity.clone().setY(p.getVelocity().getY()));
 
                         // 효과
                         p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
-                        p.spawnParticle(Particle.EXPLOSION, p.getLocation(), 1);
+                        p.getWorld().spawnParticle(Particle.EXPLOSION, p.getLocation(), 1);
                         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
+
+                        break; // 한 명만 치고 튕겨나가도록
                     }
                 }
 

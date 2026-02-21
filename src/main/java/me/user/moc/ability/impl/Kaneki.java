@@ -67,15 +67,13 @@ public class Kaneki extends Ability {
         // 1. 인벤토리 초기화
         p.getInventory().clear();
 
-        // 2. 썩은 고기 100개 지급 (64 + 36)
-        ItemStack flesh = new ItemStack(Material.ROTTEN_FLESH, 36);
+        // 2. 썩은 고기 지급
+        ItemStack flesh = new ItemStack(Material.ROTTEN_FLESH, 64);
         org.bukkit.inventory.meta.ItemMeta meta = flesh.getItemMeta();
         if (meta != null) {
             meta.setLore(Arrays.asList("§7구울의 주식입니다.", "§7이것으로만 배고픔을 채울 수 있습니다."));
             flesh.setItemMeta(meta);
         }
-        p.getInventory().addItem(flesh); // 36개
-        flesh.setAmount(64);
         p.getInventory().addItem(flesh); // 64개
 
         // 3. 기본 버프 (허기 20) - 시각 효과용
@@ -95,9 +93,9 @@ public class Kaneki extends Ability {
         p.sendMessage("§f배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
         p.sendMessage("§f폭주 시 카구네가 활성화 되며, 좌클릭 시 카구네로 상대를 끌고 옵니다 (사거리 11블럭).");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 3초 (카구네)");
+        p.sendMessage("§f쿨타임 : 7초 (카구네)");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 썩은 고기 100개");
+        p.sendMessage("§f추가 장비 : 썩은 고기 64개");
         p.sendMessage("§f장비 제거 : 철 칼, 철 갑옷, 구운 소고기, 체력 재생 포션");
     }
 
@@ -156,7 +154,7 @@ public class Kaneki extends Ability {
             return;
 
         shootKagune(p);
-        setCooldown(p, 3);
+        setCooldown(p, 7);
     }
 
     private void shootKagune(Player p) {
@@ -229,6 +227,11 @@ public class Kaneki extends Ability {
                     // AbilityManager를 사용하여 확실하게 능력 확인
                     if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p,
                             getCode())) {
+                        continue;
+                    }
+
+                    // [버그 수정] 관전 상태인 플레이어는 폭주 및 기아 효과를 받지 않음
+                    if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
                         continue;
                     }
 

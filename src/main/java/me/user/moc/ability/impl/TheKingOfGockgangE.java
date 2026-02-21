@@ -107,13 +107,21 @@ public class TheKingOfGockgangE extends Ability {
     public void onBlockDamage(BlockDamageEvent e) {
         Player p = e.getPlayer();
 
-        // 1. 쿨타임 및 능력 보유 확인
+        // 1. 아이템 장착 확인부터 해야 아무 블럭이나 캘 때 전투 시작 알림이 스팸되는 버그가 방지됨
+        ItemStack mainHand = p.getInventory().getItemInMainHand();
+        if (mainHand.getType() != Material.NETHERITE_PICKAXE)
+            return;
+        ItemMeta meta = mainHand.getItemMeta();
+        if (meta == null || !"§e킹오곡".equals(meta.getDisplayName()))
+            return;
+
+        // 2. 쿨타임 및 능력 보유 확인
         if (!checkCooldown(p)) {
             // 쿨타임 중이면 남은 시간 가이드 (이미 Ability에서 처리하겠지만 게이지를 위해 리턴만 함)
             return;
         }
 
-        // 2. 능력 보유 확인 (코드 기반)
+        // 3. 능력 보유 확인 (코드 기반)
         // 킹오브곡갱이는 다른 사람이 먹어서 사용할 수 있게 구현 ㅋㅋ 그게 더 잼슴.
         /*
          * if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin)
@@ -121,13 +129,6 @@ public class TheKingOfGockgangE extends Ability {
          * return;
          * }
          */
-
-        ItemStack mainHand = p.getInventory().getItemInMainHand();
-        if (mainHand.getType() != Material.NETHERITE_PICKAXE)
-            return;
-        ItemMeta meta = mainHand.getItemMeta();
-        if (meta == null || !"§e킹오곡".equals(meta.getDisplayName()))
-            return;
 
         // 3. 블록 즉시 파괴 로직
         Block block = e.getBlock();
