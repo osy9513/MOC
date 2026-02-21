@@ -15,6 +15,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
@@ -27,6 +28,14 @@ public class Ddumbi extends Ability {
     // Coffee consumption is limited by item count (15), no specific cooldown
     // mentioned but usually instant or item usage speed.
     // "Cooltime: CD per 10s". Coffee doesn't mention cooldown, just consume.
+
+    // 각 기술별 독립 쿨타임을 위한 맵
+    private final Map<UUID, Long> pinkCooldowns = new HashMap<>();
+    private final Map<UUID, Long> blueCooldowns = new HashMap<>();
+    private final Map<UUID, Long> blackCooldowns = new HashMap<>();
+
+    // 기술별 알림 태스크 관리
+    private final Map<UUID, Map<Integer, BukkitTask>> skillNotifyTasks = new HashMap<>();
 
     public Ddumbi(MocPlugin plugin) {
         super(plugin);
@@ -55,7 +64,7 @@ public class Ddumbi extends Ability {
                 "§f§l우클릭 시:",
                 "§f전방에 분홍색 음표를 발사하여",
                 "§f자신과 맞은 아군에게 §d재생 II§f를 5초간 부여합니다.",
-                "§7(쿨타임: 10초)"));
+                "§7(쿨타임: 7초)"));
         pinkCd.setItemMeta(pinkMeta);
 
         // Blue CD - That Winter, Us
@@ -67,7 +76,7 @@ public class Ddumbi extends Ability {
                 "§f§l우클릭 시:",
                 "§f전방에 하늘색 음표를 발사하여",
                 "§f맞은 적에게 §b동상 및 구속 II§f를 5초간 부여합니다.",
-                "§7(쿨타임: 10초)"));
+                "§7(쿨타임: 7초)"));
         blueCd.setItemMeta(blueMeta);
 
         // Black CD - The Moment I Saw You
@@ -79,7 +88,7 @@ public class Ddumbi extends Ability {
                 "§f§l우클릭 시:",
                 "§f거대한 검은 음표를 발사합니다.",
                 "§f적중 시 §c15 데미지§f와 함께 폭발합니다.",
-                "§7(쿨타임: 10초)"));
+                "§7(쿨타임: 7초)"));
         blackCd.setItemMeta(blackMeta);
 
         // Coffee
@@ -114,7 +123,7 @@ public class Ddumbi extends Ability {
         p.sendMessage("§8[널 처음 본 순간] §f폭발 음표 발사 (15 데미지 + 폭발)");
         p.sendMessage("§6[커피] §f섭취 시 배고픔 회복 + 버프 (성급함/신속 III 10초)");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 각 CD 10초");
+        p.sendMessage("§f쿨타임 : 각 CD 7초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : CD 3종, 커피 15개");
         p.sendMessage("§f장비 제거 : 철검, 스테이크");
@@ -191,9 +200,9 @@ public class Ddumbi extends Ability {
     }
 
     private void usePinkCd(Player p) {
-        if (!checkCooldown(p))
+        if (!checkSkillCooldown(p, pinkCooldowns, 1))
             return;
-        setCooldown(p, 10);
+        setSkillCooldown(p, pinkCooldowns, 7.0, 1);
 
         broadcast(p, "§d뚜비 : §f이렇게 좋은 날");
 
@@ -241,9 +250,9 @@ public class Ddumbi extends Ability {
     }
 
     private void useBlueCd(Player p) {
-        if (!checkCooldown(p))
+        if (!checkSkillCooldown(p, blueCooldowns, 2))
             return;
-        setCooldown(p, 10);
+        setSkillCooldown(p, blueCooldowns, 7.0, 2);
 
         broadcast(p, "§b뚜비 : §f그 겨울, 우리");
 
@@ -283,9 +292,9 @@ public class Ddumbi extends Ability {
     }
 
     private void useBlackCd(Player p) {
-        if (!checkCooldown(p))
+        if (!checkSkillCooldown(p, blackCooldowns, 3))
             return;
-        setCooldown(p, 10);
+        setSkillCooldown(p, blackCooldowns, 7.0, 3);
 
         broadcast(p, "§8뚜비 : §f널 처음 본 순간");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 1.0f, 0.5f);
@@ -475,9 +484,105 @@ public class Ddumbi extends Ability {
 
     @Override
     public void cleanup(Player p) {
-        if (activeTasks != null) {
-            // Basic Ability cleanup clears this, but specific logic check
+        UUID uuid = p.getUniqueId();
+        pinkCooldowns.remove(uuid);
+        blueCooldowns.remove(uuid);
+        blackCooldowns.remove(uuid);
+
+        if (skillNotifyTasks.containsKey(uuid)) {
+            Map<Integer, BukkitTask> tasks = skillNotifyTasks.remove(uuid);
+            for (BukkitTask t : tasks.values()) {
+                if (t != null && !t.isCancelled())
+                    t.cancel();
+            }
         }
-        super.cleanup(p); // Clears activeTasks and activeEntities
+
+        super.cleanup(p);
+    }
+
+    @Override
+    public void reset() {
+        pinkCooldowns.clear();
+        blueCooldowns.clear();
+        blackCooldowns.clear();
+
+        for (Map<Integer, BukkitTask> playerTasks : skillNotifyTasks.values()) {
+            for (BukkitTask t : playerTasks.values()) {
+                if (t != null && !t.isCancelled())
+                    t.cancel();
+            }
+        }
+        skillNotifyTasks.clear();
+
+        super.reset();
+    }
+
+    // === [독립 쿨타임 전용 헬퍼 메서드] ===
+
+    private boolean checkSkillCooldown(Player p, Map<UUID, Long> cooldownMap, int skillId) {
+        if (p.getGameMode() == GameMode.CREATIVE)
+            return true;
+        if (p.getGameMode() == GameMode.SPECTATOR)
+            return false;
+
+        MocPlugin moc = (MocPlugin) plugin;
+        if (moc.getGameManager() == null || !moc.getGameManager().isBattleStarted()) {
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c전투 시작 후에 사용할 수 있습니다."));
+            return false;
+        }
+
+        if (AbilityManager.silencedPlayers.contains(p.getUniqueId())) {
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c능력이 봉인되어 사용할 수 없습니다."));
+            return false;
+        }
+
+        if (!cooldownMap.containsKey(p.getUniqueId()))
+            return true;
+
+        long now = System.currentTimeMillis();
+        long endTime = cooldownMap.get(p.getUniqueId());
+
+        if (now < endTime) {
+            double left = (endTime - now) / 1000.0;
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c기술 쿨타임: " + String.format("%.1f", left) + "초"));
+            return false;
+        }
+        return true;
+    }
+
+    private void setSkillCooldown(Player p, Map<UUID, Long> cooldownMap, double seconds, int skillId) {
+        // [수정] 크리에이티브 모드라면 쿨타임을 아예 설정하지 않음
+        if (p.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+
+        UUID uuid = p.getUniqueId();
+        cooldownMap.put(uuid, System.currentTimeMillis() + (long) (seconds * 1000));
+
+        // 기존 해당 기술 알림 취소
+        Map<Integer, BukkitTask> playerTasks = skillNotifyTasks.computeIfAbsent(uuid, k -> new HashMap<>());
+        if (playerTasks.containsKey(skillId)) {
+            playerTasks.get(skillId).cancel();
+        }
+
+        // 새 알림 등록
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (p.isOnline()) {
+                    String skillName = switch (skillId) {
+                        case 1 -> "§d이렇게 좋은 날";
+                        case 2 -> "§b그 겨울, 우리";
+                        case 3 -> "§8널 처음 본 순간";
+                        default -> "기술";
+                    };
+                    p.sendActionBar(net.kyori.adventure.text.Component.text(skillName + " §a사용 가능!"));
+                    p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
+                }
+                playerTasks.remove(skillId);
+            }
+        }.runTaskLater(plugin, (long) (seconds * 20));
+
+        playerTasks.put(skillId, task);
     }
 }

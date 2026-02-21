@@ -135,6 +135,11 @@ public abstract class Ability implements Listener {
 
     // === [쿨타임 관련 헬퍼 메서드] ===
     protected void setCooldown(Player p, double seconds) {
+        // [수정] 크리에이티브 모드라면 쿨타임을 아예 설정하지 않음 (알림 도배 방지)
+        if (p.getGameMode() == org.bukkit.GameMode.CREATIVE) {
+            return;
+        }
+
         cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + (long) (seconds * 1000));
 
         // [추가] 기존 알림 취소
