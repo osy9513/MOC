@@ -125,6 +125,7 @@ public class AbilityManager {
         addAbility(new LeeSeulbi(plugin)); // 057 이슬비
         addAbility(new Isaac(plugin)); // 064 아이작
         addAbility(new SungJinWoo(plugin)); // 063 성진우
+        addAbility(new Pyro(plugin)); // 065 파이로 등록
 
         //
         //
