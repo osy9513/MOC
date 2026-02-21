@@ -60,7 +60,7 @@ public class SungJinWoo extends Ability {
         }
         p.getInventory().addItem(nightKiller);
 
-        // 10초마다 레벨업 스케줄러 실행
+        // 7.5초마다 레벨업 스케줄러 실행
         startLevelUpTask(p);
     }
 
@@ -68,7 +68,7 @@ public class SungJinWoo extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§b유틸 ● 성진우(나 혼자만 레벨업)");
         p.sendMessage("§fE급 헌터에서 국가권력급 헌터가 됩니다.");
-        p.sendMessage("§f10초마다 레벨이 1씩 오릅니다.");
+        p.sendMessage("§f7.5초마다 레벨이 1씩 오릅니다.");
         p.sendMessage("§f맨손 쉬프트 좌클릭 시 레벨을 소모하여 소환할 수 있는 선택 창이 출력됩니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
@@ -108,10 +108,10 @@ public class SungJinWoo extends Ability {
                     return;
                 }
 
-                // 레벨업 (10초마다 1)
+                // 레벨업 (7.5초마다 1)
                 p.setLevel(p.getLevel() + 1);
             }
-        }.runTaskTimer(plugin, 200L, 200L); // 200틱 = 10초
+        }.runTaskTimer(plugin, 150L, 150L); // 150틱 = 7.5초
 
         // 부모의 태스크 리스트에 등록하여 사망/리셋 시 자동 종료되도록 함
         List<BukkitTask> tList = activeTasks.getOrDefault(p.getUniqueId(), new java.util.ArrayList<>());
@@ -261,67 +261,70 @@ public class SungJinWoo extends Ability {
 
         switch (slot) {
             case 0:
-                name = "일반 좀비 병사";
+                name = "§7[Lv.1] 일반 좀비 병사";
                 summon = spawnZombie(w, loc, false, false);
                 break;
             case 9:
-                name = "정예 좀비 병사";
+                name = "§f[Lv.2] 정예 좀비 병사";
                 summon = spawnZombie(w, loc, true, false);
                 break;
             case 18:
-                name = "기사 좀비";
-                summon = spawnZombie(w, loc, false, true); // true, true에서 변경 (기사는 투구/갑옷 대신 풀셋)
-                // 위 주석처럼 기사 좀비는 isKnight=true 로 들어가게 되어 spawnZombie() 파라미터가 수정 필요할수 있지만
-                // 기존 기사 좀비 파라미터가 (w, loc, true, true) 이었고 코드를 그대로 쓰되 호출부만 바꾼다면:
-                // 기존 기사 좀비는: spawnZombie(w, loc, true, true) [isElite=true, isKnight=true]
+                name = "§b[Lv.7] 기사 좀비";
                 summon = spawnZombie(w, loc, true, true);
                 break;
             case 1:
-                name = "일반 스켈레톤 병사";
+                name = "§7[Lv.3] 일반 스켈레톤 병사";
                 summon = spawnSkeleton(w, loc, false, false);
                 break;
             case 10:
-                name = "정예 스켈레톤 병사";
+                name = "§f[Lv.4] 정예 스켈레톤 병사";
                 summon = spawnSkeleton(w, loc, true, false);
                 break;
             case 19:
-                name = "기사 스켈레톤";
+                name = "§b[Lv.8] 기사 스켈레톤";
                 summon = spawnSkeleton(w, loc, true, true);
                 break;
             case 2:
-                name = "일반 좀벌레 병사";
+                name = "§7[Lv.5] 일반 좀벌레 병사";
                 summon = spawnSilverfish(w, loc, false, false);
                 break;
             case 11:
-                name = "정예 좀벌레 병사";
+                name = "§f[Lv.6] 정예 좀벌레 병사";
                 summon = spawnSilverfish(w, loc, true, false);
                 break;
             case 20:
-                name = "기사 좀벌레";
+                name = "§b[Lv.9] 기사 좀벌레";
                 summon = spawnSilverfish(w, loc, true, true);
                 break;
             case 15:
-                name = "장군 파괴수";
+                name = "§4[Lv.10] 장군 파괴수";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.RAVAGER);
                 summon.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(150);
                 summon.setHealth(150);
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
             case 16:
-                name = "원수 위더";
+                name = "§5[Lv.15] 원수 위더";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.WITHER);
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
             case 17:
-                name = "총군단장 워든";
+                name = "§c[Lv.20] 총군단장 워든";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.WARDEN);
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
         }
 
         if (summon != null) {
-            // 커스텀 이름 및 발광, 파티클 이펙트 세팅
-            summon.setCustomName("§8" + name);
+            // [중요] 킬 판정 및 AI 연동을 위한 소유자 메타데이터 주입
+            summon.setMetadata("SungJinWooOwner",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
+            // 킬 포인트 시스템 연동 (MOC_LastKiller)
+            summon.setMetadata("MOC_LastKiller",
+                    new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
+
+            // 커스텀 이름 및 발광, 파티클 이펙트 세팅 (GUI 이름 그대로 사용)
+            summon.setCustomName(name);
             summon.setCustomNameVisible(true);
             summon.setGlowing(true); // 검푸른 발광 (바닐라 Glowing)
 
@@ -331,7 +334,78 @@ public class SungJinWoo extends Ability {
             // 타겟팅 방어 및 삭제 처리를 위한 태그와 Ability 연동
             summon.addScoreboardTag("SungJinWoo_Summon");
             registerSummon(owner, summon);
+
+            // [추가] 아군 제외 모든 생명체 자동 추적 및 호전성 부여
+            startHostilityTask(owner, summon);
         }
+    }
+
+    /**
+     * [액티브] 소환수의 호전성 부여 스케줄러
+     * 10틱(0.5초)마다 주변의 모든 생명체를 탐색하여 아군이 아니면 공격 타겟으로 지정합니다.
+     */
+    private void startHostilityTask(Player owner, org.bukkit.entity.LivingEntity summon) {
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 소환수가 죽었거나 월드에 없으면 취소
+                if (summon.isDead() || !summon.isValid()) {
+                    this.cancel();
+                    return;
+                }
+
+                // 소환수가 이미 타겟이 있더라도 정기적으로 '가장 가까운 아군 아닌 적'으로 최신화
+                // 주변 30칸 내의 모든 LivingEntity 검색
+                org.bukkit.entity.LivingEntity nearestEnemy = null;
+                double minDistance = Double.MAX_VALUE;
+
+                for (org.bukkit.entity.Entity entity : summon.getNearbyEntities(30, 10, 30)) {
+                    if (entity instanceof org.bukkit.entity.LivingEntity target && target != summon
+                            && target != owner) {
+
+                        // 아군 판별 (관전자는 제외)
+                        if (target instanceof Player pl && pl.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+                            continue;
+
+                        // 1. 성진우 본인 또는 같은 성진우 능력자(아군) 제외
+                        if (target instanceof Player pl && me.user.moc.ability.AbilityManager
+                                .getInstance((MocPlugin) plugin).hasAbility(pl, getCode())) {
+                            continue;
+                        }
+
+                        // 2. 다른 그림자 군단(성진우 소환수) 제외
+                        if (target.getScoreboardTags().contains("SungJinWoo_Summon")) {
+                            continue;
+                        }
+
+                        // 3. 투명 상태인 플레이어는 타겟팅에서 제외 (은신 보호)
+                        if (target instanceof Player pl
+                                && pl.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)) {
+                            continue;
+                        }
+
+                        // 위 조건에 걸리지 않으면 적임. 가장 가까운 적을 탐색
+                        double dist = summon.getLocation().distanceSquared(target.getLocation());
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            nearestEnemy = target;
+                        }
+                    }
+                }
+
+                // 적 발견 시 공격 타겟 지정
+                if (nearestEnemy != null && (summon instanceof org.bukkit.entity.Mob mob)) {
+                    if (mob.getTarget() == null || mob.getTarget() != nearestEnemy) {
+                        mob.setTarget(nearestEnemy);
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 10L, 10L); // 0.5초마다 갱신
+
+        // 태스크 관리 리스트에 등록 (사망 시 자동 정리)
+        List<BukkitTask> tasks = activeTasks.getOrDefault(owner.getUniqueId(), new java.util.ArrayList<>());
+        tasks.add(task);
+        activeTasks.put(owner.getUniqueId(), tasks);
     }
 
     private org.bukkit.entity.LivingEntity spawnZombie(org.bukkit.World w, org.bukkit.Location loc, boolean isElite,
@@ -407,26 +481,57 @@ public class SungJinWoo extends Ability {
         if (target == null)
             return;
 
-        // 타겟팅 주체가 내 소환수일 경우
+        // 타겟팅 주체가 그림자 군단인 경우
         if (entity.getScoreboardTags().contains("SungJinWoo_Summon")) {
-            // 다른 성진우의 소환수를 공격하려 하거나 성진우(누구든)를 공격하려 하면 취소
-            if (target.getScoreboardTags().contains("SungJinWoo_Summon")
-                    || (target instanceof Player && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin)
-                            .hasAbility((Player) target, getCode()))) {
-                e.setCancelled(true);
+            // 소유자 정보 확인
+            String ownerUuidStr = null;
+            if (entity.hasMetadata("SungJinWooOwner")) {
+                ownerUuidStr = entity.getMetadata("SungJinWooOwner").get(0).asString();
             }
-            // 관전자 타겟팅 금지 방어
+
+            // [중요] 타겟이 아군인 경우 타겟팅 취소
+            boolean isAlly = false;
+
+            // 1. 소유자 본인 확인
+            if (ownerUuidStr != null && target.getUniqueId().toString().equals(ownerUuidStr)) {
+                isAlly = true;
+            }
+            // 2. 다른 성진우 능력자 확인 (팀원 보호)
+            else if (target instanceof Player pl
+                    && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(pl, getCode())) {
+                isAlly = true;
+            }
+            // 3. 다른 그림자 군단 확인
+            else if (target.getScoreboardTags().contains("SungJinWoo_Summon")) {
+                isAlly = true;
+            }
+
+            if (isAlly) {
+                e.setCancelled(true);
+                if (entity instanceof org.bukkit.entity.Mob mob) {
+                    mob.setTarget(null);
+                }
+            }
+
+            // 관전자 타겟팅 금지
             if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR) {
                 e.setCancelled(true);
             }
         }
 
-        // 타겟팅 당하는 대상이 내 소환수일 경우
+        // 타겟팅 당하는 대상이 그림자 군단인 경우
         if (target.getScoreboardTags().contains("SungJinWoo_Summon")) {
-            // 공격자가 성진우(나) 본인이거나 다른 성진우의 소환수라면 취소 (이중 방패)
-            if (entity.getScoreboardTags().contains("SungJinWoo_Summon")
-                    || (entity instanceof Player && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin)
-                            .hasAbility((Player) entity, getCode()))) {
+            // 공격자가 아군인 경우 공격 취소
+            boolean isAttackerAlly = false;
+
+            if (entity instanceof Player pl
+                    && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(pl, getCode())) {
+                isAttackerAlly = true;
+            } else if (entity.getScoreboardTags().contains("SungJinWoo_Summon")) {
+                isAttackerAlly = true;
+            }
+
+            if (isAttackerAlly) {
                 e.setCancelled(true);
             }
         }
@@ -434,36 +539,27 @@ public class SungJinWoo extends Ability {
 
     @org.bukkit.event.EventHandler
     public void onEntityDamage(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
-        // 팀킬 광역기 데미지 방지
+        // 팀킬 데미지 방지 로직
         org.bukkit.entity.Entity damager = e.getDamager();
         org.bukkit.entity.Entity victim = e.getEntity();
 
-        // 투사체 처리 (스켈레톤의 화살 등)
-        if (damager instanceof org.bukkit.entity.Projectile) {
-            org.bukkit.projectiles.ProjectileSource shooter = ((org.bukkit.entity.Projectile) damager).getShooter();
-            if (shooter instanceof org.bukkit.entity.Entity) {
-                damager = (org.bukkit.entity.Entity) shooter;
+        // 투사체 처리
+        if (damager instanceof org.bukkit.entity.Projectile proj) {
+            if (proj.getShooter() instanceof org.bukkit.entity.Entity shooter) {
+                damager = shooter;
             }
         }
 
-        boolean damagerIsSungJinWoo = false;
-        if (damager instanceof Player) {
-            damagerIsSungJinWoo = me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin)
-                    .hasAbility((Player) damager, getCode());
-        } else if (damager.getScoreboardTags() != null && damager.getScoreboardTags().contains("SungJinWoo_Summon")) {
-            damagerIsSungJinWoo = true;
-        }
+        boolean damagerIsAlly = (damager instanceof Player pl
+                && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(pl, getCode()))
+                || damager.getScoreboardTags().contains("SungJinWoo_Summon");
 
-        boolean victimIsSungJinWoo = false;
-        if (victim instanceof Player) {
-            victimIsSungJinWoo = me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin)
-                    .hasAbility((Player) victim, getCode());
-        } else if (victim.getScoreboardTags() != null && victim.getScoreboardTags().contains("SungJinWoo_Summon")) {
-            victimIsSungJinWoo = true;
-        }
+        boolean victimIsAlly = (victim instanceof Player pl
+                && me.user.moc.ability.AbilityManager.getInstance((MocPlugin) plugin).hasAbility(pl, getCode()))
+                || victim.getScoreboardTags().contains("SungJinWoo_Summon");
 
-        if (damagerIsSungJinWoo && victimIsSungJinWoo) {
-            e.setCancelled(true); // 서로 공격 불가
+        if (damagerIsAlly && victimIsAlly) {
+            e.setCancelled(true);
         }
     }
 }
