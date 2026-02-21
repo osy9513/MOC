@@ -183,6 +183,11 @@ public class Frieren extends Ability {
                     return;
                 }
 
+                // [추가] 캐스팅 도중 침묵 체크
+                if (isSilenced(p)) {
+                    return;
+                }
+
                 if (ticks >= castTime) {
                     fireZoltraak(p);
                     castingPlayers.remove(uuid); // 정상 발사 후 명단 제거

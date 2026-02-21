@@ -140,6 +140,10 @@ public class GonFreecss extends Ability {
         // 1. 가위바위권 발동: 맨손 + 쉬프트 + 좌클릭
         if (p.isSneaking() && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK)) {
             if (p.getInventory().getItemInMainHand().getType() == Material.AIR) {
+                // [추가] 침묵 체크
+                if (isSilenced(p))
+                    return;
+
                 if (!checkCooldown(p))
                     return;
 
