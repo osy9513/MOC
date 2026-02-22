@@ -364,8 +364,8 @@ public class Ulquiorra extends Ability {
     }
 
     private void explode(Location loc, Set<Entity> targets, Player attacker) {
-        // 1. 폭발 이펙트 (데미지 X, 블록 파괴 X)
-        loc.getWorld().createExplosion(loc, 4.0F, false, false);
+        // 1. 폭발 이펙트 (폭발 자체 데미지는 0으로 설정하여 중첩 데미지 방지)
+        loc.getWorld().createExplosion(loc, 0.0F, false, false);
         // 추가 이펙트
         loc.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, loc, 1);
 
