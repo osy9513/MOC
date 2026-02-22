@@ -211,8 +211,14 @@ public class Jigsaw extends Ability {
     private void startGame(Player p, LivingEntity target) {
         GameInfo info = new GameInfo(p, target);
 
-        // 1. 미션 설정: 구운 소고기 16개 (고정)
-        info.requiredBeef = 16;
+        // 1. 미션 설정: 기본 16개이나, 30% 확률로 19개, 30% 확률로 21개 요청
+        if (new Random().nextInt(100) < 30) {
+            info.requiredBeef = 19;
+        } else if (new Random().nextInt(100) < 30) {
+            info.requiredBeef = 21;
+        } else {
+            info.requiredBeef = 16;
+        }
 
         // 2. 메시지 출력
         p.sendMessage("§c[직쏘] §f게임을 시작하지.");
