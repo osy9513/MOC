@@ -63,6 +63,9 @@ public class NanayaShiki extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 능력 보유 여부 확인
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
@@ -195,6 +198,9 @@ public class NanayaShiki extends Ability {
     @EventHandler
     public void onAttack(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player attacker))
+            return;
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(attacker))
             return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
             return;

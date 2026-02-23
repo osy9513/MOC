@@ -82,6 +82,9 @@ public class Zenitsu extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 내 능력인지 확인
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;

@@ -76,8 +76,11 @@ public class Ueki extends Ability {
     public void onUse(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        if (isSilenced(p))
+            return;
         // 1. 이 사람이 우에키 능력을 가졌는지 확인 (람머스와 동일한 방식)
         if (!me.user.moc.MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode()))
+            // [추가] 능력이 봉인된 상태 (침묵)인지 체크
             return;
 
         // 2. 묘목을 들고 우클릭했는지 확인

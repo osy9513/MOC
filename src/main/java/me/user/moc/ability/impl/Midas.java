@@ -223,6 +223,9 @@ public class Midas extends Ability {
     private boolean isMidas(Player p) {
         if (!MocPlugin.getInstance().getGameManager().isBattleStarted())
             return false;
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return false;
         if (plugin instanceof MocPlugin moc) {
             return moc.getAbilityManager() != null && moc.getAbilityManager().hasAbility(p, getCode());
         }

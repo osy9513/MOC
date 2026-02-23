@@ -118,7 +118,7 @@ public class Singed extends Ability {
         p.sendMessage("§c전투 ● 신지드");
         p.sendMessage("§f항상 신속 2 상태를 유지합니다.");
         p.sendMessage("§f이동하는 모든 경로에 3초간 지속되는 맹독 가스를 남깁니다.");
-        p.sendMessage("§f가스에 닿은 적(및 방독면 없는 자신)은 2초간 독 3에 걸립니다.");
+        p.sendMessage("§f가스에 닿은 적(및 방독면 없는 자신)은 2초간 독 5에 걸립니다.");
         p.sendMessage("§f다른 생명체와 부딪히면 3초간 신속 6을 얻습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
@@ -239,7 +239,7 @@ public class Singed extends Ability {
                         }
 
                         // 독 부여
-                        victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 60, 2));
+                        victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 60, 4));
                         poisonedEntities.add(victim.getUniqueId());
                     }
                 }

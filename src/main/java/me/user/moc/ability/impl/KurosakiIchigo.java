@@ -79,6 +79,9 @@ public class KurosakiIchigo extends Ability {
     @EventHandler
     public void onInteract(org.bukkit.event.player.PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 

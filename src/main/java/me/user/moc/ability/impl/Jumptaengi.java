@@ -102,6 +102,9 @@ public class Jumptaengi extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 능력자 체크
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;

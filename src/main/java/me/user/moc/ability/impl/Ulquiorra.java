@@ -1,4 +1,4 @@
-package me.user.moc.ability.impl;
+﻿package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
@@ -81,6 +81,9 @@ public class Ulquiorra extends Ability {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 

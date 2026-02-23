@@ -245,18 +245,18 @@ public class AbilityManager {
     }
 
     /**
-     * [추가] 0회 사용된 능력에 가중치(1.1)를 주어 랜덤으로 하나를 뽑습니다.
+     * [추가] 0회 사용된 능력에 가중치(1.5)를 주어 랜덤으로 하나를 뽑습니다. (50% 등장 확률 증가)
      */
     public String drawWeightedRandomAbility(List<String> pool) {
         if (pool == null || pool.isEmpty())
             return null;
         double totalWeight = 0;
         for (String code : pool) {
-            totalWeight += getUsageCount(code) == 0 ? 1.1 : 1.0;
+            totalWeight += getUsageCount(code) == 0 ? 1.5 : 1.0;
         }
         double randomVal = Math.random() * totalWeight;
         for (String code : pool) {
-            double weight = getUsageCount(code) == 0 ? 1.1 : 1.0;
+            double weight = getUsageCount(code) == 0 ? 1.5 : 1.0;
             randomVal -= weight;
             if (randomVal <= 0) {
                 return code;
@@ -302,10 +302,16 @@ public class AbilityManager {
         }
 
         playerAbilities.put(uuid, abilityCode);
+    }
 
-        // [추가] 능력 등장 횟수 카운트 (통계용)
-        if (abilityCode != null) {
-            gameUsageCounts.put(abilityCode, gameUsageCounts.getOrDefault(abilityCode, 0) + 1);
+    /**
+     * [추가] 라운드 시작(전투 돌입) 시 최종 확정된 능력들에 대해서만 사용 횟수를 1씩 증가시킵니다.
+     */
+    public void recordFinalUsages() {
+        for (String code : playerAbilities.values()) {
+            if (code != null) {
+                gameUsageCounts.put(code, gameUsageCounts.getOrDefault(code, 0) + 1);
+            }
         }
     }
 

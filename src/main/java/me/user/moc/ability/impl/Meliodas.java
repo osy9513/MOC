@@ -101,6 +101,9 @@ public class Meliodas extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)

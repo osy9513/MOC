@@ -142,6 +142,8 @@ public class Ddumbi extends Ability {
         Player p = e.getPlayer();
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
+        if (isSilenced(p))
+            return;
         if (e.getItem() == null)
             return;
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)
@@ -179,6 +181,10 @@ public class Ddumbi extends Ability {
         Player p = e.getPlayer();
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
+        if (isSilenced(p)) {
+            e.setCancelled(true);
+            return;
+        }
         ItemStack item = e.getItem();
 
         if (item.getType() == Material.POTION && item.hasItemMeta() && item.getItemMeta().hasCustomModelData()) {

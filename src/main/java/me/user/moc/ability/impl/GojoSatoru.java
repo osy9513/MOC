@@ -89,6 +89,9 @@ public class GojoSatoru extends Ability {
             return;
         }
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 2. 능력 보유 확인
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;

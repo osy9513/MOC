@@ -113,9 +113,9 @@ public class TungTungTungSahur extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§a유틸 ● 퉁퉁퉁사후르(Italian Brainrot)");
-        p.sendMessage("§f매 8초마다 당신은 자신을 제외한 무작위 플레이어의 이름을 부릅니다.");
-        p.sendMessage("§f지목된 대상이 4초 이내에 채팅으로 '넵!' 이라고 대답하지 않으면,");
-        p.sendMessage("§f당신에게 힘 1, 신속 1 버프가 부여됩니다. (최대 9중첩)");
+        p.sendMessage("§f매 9초마다 당신은 자신을 제외한 무작위 플레이어의 이름을 부릅니다.");
+        p.sendMessage("§f지목된 대상이 9초 이내에 채팅으로 '넵!' 이라고 대답하지 않으면,");
+        p.sendMessage("§f당신에게 힘 1 버프가 부여됩니다. (최대 9중첩)");
         p.sendMessage("§f9중첩이 되면 더 이상 이름을 부르지 않습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
@@ -159,7 +159,6 @@ public class TungTungTungSahur extends Ability {
 
         // [추가] 적용된 버프 제거 (힘, 신속)
         p.removePotionEffect(PotionEffectType.STRENGTH);
-        p.removePotionEffect(PotionEffectType.SPEED);
 
         // 부모 클래스의 cleanup 호출 (activeTasks, activeEntities 등 정리)
         super.cleanup(p);
@@ -305,8 +304,8 @@ public class TungTungTungSahur extends Ability {
         // 대상 선정
         Player target = selectRandomTarget(p);
         if (target == null) {
-            // 대상이 없으면(혼자 남았거나 등) 잠시 후 다시 시도 (4초 뒤)
-            scheduleNextRequest(p, 80L);
+            // 대상이 없으면(혼자 남았거나 등) 잠시 후 다시 시도 (9초 뒤)
+            scheduleNextRequest(p, 9 * 20L);
             return;
         }
 
@@ -317,7 +316,7 @@ public class TungTungTungSahur extends Ability {
         p.getServer().broadcast(Component.text("[" + target.getName() + "] 넵!이라고 대답하라.")
                 .color(TextColor.color(0xFFA500))); // 주황색
 
-        // 4초 타이머 시작 for 타임아웃
+        // 9초 타이머 시작 for 타임아웃
         scheduleTimeout(p, target);
     }
 
@@ -351,7 +350,7 @@ public class TungTungTungSahur extends Ability {
     }
 
     /**
-     * 4초 뒤에 반응이 없었는지 체크하는 태스크
+     * 9초 뒤에 반응이 없었는지 체크하는 태스크
      */
     private void scheduleTimeout(Player sahur, Player target) {
         UUID sahurUUID = sahur.getUniqueId();
@@ -364,7 +363,7 @@ public class TungTungTungSahur extends Ability {
         BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
-                // 이 코드가 실행되었다는 건 4초 동안 취소되지 않았다는 뜻 (실패!)
+                // 이 코드가 실행되었다는 건 9초 동안 취소되지 않았다는 뜻 (실패!)
 
                 // 1. 전체 메시지 출력
                 sahur.getServer().broadcast(Component.text("퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.사후르")
@@ -377,10 +376,10 @@ public class TungTungTungSahur extends Ability {
                 currentTargets.remove(sahurUUID);
                 timeoutTasks.remove(sahurUUID);
 
-                // 4. [추가] 사이클 종료 후 4초 뒤 다음 요청 예약
-                scheduleNextRequest(sahur, 80L);
+                // 4. [추가] 사이클 종료 후 9초 뒤 다음 요청 예약
+                scheduleNextRequest(sahur, 9 * 20L);
             }
-        }.runTaskLater(plugin, 80L); // 4초 (80틱)
+        }.runTaskLater(plugin, 9 * 20L); // 9초 (180틱)
 
         timeoutTasks.put(sahurUUID, task);
     }
@@ -398,14 +397,12 @@ public class TungTungTungSahur extends Ability {
 
             p.sendMessage("§a[퉁퉁퉁사후르] 버프가 중첩되었습니다! 현재: " + stack + "중첩");
 
-            // 버프 적용: 힘(INCREASE_DAMAGE), 신속(SPEED)
+            // 버프 적용: 힘(INCREASE_DAMAGE)
             // 앰플리파이어는 0부터 시작하므로 (stack - 1)
             // 시간은 무한(GameManager에서 죽거나 끝나면 풀리겠지.. 여기선 일단 긴 시간)
             // *주의*: 중첩될 때마다 기존 효과를 덮어씌워야 함.
             p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, PotionEffect.INFINITE_DURATION, stack - 1,
                     true, true, true));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, stack - 1, true,
-                    true, true));
 
             // 이펙트: 초록색 연기 + 뼈가루 소리(보통 뼈가루는 BONE_MEAL_USE or COMPOSTER_FILL 등)
             // 여기서는 VILLAGER_WORK_FARMER(작물 심는 소리)나 ITEM_BONE_MEAL_USE 사용
@@ -458,10 +455,10 @@ public class TungTungTungSahur extends Ability {
                     plugin.getServer()
                             .broadcast(Component.text("§e[정보] " + speaker.getName() + "님이 대답하여 버프를 얻지 못했습니다."));
 
-                    // 4. 성공했으므로 4초 뒤 다음 요청 예약
+                    // 4. 성공했으므로 9초 뒤 다음 요청 예약
                     Player sahur = Bukkit.getPlayer(sahurUUID);
                     if (sahur != null) {
-                        scheduleNextRequest(sahur, 80L);
+                        scheduleNextRequest(sahur, 9 * 20L);
                     }
                 }
             }
