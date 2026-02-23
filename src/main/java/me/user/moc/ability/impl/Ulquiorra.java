@@ -1,4 +1,4 @@
-﻿package me.user.moc.ability.impl;
+package me.user.moc.ability.impl;
 
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
@@ -319,14 +319,14 @@ public class Ulquiorra extends Ability {
                 }
 
                 // 5. 끌고 가기 (Dragged Entities Teleport)
-                for (Entity e : draggedEntities) {
-                    if (e.isValid() && !e.isDead()) {
+                for (Entity e_dr : draggedEntities) {
+                    if (e_dr.isValid() && !e_dr.isDead()) {
                         Location target = currentLoc.clone();
                         // 끌려갈 때 삼지창 끝부분에 위치하도록 뒤로 밀기
                         target.subtract(currentDir.clone().multiply(1.5));
-                        target.setYaw(e.getLocation().getYaw());
-                        target.setPitch(e.getLocation().getPitch());
-                        e.teleport(target);
+                        target.setYaw(e_dr.getLocation().getYaw());
+                        target.setPitch(e_dr.getLocation().getPitch());
+                        e_dr.teleport(target);
                     }
                 }
 
