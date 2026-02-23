@@ -99,6 +99,9 @@ public class BartholomewKuma extends Ability {
     public void onAttack(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p))
             return;
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
             return; // 쿠마 능력자인지 확인 (Fix: activeEntities -> AbilityManager)
 

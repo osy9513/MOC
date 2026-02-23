@@ -73,6 +73,9 @@ public class PaulPhoenix extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 내 능력이 맞는지 확인
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
             return;
@@ -114,6 +117,9 @@ public class PaulPhoenix extends Ability {
         if (isDamaging.contains(p.getUniqueId()))
             return;
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 내 능력이 맞는지 확인
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
             return;

@@ -547,6 +547,9 @@ public class KumagawaMisogi extends Ability {
     }
 
     private boolean hasAbility(Player p) {
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return false;
         return AbilityManager.getInstance().hasAbility(p, getCode());
     }
 

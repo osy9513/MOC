@@ -182,6 +182,8 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("§e re_point (능력 리롤 횟수 - 숫자): §f" + cm.re_point);
                     p.sendMessage("§e start_time (능력 추첨 시간 - 초): §f" + cm.start_time);
                     p.sendMessage("§e peace_time (능력 추첨 후 평화 시간 - 초): §f" + cm.peace_time);
+                    p.sendMessage(
+                            "§e disable_attack_cooldown (공격 딜레이 제거 - true/false): §f" + cm.disable_attack_cooldown); // [추가]
                     p.sendMessage("");
                     p.sendMessage("전장 설정");
                     p.sendMessage("§e map_size (맵 크기 - 숫자): §f" + cm.map_size);

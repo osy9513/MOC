@@ -73,7 +73,7 @@ public class Tarnished extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§c유틸 ● 빛바랜 자(엘든 링)");
-        p.sendMessage("§f쉬프트를 두 번 누르면 배고픔을 1칸 소모하여");
+        p.sendMessage("§f쉬프트를 두 번 누르면 배고픔을 3칸 소모하여");
         p.sendMessage("§f0.8초간 전방으로 구릅니다.");
         p.sendMessage("§f구르는 동안은 무적 상태입니다.");
         p.sendMessage("§f생명체를 처치하면 체력 4칸 회복 및 방어구가 강화됩니다.");
@@ -111,6 +111,9 @@ public class Tarnished extends Ability {
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 능력이 없는 플레이어는 무시
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
@@ -137,7 +140,7 @@ public class Tarnished extends Ability {
 
     private void performRoll(Player p) {
         // 1. 배고픔 체크
-        if (p.getFoodLevel() < 2) { // 1칸 = 2 포인트
+        if (p.getFoodLevel() < 6) { // 3칸 = 6 포인트
             p.sendActionBar(net.kyori.adventure.text.Component.text("§c배고픔이 부족합니다!"));
             return;
         }
@@ -182,6 +185,9 @@ public class Tarnished extends Ability {
         if (killer == null)
             return;
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(killer))
+            return;
         // 킬러가 빛바랜 자인지 확인
         if (!AbilityManager.getInstance().hasAbility(killer, getCode()))
             return;

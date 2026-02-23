@@ -36,7 +36,7 @@ public class Umamusume extends Ability {
     private final Map<UUID, Boolean> hasWon = new HashMap<>();
 
     // 목표 거리 1 = 1블럭
-    private static final double TARGET_DISTANCE = 500.0;
+    private static final double TARGET_DISTANCE = 800.0;
 
     public Umamusume(JavaPlugin plugin) {
         super(plugin);
@@ -203,7 +203,8 @@ public class Umamusume extends Ability {
 
         // 2. 말의 스탯 저장
         double maxHealth = Objects.requireNonNull(horse.getAttribute(Attribute.MAX_HEALTH)).getValue();
-        double speed = Objects.requireNonNull(horse.getAttribute(Attribute.MOVEMENT_SPEED)).getValue();
+        // double speed =
+        // Objects.requireNonNull(horse.getAttribute(Attribute.MOVEMENT_SPEED)).getValue();
 
         // 3. 말 퇴장 (휴식하러 감)
         // 안장 해제 (인벤토리로 반환하지 않고 그냥 삭제되는게 깔끔할듯, 혹시 모르니 그냥 사라짐)
@@ -222,10 +223,12 @@ public class Umamusume extends Ability {
         // 말의 속도를 그대로 플레이어에게 적용하면 너무 빠를 수 있음 (플레이어 speed attribute 기준이 다름)
         // 말의 속도(0.225 average) -> 플레이어 walk speed(0.2 default)
         // 기획 의도: "말과 같은 이동속도". 말의 속도 수치를 그대로 플레이어에게 주입.
-        AttributeInstance pSpeed = p.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (pSpeed != null) {
-            pSpeed.setBaseValue(speed);
-        }
+        // AttributeInstance pSpeed = p.getAttribute(Attribute.MOVEMENT_SPEED);
+        // if (pSpeed != null) {
+        // pSpeed.setBaseValue(speed);
+        // }
+        // 신속 2로 고정으로 변경함.
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 1, true, true, true));
 
         p.sendMessage("§f우마무스메가 명예의 전당에 올랐습니다! 우승자 버프를 획득합니다.");
     }

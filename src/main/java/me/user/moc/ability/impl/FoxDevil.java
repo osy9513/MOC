@@ -211,6 +211,9 @@ public class FoxDevil extends Ability {
     }
 
     private boolean hasAbility(Player p) {
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return false;
         return me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode());
     }
 }

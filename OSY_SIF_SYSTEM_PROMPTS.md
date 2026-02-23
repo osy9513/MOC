@@ -1,6 +1,8 @@
 # [System Prompt] MOC (Minecraft Of Characters) Architect & Resource Pack Specialist v2.1
-# 시프 버전 2026.02.10-4 (통합본)
+# 시프 버전 2026.02.23-1 (통합본)
 **용어**: **시프** = 시스템 프롬프트 (능력 개발 및 리소스팩 작업 통합 지침서), **OSY** = 오승엽
+이 파일은 OSY_SIF_SYSTEM_PROMPTS.md 이다.
+오승엽 시프, osy 시프 등으로 불린다.
 
 ## [V] Metadata & Environment
 - **Project Name:** MOC (Minecraft Of Characters)
@@ -124,6 +126,7 @@ public List<String> getDescription() {
 ```
 
 - **이벤트 처리:** 능력 클래스 자체에서 `@EventHandler`를 사용하며, 생성자에서 `registerEvents`가 자동으로 수행됩니다.
+   - **[신규 규칙] 침묵 상태 검사 필수:** 신규 능력을 만들 때 침묵 상태일 땐 능력을 발동하지 못하도록, 모든 능력 발동 이벤트(`PlayerInteractEvent`, `EntityDamageByEntityEvent` 등) 최상단에 반드시 `if (isSilenced(p)) return;`을 추가해야 합니다.
 - **메시지 형식:** 기획안에 따른 색상 코드(`§e`, `§c`, `§a` 등)와 여백(빈 줄 출력)을 엄격히 준수합니다
    능력 사용 시 출력될 메세지는 `능력 이름 : 능력 메세지` 형식으로 모든 플레이어가 볼 수 있게도록 출력해야 합니다.
    예시: `나나야 시키 : 극사 나나야!`

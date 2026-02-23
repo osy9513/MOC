@@ -627,6 +627,19 @@ public class GameManager implements Listener {
                 maxHealth.setBaseValue(60.0);
             p.setHealth(60.0);
 
+            // [추가] 공격 딜레이 설정
+            Attribute attackSpeedAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_speed"));
+            if (attackSpeedAttr != null) {
+                AttributeInstance attackSpeed = p.getAttribute(attackSpeedAttr);
+                if (attackSpeed != null) {
+                    if (configManager.disable_attack_cooldown) {
+                        attackSpeed.setBaseValue(100.0); // 딜레이 제거
+                    } else {
+                        attackSpeed.setBaseValue(4.0); // 바닐라 기본값
+                    }
+                }
+            }
+
             // 아이템 지급 (칼-고기-물-유리-포션-갑옷-능력템) + 능력부여.
             giveBattleItems(p);
         }
@@ -889,6 +902,14 @@ public class GameManager implements Listener {
                 maxHealth.setBaseValue(20.0);
             p.setHealth(20.0);
 
+            // [추가] 공격 딜레이 초기화
+            Attribute attackSpeedAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_speed"));
+            if (attackSpeedAttr != null) {
+                AttributeInstance attackSpeed = p.getAttribute(attackSpeedAttr);
+                if (attackSpeed != null)
+                    attackSpeed.setBaseValue(4.0);
+            }
+
             // [추가] 방어 속성 초기화 (토가 히미코 버그 방지)
             // 1.21.11 대응: Registry 사용
             Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
@@ -1149,6 +1170,11 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§e이번 라운드에 나온 능력은 아래와 같습니다.");
         Bukkit.broadcastMessage(" ");
+
+        // [추가] 통계 출력(printRoundStats) 전에 사용된 능력들을 통계에 카운팅합니다.
+        if (abilityManager != null) {
+            abilityManager.recordFinalUsages();
+        }
 
         // 데이터 수집용 리스트
         // 점수 및 통계 출력 (공통 함수 사용)

@@ -125,6 +125,9 @@ public class DIO extends Ability {
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
@@ -424,6 +427,9 @@ public class DIO extends Ability {
             Player shooter = (Player) proj.getShooter();
             // DIO가 쏜거면 안 멈춤?
             if (AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(shooter, getCode())) {
+                // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+                if (isSilenced(shooter))
+                    return;
                 return;
             }
         }
@@ -458,8 +464,11 @@ public class DIO extends Ability {
         if (p.getGameMode() == GameMode.SPECTATOR)
             return false;
 
+        if (isSilenced(p))
+            return false;
         // DIO 능력을 가진 플레이어는 면역
         return !AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode());
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
     }
 
     @EventHandler

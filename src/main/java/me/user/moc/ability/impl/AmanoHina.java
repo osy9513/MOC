@@ -72,6 +72,9 @@ public class AmanoHina extends Ability {
         // 1. 능력자 체크
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
 
         // 2. 액션 체크 (맨손 + 쉬프트 + 좌클릭)
         if (e.getAction() != Action.LEFT_CLICK_AIR && e.getAction() != Action.LEFT_CLICK_BLOCK)

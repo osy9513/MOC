@@ -92,6 +92,9 @@ public class Jjanggu extends Ability {
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 내 능력인지 확인
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
             return;
@@ -118,7 +121,7 @@ public class Jjanggu extends Ability {
         dashingPlayers.add(p.getUniqueId());
 
         // [추가] 5% 확률로 배고픔 1칸(2포인트) 감소 페널티
-        if (Math.random() < 0.05) {
+        if (Math.random() < 0.20) {
             int currentFood = p.getFoodLevel();
             p.setFoodLevel(Math.max(0, currentFood - 2));
             p.sendMessage("§f짱구: 아이 배고프당");
@@ -205,6 +208,9 @@ public class Jjanggu extends Ability {
 
         // 1. 내 능력인지 확인
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode())) {
+            // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+            if (isSilenced(p))
+                return;
             return;
         }
 

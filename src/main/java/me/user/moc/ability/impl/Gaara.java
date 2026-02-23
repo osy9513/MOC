@@ -245,6 +245,9 @@ public class Gaara extends Ability {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
@@ -308,7 +311,10 @@ public class Gaara extends Ability {
     @EventHandler
     public void onPickup(org.bukkit.event.entity.EntityPickupItemEvent e) {
         if (e.getEntity() instanceof Player p) {
+            if (isSilenced(p))
+                return;
             if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+                // [추가] 능력이 봉인된 상태 (침묵)인지 체크
                 return;
 
             ItemStack item = e.getItem().getItemStack();

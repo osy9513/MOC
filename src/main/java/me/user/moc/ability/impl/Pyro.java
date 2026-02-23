@@ -113,6 +113,9 @@ public class Pyro extends Ability {
         Player p = e.getPlayer();
         UUID uuid = p.getUniqueId();
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         // 1. 능력자 체크 및 아이템 확인
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
@@ -205,8 +208,11 @@ public class Pyro extends Ability {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    if (isSilenced(p))
+                        return;
                     // 플레이어가 이미 제거되었거나 능력이 바뀌었다면 중단
                     if (!p.isOnline() || !AbilityManager.getInstance().hasAbility(p, getCode()))
+                        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
                         return;
 
                     Location centerPoint = eyeLoc.clone().add(direction.clone().multiply(distance));

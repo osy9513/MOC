@@ -147,6 +147,9 @@ public class Kaneki extends Ability {
             return;
 
         // AbilityManager를 사용하여 확실하게 능력 확인
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 

@@ -151,6 +151,9 @@ public class TrafalgarLaw extends Ability {
     }
 
     private boolean isLaw(Player p) {
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return false;
         return MocPlugin.getInstance().getAbilityManager().hasAbility(p, getCode());
     }
 

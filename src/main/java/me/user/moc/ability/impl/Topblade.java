@@ -82,6 +82,9 @@ public class Topblade extends Ability {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
 

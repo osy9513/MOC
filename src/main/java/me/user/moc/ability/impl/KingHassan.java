@@ -130,6 +130,9 @@ public class KingHassan extends Ability {
         if (!(e.getDamager() instanceof Player attacker))
             return;
 
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(attacker))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(attacker, getCode()))
             return;
 
@@ -153,6 +156,9 @@ public class KingHassan extends Ability {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onSlotChange(PlayerItemHeldEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
@@ -167,6 +173,9 @@ public class KingHassan extends Ability {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player p))
+            return;
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
             return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;

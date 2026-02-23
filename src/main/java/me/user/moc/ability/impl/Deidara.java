@@ -108,6 +108,9 @@ public class Deidara extends Ability {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
 
@@ -251,6 +254,9 @@ public class Deidara extends Ability {
         new BukkitRunnable() {
             @Override
             public void run() {
+                // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+                if (isSilenced(p))
+                    return;
                 if (!p.isOnline() || !AbilityManager.getInstance().hasAbility(p, getCode()))
                     return;
 

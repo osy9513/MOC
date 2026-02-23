@@ -81,6 +81,9 @@ public class Ulquiorra extends Ability {
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
         if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
@@ -316,14 +319,14 @@ public class Ulquiorra extends Ability {
                 }
 
                 // 5. 끌고 가기 (Dragged Entities Teleport)
-                for (Entity e : draggedEntities) {
-                    if (e.isValid() && !e.isDead()) {
+                for (Entity e_dr : draggedEntities) {
+                    if (e_dr.isValid() && !e_dr.isDead()) {
                         Location target = currentLoc.clone();
                         // 끌려갈 때 삼지창 끝부분에 위치하도록 뒤로 밀기
                         target.subtract(currentDir.clone().multiply(1.5));
-                        target.setYaw(e.getLocation().getYaw());
-                        target.setPitch(e.getLocation().getPitch());
-                        e.teleport(target);
+                        target.setYaw(e_dr.getLocation().getYaw());
+                        target.setPitch(e_dr.getLocation().getPitch());
+                        e_dr.teleport(target);
                     }
                 }
 

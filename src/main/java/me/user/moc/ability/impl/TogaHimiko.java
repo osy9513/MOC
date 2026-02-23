@@ -141,6 +141,8 @@ public class TogaHimiko extends Ability {
         // 공격자가 토가 히미코인지 확인 (변신 중에는 피를 뽑을 수 없음 - 원작 고증 혹은 밸런스)
         AbilityManager am = AbilityManager.getInstance((MocPlugin) plugin);
         if (!am.hasAbility(attacker, getCode()) || isTransformed.contains(attacker.getUniqueId())) {
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(attacker)) return;
             return;
         }
 

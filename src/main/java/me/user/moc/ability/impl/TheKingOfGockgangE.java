@@ -126,9 +126,14 @@ public class TheKingOfGockgangE extends Ability {
         /*
          * if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin)
          * plugin).hasAbility(p, getCode())) {
+         * 
          * return;
          * }
          */
+
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(p))
+            return;
 
         // 3. 블록 즉시 파괴 로직
         Block block = e.getBlock();
