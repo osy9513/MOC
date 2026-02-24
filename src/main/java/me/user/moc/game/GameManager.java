@@ -628,15 +628,12 @@ public class GameManager implements Listener {
             p.setHealth(60.0);
 
             // [추가] 공격 딜레이 설정
-            Attribute attackSpeedAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_speed"));
-            if (attackSpeedAttr != null) {
-                AttributeInstance attackSpeed = p.getAttribute(attackSpeedAttr);
-                if (attackSpeed != null) {
-                    if (configManager.disable_attack_cooldown) {
-                        attackSpeed.setBaseValue(100.0); // 딜레이 제거
-                    } else {
-                        attackSpeed.setBaseValue(4.0); // 바닐라 기본값
-                    }
+            AttributeInstance attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
+            if (attackSpeed != null) {
+                if (configManager.disable_attack_cooldown) {
+                    attackSpeed.setBaseValue(100.0); // 딜레이 제거
+                } else {
+                    attackSpeed.setBaseValue(4.0); // 바닐라 기본값
                 }
             }
 
@@ -903,34 +900,22 @@ public class GameManager implements Listener {
             p.setHealth(20.0);
 
             // [추가] 공격 딜레이 초기화
-            Attribute attackSpeedAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.attack_speed"));
-            if (attackSpeedAttr != null) {
-                AttributeInstance attackSpeed = p.getAttribute(attackSpeedAttr);
-                if (attackSpeed != null)
-                    attackSpeed.setBaseValue(4.0);
-            }
+            AttributeInstance attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
+            if (attackSpeed != null)
+                attackSpeed.setBaseValue(4.0);
 
             // [추가] 방어 속성 초기화 (토가 히미코 버그 방지)
-            // 1.21.11 대응: Registry 사용
-            Attribute armorAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor"));
-            Attribute toughnessAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.armor_toughness"));
-            Attribute knockbackAttr = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("generic.knockback_resistance"));
+            AttributeInstance armor = p.getAttribute(Attribute.ARMOR);
+            if (armor != null)
+                armor.setBaseValue(0.0);
 
-            if (armorAttr != null) {
-                AttributeInstance armor = p.getAttribute(armorAttr);
-                if (armor != null)
-                    armor.setBaseValue(0.0);
-            }
-            if (toughnessAttr != null) {
-                AttributeInstance toughness = p.getAttribute(toughnessAttr);
-                if (toughness != null)
-                    toughness.setBaseValue(0.0);
-            }
-            if (knockbackAttr != null) {
-                AttributeInstance knockback = p.getAttribute(knockbackAttr);
-                if (knockback != null)
-                    knockback.setBaseValue(0.0);
-            }
+            AttributeInstance toughness = p.getAttribute(Attribute.ARMOR_TOUGHNESS);
+            if (toughness != null)
+                toughness.setBaseValue(0.0);
+
+            AttributeInstance knockback = p.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
+            if (knockback != null)
+                knockback.setBaseValue(0.0);
         }
 
         // [강화] 게임 데이터 초기화

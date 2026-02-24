@@ -92,15 +92,21 @@ public class Yopopo extends Ability {
         yopopo.setCustomNameVisible(true);
         yopopo.setRemoveWhenFarAway(false);
 
-        // 능력치 설정 (체력 100)
+        // 능력치 설정 (체력 120)
         if (yopopo.getAttribute(Attribute.MAX_HEALTH) != null) {
-            yopopo.getAttribute(Attribute.MAX_HEALTH).setBaseValue(100.0);
+            yopopo.getAttribute(Attribute.MAX_HEALTH).setBaseValue(120.0);
         }
-        yopopo.setHealth(100.0);
+        yopopo.setHealth(120.0);
 
         // 공격력 설정 (나무검 수준 = 보통 좀비 기본 공격력 부근, 약 3~4)
         if (yopopo.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
             yopopo.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(4.0);
+        }
+
+        // [추가] 이동속도 50% 증가 (기본 좀비 속도 = 0.23 -> 50% 증가 = 0.345)
+        if (yopopo.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+            double baseSpeed = yopopo.getAttribute(Attribute.MOVEMENT_SPEED).getBaseValue();
+            yopopo.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(baseSpeed * 1.5);
         }
 
         // 방어 속성 초기화
@@ -159,10 +165,11 @@ public class Yopopo extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§a복합 ● 요뽀뽀(갓슈벨!!/금색의 갓슈!!)");
         p.sendMessage("§f귀여운 요뽀뽀이가 당신을 도와 싸웁니다!");
-        p.sendMessage("§f(요뽀뽀 체력 100)");
+        p.sendMessage("§f(요뽀뽀 체력 120)");
         p.sendMessage("§f[좌클릭] 요뽀뽀 책을 생명체를 바라보며 클릭 시 요뽀뽀가 라이터를 들고 돌진합니다.");
         p.sendMessage("§f[우클릭] 요뽀뽀가 5초간 춤을 춥니다. 춤을 출 동안엔 주변 적들이 요뽀뽀를 공격하게 유도하며,");
         p.sendMessage("§f춤추는 동안 요뽀뽀는 어떠한 데미지도 받지 않고 체력이 채워집니다.");
+        p.sendMessage("§f[쉬프트 2번] 연속으로 웅크리기(Shift)를 2번 하면 요뽀뽀가 주인 옆으로 귀환하며 얌전해집니다.");
         p.sendMessage("§f");
         p.sendMessage("§f쿨타임 : 10초");
         p.sendMessage("§f---");
@@ -227,12 +234,13 @@ public class Yopopo extends Ability {
             }
 
             // 시야 내 엔티티 추적 (거리 제한 없음 -> 최대한 10000블럭)
+            // 판정 범위(RaySize)를 기존 0.5에서 2.5로 상향하여 조준을 훨씬 편하게 함.
             Entity targetUser = null;
             var trace = p.getWorld().rayTraceEntities(
                     p.getEyeLocation(),
                     p.getEyeLocation().getDirection(),
                     10000.0,
-                    0.5,
+                    2.5,
                     ent -> ent != p && ent != yopopo && ent instanceof LivingEntity &&
                             (!(ent instanceof Player)
                                     || ((Player) ent).getGameMode() != org.bukkit.GameMode.SPECTATOR));
@@ -377,6 +385,57 @@ public class Yopopo extends Ability {
             if (dancingYopopos.contains(z.getUniqueId())) {
                 e.setCancelled(true);
             }
+        }
+    }
+
+    // [추가] 연속 쉬프트(2번) 감지용 맵
+    private final Map<UUID, Long> sneakTimestamps = new HashMap<>();
+
+    /**
+     * 주인이 0.5초(500ms) 이내에 쉬프트를 2번 누르면 요뽀뽀가 곁으로 텔레포트합니다.
+     */
+    @EventHandler
+    public void onSneak(org.bukkit.event.player.PlayerToggleSneakEvent e) {
+        Player p = e.getPlayer();
+
+        // 웅크릴 때(isSneaking == true)만 감지
+        if (!e.isSneaking())
+            return;
+
+        Zombie yopopo = yopopoMap.get(p.getUniqueId());
+        if (yopopo == null || !yopopo.isValid() || yopopo.isDead()) {
+            return; // 요뽀뽀가 없음
+        }
+
+        // 능력이 봉인된 상태 체크
+        if (isSilenced(p))
+            return;
+
+        long currentTime = System.currentTimeMillis();
+        long lastTime = sneakTimestamps.getOrDefault(p.getUniqueId(), 0L);
+
+        // 0.5초 이내에 다시 쉬프트를 누름 (더블 쉬프트 감지)
+        if (currentTime - lastTime <= 500) {
+            // 더블 쉬프트 인식 완료이므로 시간 초기화
+            sneakTimestamps.put(p.getUniqueId(), 0L);
+
+            // 춤추는 중이 아닐 때만 귀환 가능
+            if (!dancingYopopos.contains(yopopo.getUniqueId())) {
+                // 요뽀뽀 텔레포트
+                yopopo.teleport(p.getLocation().clone().add(0, 0, 1)); // 주인 바로 옆 (Z축 1)
+
+                // 타겟 및 공격 상태 초기화 (얌전해짐)
+                yopopo.setTarget(null);
+                yopopo.getEquipment().setItemInMainHand(null);
+
+                p.sendMessage("§a[!] 요뽀뽀가 당신의 곁으로 돌아와 얌전해졌습니다.");
+                p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
+            } else {
+                p.sendMessage("§c요뽀뽀는 현재 춤을 추느라 바쁩니다!");
+            }
+        } else {
+            // 처음 누른 시간 기록
+            sneakTimestamps.put(p.getUniqueId(), currentTime);
         }
     }
 

@@ -85,7 +85,8 @@ public class LeeSeulbi extends Ability {
         p.sendMessage("§f전방의 특정 좌표를 조준한 후 지하철을 소환하여 초고속으로 낙하시켜 광역 피해를 입힌다.");
         p.sendMessage(" ");
         p.sendMessage("§f[맨손 쉬프트 좌클릭] 하늘에 지하철을 3초에 걸쳐 소환합니다.");
-        p.sendMessage("§f[소환 후 맨손 쉬프트 좌클릭] 8블럭 앞에 지하철을 수직 낙하시켜 2초 동안 반경 내 30 데미지를 주고 5초 후 사라집니다.");
+        p.sendMessage("§f[소환 후 맨손 쉬프트 좌클릭] 12블럭 앞에 지하철을 수직 낙하시켜 단일 데미지 30을 주고,");
+        p.sendMessage("§f땅에 박힌 부분에 5초동안 지속 폭발 데미지 장판을 생성합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초 (낙하 직후 계산)");
         p.sendMessage("§f---");
@@ -330,9 +331,9 @@ public class LeeSeulbi extends Ability {
             trackingTasks.remove(p.getUniqueId());
         }
 
-        // 1. 목표 지점 계산: 이슬비 전방 8블록 앞
+        // 1. 목표 지점 계산: 이슬비 전방 12블록 앞
         Location targetLoc = p.getLocation().clone();
-        targetLoc.add(targetLoc.getDirection().setY(0).normalize().multiply(8));
+        targetLoc.add(targetLoc.getDirection().setY(0).normalize().multiply(12));
         targetLoc.setY(targetLoc.getWorld().getHighestBlockYAt(targetLoc));
 
         // 바닥에 약간 파묻히게
@@ -348,7 +349,7 @@ public class LeeSeulbi extends Ability {
         // 이동 벡터 및 속도 설정
         Vector dir = targetLoc.toVector().subtract(currentLoc.toVector());
         double distance = dir.length();
-        Vector velocity = dir.normalize().multiply(2.5); // 틱당 2.5블럭 속도 (매우 빠름)
+        Vector velocity = dir.normalize().multiply(3.25); // 틱당 3.25블럭 속도 (기존 대비 30% 증가)
 
         // 2. 낙하 애니메이션 태스크
         BukkitTask dropTask = new BukkitRunnable() {
@@ -411,9 +412,13 @@ public class LeeSeulbi extends Ability {
                     }
                 }
 
-                // [2] 0~100틱 (5초) 내내 가까이 오면 밀쳐내며 데미지 (10틱 마다 체크결과 5데미지)
+                // [2] 지하철이 땅에 박힌 부분에 지속적인 폭발 데미지 주기 (5초간, 10틱마다 데미지)
                 if (ticks <= 100 && ticks % 10 == 0) {
-                    for (Entity ent : impactLoc.getWorld().getNearbyEntities(impactLoc.clone().add(0, 10, 0), 6, 20,
+                    // [추가] 땅에 박힌 부분(충돌 중심부)에 작은 폭발 파티클 지속 발생
+                    impactLoc.getWorld().spawnParticle(Particle.EXPLOSION, impactLoc.clone().add(0, 2, 0), 2, 2, 2, 2,
+                            0.05);
+
+                    for (Entity ent : impactLoc.getWorld().getNearbyEntities(impactLoc.clone().add(0, 5, 0), 6, 10,
                             6)) {
                         if (ent instanceof LivingEntity target && target != p && !(target instanceof Player targetPlayer
                                 && targetPlayer.getGameMode() == org.bukkit.GameMode.SPECTATOR)) {

@@ -296,8 +296,7 @@ public class ArenaManager implements Listener {
     }
 
     /**
-     * [전장 바닥 제거 기능 - 알렉스 능력 전용]
-     * 생성된 기반암 바닥을 모두 공기(AIR)로 제거합니다.
+     * [전장 블럭 제거 기능 - 알렉스 능력 전용]
      */
     public void removeSquareFloor() {
         // [추가] 설정 확인 (야생맵이면 지우면 큰일남)
@@ -310,28 +309,39 @@ public class ArenaManager implements Listener {
         if (world == null)
             return;
 
-        int targetY = gameCenter.getBlockY() - 1;
-        int halfSize = config.map_size / 2;
         int cx = gameCenter.getBlockX();
         int cz = gameCenter.getBlockZ();
 
-        // 한 번에 제거 (비동기 말고 동기로 처리해도 되지만, 양이 많으면 렉 유발 가능성 있음 -> 일단 루프 돌려서 제거)
-        // 알렉스 능력은 게임 중 발동되므로 Task로 나누는게 안전함.
+        // 현재 자기장 크기 체크 후 +1 블럭 반경 계산
+        WorldBorder border = world.getWorldBorder();
+        int halfSize = (int) Math.ceil(border.getSize() / 2.0) + 1;
+
+        int minHeight = world.getMinHeight();
+        int maxHeight = world.getMaxHeight();
+
+        // 알렉스 능력은 게임 중 발동되므로 전체 블럭 제거 (에메랄드 제외)
+        // 약간의 랙은 감수하고 확실하게 가능한 모든 플레이어가 떨어지게 함
         new BukkitRunnable() {
             int x = cx - halfSize;
 
             @Override
             public void run() {
-                for (int i = 0; i < 20; i++) {
+                // 한 번에 x축 5줄씩 처리하여 너무 심한 랙 막기
+                for (int i = 0; i < 5; i++) {
                     if (x > cx + halfSize) {
                         this.cancel();
                         return;
                     }
 
                     for (int z = cz - halfSize; z <= cz + halfSize; z++) {
-                        Block b = world.getBlockAt(x, targetY, z);
-                        if (b.getType() == Material.BEDROCK) {
-                            b.setType(Material.AIR, false);
+                        for (int y = minHeight; y < maxHeight; y++) {
+                            Block b = world.getBlockAt(x, y, z);
+                            Material type = b.getType();
+
+                            // 에메랄드 블럭과 이미 공기인 블럭은 제외
+                            if (type != Material.AIR && type != Material.EMERALD_BLOCK) {
+                                b.setType(Material.AIR, false);
+                            }
                         }
                     }
                     x++;

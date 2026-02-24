@@ -65,8 +65,9 @@ public class Naofumi extends Ability {
             meta.setDisplayName("§c분노의 방패");
             meta.setLore(Arrays.asList(
                     "§7방어 성공 시 아이언 메이든 게이지가 충전됩니다.",
-                    "§710회 방어 후 우클릭 시 아이언 메이든을 발동합니다.",
-                    "§c발동 후 10초간 방패 사용이 불가능합니다."));
+                    "§720회 방어 달성 후 방패로 타격 시 대상에게 아이언 메이든을 발동합니다.",
+                    "§c(패널티) 해당 방패 소지 시 구속 1 디버프를 얻습니다.",
+                    "§c(패널티) 발동 후 20초간 방패 사용이 불가능합니다."));
             meta.setUnbreakable(true); // [Fix] 내구도 무한
             shield.setItemMeta(meta);
         }
@@ -88,16 +89,16 @@ public class Naofumi extends Ability {
         p.sendMessage("§c전투 ● 이와타니 나오후미(방패 용사 성공담)");
         p.sendMessage("§f분노의 방패를 얻습니다.");
         p.sendMessage("§f방패을 들고 있을 경우 힘1과 허기1 디버프가 상시 적용됩니다.");
-        p.sendMessage("§f방패로 공격을 10번 막으면 아이언 메이든가 활성화 됩니다.");
+        p.sendMessage("§f방패로 공격을 20번 막으면 아이언 메이든이 활성화 됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f아이언 메이든가 활성화된 상태에서 방패를 들고");
-        p.sendMessage("§f10칸 이내의 상대를 조준점으로 조준하고 있는 상태에서");
-        p.sendMessage("§f우클릭 시 아이언 메이든이 발동됩니다.");
+        p.sendMessage("§f아이언 메이든이 활성화된 상태에서 방패를 들고");
+        p.sendMessage("§f방패로 타격하면 대상에게 즉시 아이언 메이든이 발동됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f발동 후 다시 발동하기 위해선 다시 10번의 공격을 막아야합니다.");
+        p.sendMessage("§f발동 후 다시 쓰려면 다시 20번의 공격을 막아야합니다.");
         p.sendMessage("§f아이언 메이든의 지속시간은 20초 입니다.");
         p.sendMessage("§f[제한] 대상이 플레이어일 경우, 체력이 3칸(6.0) 남으면 능력이 강제 종료됩니다.");
-        p.sendMessage("§f[패널티] 능력 발동 후 10초간 방패를 사용할 수 없습니다.");
+        p.sendMessage("§f[패널티] 인벤토리에 '분노의 방패'가 있다면 상시 구속 1 효과를 겪습니다.");
+        p.sendMessage("§f[패널티] 능력 발동 후 20초간 방패를 우클릭 사용할 수 없습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
@@ -152,16 +153,35 @@ public class Naofumi extends Ability {
     }
 
     private void checkShieldPassive(Player p) {
-        ItemStack main = p.getInventory().getItemInMainHand();
-        ItemStack off = p.getInventory().getItemInOffHand();
-
-        boolean hasShield = (main != null && main.getType() == Material.SHIELD) ||
-                (off != null && off.getType() == Material.SHIELD);
+        boolean hasShield = false;
+        for (ItemStack item : p.getInventory().getContents()) {
+            if (item != null && item.getType() == Material.SHIELD) {
+                hasShield = true;
+                break;
+            }
+        }
 
         if (hasShield) {
+            // [너프] 방패 소지 시 속도 제한 (구속 1)
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 40, 0, true, true, true));
+        }
+
+        // 들고 있을 때의 버프/디버프는 따로 적용
+        ItemStack main = p.getInventory().getItemInMainHand();
+        ItemStack off = p.getInventory().getItemInOffHand();
+        boolean holdingShield = (main != null && main.getType() == Material.SHIELD) ||
+                (off != null && off.getType() == Material.SHIELD);
+
+        if (holdingShield) {
             // [효과 부여] 힘 1, 허기 1
             p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 0, true, true, true));
             p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 40, 4, true, true, true));
+        }
+
+        // [추가] 아이언 메이든(20스택) 대기 상태라면 붉은 파티클 효과 부여
+        if (isIronMaidenReady.contains(p.getUniqueId())) {
+            p.getWorld().spawnParticle(Particle.DUST, p.getLocation().add(0, 1, 0), 3, 0.4, 0.5, 0.4,
+                    new org.bukkit.Particle.DustOptions(org.bukkit.Color.RED, 1.0f));
         }
     }
 
@@ -186,52 +206,65 @@ public class Naofumi extends Ability {
 
             p.playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 1f);
 
-            if (count >= 10 && !isIronMaidenReady.contains(p.getUniqueId())) {
+            if (count >= 20 && !isIronMaidenReady.contains(p.getUniqueId())) {
                 isIronMaidenReady.add(p.getUniqueId());
-                p.sendMessage("§c§l[MOC] §4아이언 메이든§c이 활성화되었습니다!");
+                p.sendMessage("§c§l[MOC] §4아이언 메이든§c 발동 준비 완료! 방패를 든 채 공격하여 발동하세요.");
                 p.playSound(p.getLocation(), Sound.ENTITY_IRON_GOLEM_DEATH, 1f, 0.5f);
-            } else if (count < 10) {
-                p.sendActionBar(net.kyori.adventure.text.Component.text("§7방어 횟수: " + count + "/10"));
+            } else if (count < 20) {
+                p.sendActionBar(net.kyori.adventure.text.Component.text("§7방어 횟수: " + count + "/20"));
             }
         }
     }
 
     /**
-     * [액티브] 아이언 메이든 발동
+     * [액티브] 아이언 메이든 발동 (생명체 직접 공격)
      */
     @EventHandler
-    public void onInteract(PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+    public void onIronMaidenAttack(EntityDamageByEntityEvent e) {
+        if (!(e.getDamager() instanceof Player p))
+            return;
+
+        // 침묵 확인
         if (isSilenced(p))
             return;
+
+        // 나오후미 여부 확인
         if (!AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
             return;
 
-        if (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
-                || e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
-            // 방패 들고 있어야 함
-            ItemStack main = p.getInventory().getItemInMainHand();
-            ItemStack off = p.getInventory().getItemInOffHand();
-            if (main.getType() != Material.SHIELD && off.getType() != Material.SHIELD)
+        // 아이언 메이든 장전 상태인지 확인
+        if (!isIronMaidenReady.contains(p.getUniqueId()))
+            return;
+
+        // 방패를 들고 타격했는지 확인
+        ItemStack main = p.getInventory().getItemInMainHand();
+        ItemStack off = p.getInventory().getItemInOffHand();
+        if (main.getType() != Material.SHIELD && off.getType() != Material.SHIELD)
+            return;
+
+        // 타겟이 살아있는 생명체인지 확인
+        if (e.getEntity() instanceof LivingEntity livingTarget) {
+            // 대상이 관전자면 제외
+            if (livingTarget instanceof Player
+                    && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                 return;
 
-            // 활성화 되었는지 확인
-            if (!isIronMaidenReady.contains(p.getUniqueId()))
-                return;
-
-            // 타겟팅 확인 (10칸)
-            Entity target = getTargetEntity(p, 10);
-            if (target instanceof LivingEntity livingTarget) {
-                if (livingTarget instanceof Player
-                        && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
-                    return;
-                // 발동!
-                useIronMaiden(p, livingTarget);
-            }
+            // 아이언 메이든 대미지 자체를 막기 위해 평타 공격을 취소선 처리할 수 있지만
+            // 일반 타격 판정도 넣을거면 그냥 진행. 여기선 아이언 메이든을 발동시킴.
+            useIronMaiden(p, livingTarget);
         }
     }
 
+    /**
+     * [기존 우클릭] 방어 성공 텍스트나 다른 잔여 효과 방지용으로 남겨둠
+     * (아이언 메이든은 이제 직접 타격으로 발동하므로 허공 우클릭 발동은 제거됨)
+     */
+    @EventHandler
+    public void onInteract(PlayerInteractEvent e) {
+        // 기존 코드는 삭제됨 (발동 불가)
+    }
+
+    // 대상 얻는 기존 RayTrace 메서드 삭제 또는 보존
     private Entity getTargetEntity(Player p, int range) {
         return p.getTargetEntity(range, false); // RayTrace
     }
@@ -244,9 +277,9 @@ public class Naofumi extends Ability {
         p.sendMessage("§4아이언 메이든!");
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f); // 웅장한 소리
 
-        // [추가] 방패 쿨타임 10초 적용 (도끼로 찍힌 효과)
-        p.setCooldown(Material.SHIELD, 200);
-        p.sendMessage("§c[패널티] 방패가 10초간 비활성화됩니다.");
+        // [추가] 방패 쿨타임 20초(400틱) 적용 (도끼로 찍힌 효과처럼 방어를 제한함)
+        p.setCooldown(Material.SHIELD, 400);
+        p.sendMessage("§c[패널티] 아이언 메이든의 반동으로 방패가 20초간 비활성화됩니다.");
 
         // 2. 가마솥 소환 (BlockDisplay 활용)
         Location targetLoc = target.getLocation();

@@ -133,16 +133,15 @@ public class TogaHimiko extends Ability {
         if (!(e.getDamager() instanceof Player attacker) || !(e.getEntity() instanceof Player victim)) {
             return;
         }
-
         // [Fix] 관전자는 대상에서 제외
         if (victim.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
-
+        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
+        if (isSilenced(attacker))
+            return;
         // 공격자가 토가 히미코인지 확인 (변신 중에는 피를 뽑을 수 없음 - 원작 고증 혹은 밸런스)
         AbilityManager am = AbilityManager.getInstance((MocPlugin) plugin);
         if (!am.hasAbility(attacker, getCode()) || isTransformed.contains(attacker.getUniqueId())) {
-        // [추가] 능력이 봉인된 상태 (침묵)인지 체크
-        if (isSilenced(attacker)) return;
             return;
         }
 
@@ -258,8 +257,14 @@ public class TogaHimiko extends Ability {
 
                 transformToTarget(p, target, am);
 
-                // 체력 4칸(8.0) 회복
-                double newHealth = Math.min(p.getHealth() + 8.0,
+                // 체력 비례/절대값 유지: 현재 체력을 복사
+                // (어빌리티 변경 시 MaxHealth가 먼저 바뀌지만, 혹시를 대비해 기존 체력을 읽어둠)
+                double currentHealthBefore = p.getHealth();
+
+                transformToTarget(p, target, am);
+
+                // 체력 4칸(8.0) 회복 후 최대 체력 초과 방지
+                double newHealth = Math.min(currentHealthBefore + 8.0,
                         p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
                 p.setHealth(newHealth);
 
@@ -325,7 +330,7 @@ public class TogaHimiko extends Ability {
                 : 1.0;
         state.movementSpeed = p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED) != null
                 ? p.getAttribute(org.bukkit.attribute.Attribute.MOVEMENT_SPEED).getValue()
-                : 0.2; // 플레이어 기본 이속 0.2
+                : 0.1; // 플레이어 기본 이속 0.1 (0.2로 되어있던 이속 비정상 버그 패치)
 
         // [버그 수정] 방어력(Armor) 및 방어 강도(Toughness) 백업 추가
         // 1.21.11 대응: Registry 사용
@@ -475,9 +480,12 @@ public class TogaHimiko extends Ability {
                         p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(original.maxHealth);
                     }
 
-                    // 최대 체력 복구 후 현재 체력 설정
+                    // [버그 수정] 변신 기간 동안 입었던 피해나 회복 상태를 '그대로' 복원
+                    // 변신 해제 직전(예: 카네키 켄 상태)에서의 체력을 절대값으로 유지합니다.
+                    // 만약 현재 체력이 원래 육신의 최대 체력을 넘는다면 최대 체력까지만 채웁니다.
+                    double currentHealthBeforeRevert = p.getHealth();
                     double restoredMax = p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
-                    p.setHealth(Math.min(original.health, restoredMax));
+                    p.setHealth(Math.min(currentHealthBeforeRevert, restoredMax));
 
                     // 나머지 속성 복구
                     if (p.getAttribute(org.bukkit.attribute.Attribute.SCALE) != null)

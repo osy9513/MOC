@@ -106,8 +106,8 @@ public class TungTungTungSahur extends Ability {
         // 3. 채팅창에 변신 대사 출력
         p.getServer().broadcast(Component.text("퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.퉁.사후르").color(TextColor.color(0xc16c15)));
 
-        // 4. 최초 요청 예약 (8초 후 시작, 혹은 4초 후? 기존 8초 였으니 4초 대기 후 시작으로 변경)
-        scheduleNextRequest(p, 80L); // 4초 후 첫 번째 질문 시작
+        // 4. 최초 요청 예약
+        scheduleNextRequest(p, 180L); // 9초 후 첫 번째 질문 시작
     }
 
     @Override

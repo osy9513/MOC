@@ -73,7 +73,7 @@ public class Jihyun extends Ability {
         p.sendMessage("§d히든 ● 지현(바집소)");
         p.sendMessage("§f도넛 모양 연기를 날립니다.");
         p.sendMessage("§f연기는 3초에 걸쳐 10블럭 날라가며 맞을 경우 5의 데미지를 줍니다.");
-        p.sendMessage("§f맞은 대상은 3초간 시야가 좁아집니다(실명).");
+        p.sendMessage("§f맞은 대상은 3초간 시야가 좁아집니다(어둠).");
         p.sendMessage(" ");
         p.sendMessage("§f능력을 사용할 수록 날라가는 연기가 증가하며");
         p.sendMessage("§f최대 8번까지 연속해서 연기를 발사합니다.");
@@ -231,9 +231,9 @@ public class Jihyun extends Ability {
                             // 넉백 상쇄
                             target.setVelocity(originalVel);
 
-                            // 실명 2초 (40틱)
+                            // 어둠 2초 (40틱)
                             target.addPotionEffect(
-                                    new PotionEffect(PotionEffectType.BLINDNESS, 40, 0, true, true, true));
+                                    new PotionEffect(PotionEffectType.DARKNESS, 40, 0, true, true, true));
                             target.sendMessage("§f악! 눈에 연기가!!"); // 본인에게만 표시
                             hitEntities.add(target.getUniqueId());
                         }

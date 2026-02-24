@@ -53,7 +53,7 @@ public class Alex extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§e유틸 ● 알렉스(이터널 리턴)");
         p.sendMessage("§f맨손으로 에메랄드 블록을 20초간 우클릭하여");
-        p.sendMessage("§f해킹에 성공하면 전장의 기반암을 파괴합니다.");
+        p.sendMessage("§f해킹에 성공하면 에메랄드를 제외한 전장 내 모든 블럭을 파괴합니다.");
         p.sendMessage("§f해킹 성공 시 자신은 20초간 느린 낙하 효과를 얻습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
