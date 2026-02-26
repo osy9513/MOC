@@ -85,13 +85,14 @@ public class May extends Ability {
         p.sendMessage("§f닻을 우클릭하면 돌고래를 타고 전방에 포물선 방향으로 돌진합니다.");
         p.sendMessage("§f돌진 중 적과 부딪치면 상대의 피격 무적을 무시한 채");
         p.sendMessage("§f8 데미지를 주며 적과 함께 공중에 뜹니다.");
-        p.sendMessage("§f이때 쿨타임이 초기화 되어 5초 이내 돌진을 또 할 수 있습니다.");
+        p.sendMessage("§f이때 쿨타임이 초기화 되어 3초 이내 돌진을 또 할 수 있습니다.");
         p.sendMessage("§f이는 최대 5번까지 가능합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 초기화 후 5초 이내 돌진을 하지 않을 경우,");
+        p.sendMessage("§f쿨타임 초기화 후 3초 이내 돌진을 하지 않을 경우,");
         p.sendMessage("§f쿨타임 초기화가 취소되어 15초의 쿨타임을 가집니다.");
+        p.sendMessage("§f돌고래 돌진 시 낙하 데미지를 받지 않습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 15초 (충돌 시 5초 이내 재사용/최대 5콤보)");
+        p.sendMessage("§f쿨타임 : 15초 (충돌 시 3초 이내 재사용/최대 5콤보)");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 닻");
         p.sendMessage("§f장비 제거 : 철 칼");
@@ -108,8 +109,8 @@ public class May extends Ability {
         super.cleanup(p);
     }
 
-    // 돌진 중인지 여부를 저장해 중복 대쉬 방지
-    private final java.util.Set<UUID> isDashing = new java.util.HashSet<>();
+    // 돌진 중인지 여부와 핑, 랙으로 인한 낙하 데미지 무시 유예 시간을 함께 저장 (UUID -> 유예 만료 시간(밀리초))
+    private final Map<UUID, Long> isDashing = new HashMap<>();
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
@@ -127,13 +128,30 @@ public class May extends Ability {
                 || item.getItemMeta().getCustomModelData() != 15)
             return;
 
-        // 돌진 중이면 무시
-        if (isDashing.contains(p.getUniqueId()))
+        // 돌진 중이거나 유예 시간이 안 끝났으면 무시 (1초 유예)
+        if (isDashing.containsKey(p.getUniqueId()) && System.currentTimeMillis() < isDashing.get(p.getUniqueId()))
             return;
 
-        // 쿨타임 체크 (15초 본 쿨타임)
-        if (!checkCooldown(p))
+        // 이미 무언가(돌고래 등)에 탑승 중이면 돌진 불가
+        if (p.getVehicle() != null)
             return;
+
+        // 쿨타임 체크 (수동 확인: checkCooldown()은 쿨타임을 자동으로 부여하기도 하므로 직접 검사)
+        if (cooldowns.containsKey(p.getUniqueId())) {
+            long now = System.currentTimeMillis();
+            long endTime = cooldowns.get(p.getUniqueId());
+            if (now < endTime) {
+                // 이미 checkCooldown 내부에서 액션바 알림을 주지만 수동으로 할 땐 직접 알림
+                if (p.getGameMode() != org.bukkit.GameMode.CREATIVE) {
+                    double left = (endTime - now) / 1000.0;
+                    p.sendActionBar(net.kyori.adventure.text.Component
+                            .text("§c쿨타임이 " + String.format("%.1f", left) + "초 남았습니다."));
+                    return;
+                }
+            } else {
+                cooldowns.remove(p.getUniqueId());
+            }
+        }
 
         e.setCancelled(true);
         executeDolphinDash(p);
@@ -148,13 +166,16 @@ public class May extends Ability {
             comboTask.remove(uuid);
         }
 
-        isDashing.add(uuid);
+        // 돌진 시작: 아주 넉넉하게 5초(5000ms) 동안 대쉬 판정 유지 - finishDash에서 1초 유예로 줄어듦
+        isDashing.put(uuid, System.currentTimeMillis() + 5000);
 
         // 돌고래 소환
         Location loc = p.getLocation();
-        Dolphin dolphin = p.getWorld().spawn(loc, Dolphin.class, d -> {
+        Dolphin dolphin = p.getWorld().spawn(loc.clone().add(0, 0.5, 0), Dolphin.class, d -> {
             d.setInvulnerable(true);
-            d.setAI(false);
+            // NoAI가 켜져 있으면 velocity 연산이 무시되므로 제거하고 구속으로 이동을 억제합니다.
+            d.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS, 100, 255,
+                    false, false, false));
             d.setGravity(true);
             d.setCustomName("§b돌고래씨");
             d.setCustomNameVisible(false);
@@ -162,20 +183,26 @@ public class May extends Ability {
 
         dolphin.addPassenger(p);
 
-        // 포물선 벡터 (시선 방향, y축 고정)
-        Vector v = loc.getDirection().setY(0).normalize().multiply(1.5).setY(0.8);
-        dolphin.setVelocity(v);
+        // 포물선 벡터 (시선 방향, y축 고정) - 거리를 10칸 정도로 맞추기 위해 Y 폭을 낮춤
+        Vector baseVel = loc.getDirection().setY(0).normalize().multiply(1.5).setY(0.6);
+        dolphin.setVelocity(baseVel);
+
+        // 현재 콤보 횟수 확인 (최초 사용 시 1)
+        int combo = comboCount.getOrDefault(uuid, 0) + 1;
 
         p.getWorld().playSound(loc, Sound.ENTITY_DOLPHIN_PLAY, 1.0f, 1.0f);
-        p.getServer().broadcastMessage("§b메이: §f돌고래씨!");
+        p.getServer().broadcastMessage("§b메이: §f돌고래씨! (" + combo + "/5)");
 
         // 3x3 물 디스플레이 생성
-        org.bukkit.entity.BlockDisplay waterDisplay = p.getWorld().spawn(loc.clone().subtract(1.5, 0.5, 1.5),
+        org.bukkit.entity.BlockDisplay waterDisplay = p.getWorld().spawn(loc.clone().subtract(0, 0.5, 0),
                 org.bukkit.entity.BlockDisplay.class, d -> {
-                    d.setBlock(org.bukkit.Bukkit.createBlockData(Material.WATER));
+                    // 유체인 WATER는 BlockDisplay에서 투명하게 렌더링되므로 CYAN 유리로 대체합니다.
+                    d.setBlock(org.bukkit.Bukkit.createBlockData(Material.CYAN_STAINED_GLASS));
                     org.bukkit.util.Transformation t = d.getTransformation();
-                    t.getScale().set(3f, 0.8f, 3f);
+                    t.getScale().set(3f, 1f, 3f);
+                    t.getTranslation().set(-1.5f, -0.2f, -1.5f);
                     d.setTransformation(t);
+                    d.setTeleportDuration(1); // 1틱 보간(부드러운 이동)
                 });
 
         // 소환된 엔티티/디스플레이 Ability 통합 관리에 등록하여 게임 종료/사망 시 자동 삭제되도록 함
@@ -184,6 +211,8 @@ public class May extends Ability {
 
         new BukkitRunnable() {
             int ticks = 0;
+            int groundTicks = 0; // 땅에 닿아있는 시간 누적
+            Vector currentVel = baseVel.clone();
 
             @Override
             public void run() {
@@ -193,19 +222,54 @@ public class May extends Ability {
                     return;
                 }
 
-                // 돌진 최대 거리/시간 초과(약 60틱=3초) 또는 돌진 후 바닥에 닿았을 때 (초반 몇 틱은 제외)
-                if (ticks > 60 || (ticks > 5 && dolphin.isOnGround())) {
+                // 돌진 최대 시간 초과(약 60틱=3초)
+                if (ticks > 60) {
                     finishDash(p, dolphin, waterDisplay, false, null);
                     this.cancel();
                     return;
                 }
 
                 Location dLoc = dolphin.getLocation();
-                // 물 디스플레이 추적
-                waterDisplay.teleport(dLoc.clone().subtract(1.5, 0.5, 1.5));
 
-                // 물 이펙트 흩날림
-                p.getWorld().spawnParticle(Particle.SPLASH, dLoc.clone().add(0, 0.5, 0), 15, 0.5, 0.5, 0.5, 0.1);
+                // 2) 플레이어 낙하 데미지 지속 무시
+                p.setFallDistance(0);
+
+                // 벽 충돌 (가시선 내 블록 확인) 또는 땅에 닿은 시간 누적 (0.5초 = 10틱)
+                boolean isCollidingWithBlock = false;
+
+                // 돌고래의 현재 위치와 진행 방향 앞쪽 블록(벽), 그리고 아래쪽 블록(땅) 검사
+                org.bukkit.block.Block currentBlock = dLoc.getBlock();
+                org.bukkit.block.Block frontBlock = dLoc.clone().add(currentVel.clone().normalize().multiply(0.5))
+                        .getBlock();
+                org.bukkit.block.Block belowBlock = dLoc.clone().subtract(0, 0.5, 0).getBlock();
+
+                if (currentBlock.getType().isSolid() || frontBlock.getType().isSolid() || belowBlock.getType().isSolid()
+                        || dolphin.isOnGround()) {
+                    isCollidingWithBlock = true;
+                }
+
+                if (isCollidingWithBlock) {
+                    // 낙하 데미지를 확실히 무효화
+                    p.setFallDistance(0);
+                    groundTicks++;
+                    if (groundTicks >= 10) {
+                        finishDash(p, dolphin, waterDisplay, false, null);
+                        this.cancel();
+                        return;
+                    }
+                } else {
+                    groundTicks = 0; // 공중에 뜨면 초기화
+                }
+
+                // 강제 전진 유지 및 중력 적용 (돌고래의 마찰을 이겨냄) - 중력을 조금 더 줘서 10칸 쯤에 떨어지게 유도
+                currentVel.setY(currentVel.getY() - 0.09); // 중력 스케일
+                dolphin.setVelocity(currentVel);
+
+                // 물 디스플레이 추적 (translation에 의해 중심 정렬됨)
+                waterDisplay.teleport(dLoc);
+
+                // 물 이펙트 흩날림 (물기둥 느낌)
+                p.getWorld().spawnParticle(Particle.SPLASH, dLoc.clone().add(0, 0.5, 0), 45, 1.0, 0.5, 1.0, 0.1);
 
                 // 엔티티 충돌 체크
                 for (Entity e : dolphin.getNearbyEntities(1.5, 1.5, 1.5)) {
@@ -229,7 +293,8 @@ public class May extends Ability {
             LivingEntity target) {
         UUID uuid = p.getUniqueId();
 
-        isDashing.remove(uuid);
+        // 돌진 종료 시, 약간의 유예 시간(1초 = 1000ms)을 주어 핑이나 서버 랙으로 인한 뒤늦은 낙뎀 방지
+        isDashing.put(uuid, System.currentTimeMillis() + 1000);
 
         if (dolphin.isValid()) {
             dolphin.eject();
@@ -249,10 +314,15 @@ public class May extends Ability {
 
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.0f);
 
-            // 공중으로 띄움 (메이, 타겟)
-            Vector up = new Vector(0, 0.8, 0);
-            p.setVelocity(p.getVelocity().setY(0).add(up));
-            target.setVelocity(target.getVelocity().setY(0).add(up));
+            // 1) 둘 다 기존보다 2칸 정도(Y값 0.4~0.5 가량) 덜 띄우도록 수정.
+            // 기존 1.3에서 0.4를 뺀 0.9로 설정합니다.
+            Vector targetUp = new Vector(0, 0.9, 0);
+
+            // 2) 서로 높이 차이를 15%로 설정 (메이가 15% 덜 띄워지도록 0.85 곱함)
+            Vector selfUp = new Vector(0, 0.9 * 0.85, 0);
+
+            p.setVelocity(p.getVelocity().setY(0).add(selfUp));
+            target.setVelocity(target.getVelocity().setY(0).add(targetUp));
 
             // 콤보 카운트 업데이트
             int currentCombo = comboCount.getOrDefault(uuid, 0) + 1;
@@ -269,7 +339,7 @@ public class May extends Ability {
                 }
 
                 org.bukkit.scheduler.BukkitTask task = new BukkitRunnable() {
-                    int timeLeft = 50; // 5초 = 50 * 2틱 (100틱)
+                    int timeLeft = 30; // 3초 = 30 * 2틱 (60틱)
 
                     @Override
                     public void run() {
@@ -282,7 +352,7 @@ public class May extends Ability {
                             return;
                         }
 
-                        // 요청 포맷: 1/5콤보! 연속 사용 가능! 5초..
+                        // 요청 포맷: 1/5콤보! 연속 사용 가능! 3초..
                         p.sendActionBar(net.kyori.adventure.text.Component.text(
                                 "§b" + currentCombo + "/5콤보! 연속 사용 가능! " + String.format("%.1f", timeLeft / 10.0)
                                         + "초.."));
@@ -297,6 +367,21 @@ public class May extends Ability {
             // 허공 빗나감 혹은 맨 땅에 떨어짐 -> 즉시 15초 쿨타임
             comboCount.remove(uuid);
             setCooldown(p, 15);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDamage(org.bukkit.event.entity.EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player p))
+            return;
+
+        // 낙하 데미지일 경우
+        if (e.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.FALL) {
+            UUID uuid = p.getUniqueId();
+            // 메이 능력 돌진 중이거나 돌진이 끝난 직후 유예 시간(1초) 내라면
+            if (isDashing.containsKey(uuid) && System.currentTimeMillis() < isDashing.get(uuid)) {
+                e.setCancelled(true);
+            }
         }
     }
 }

@@ -188,6 +188,7 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("전장 설정");
                     p.sendMessage("§e map_size (맵 크기 - 숫자): §f" + cm.map_size);
                     p.sendMessage("§e battle_map (맵 크기에 맞춰 전장 활성화 - true/false): §f" + cm.battle_map);
+                    p.sendMessage("§e map_back_up (전장 생성 전 맵 백업과 게임 종료 시 맵 복구 여부 - true/false): §f" + cm.map_back_up); // [추가]
                     p.sendMessage("§e random_map (전장의 랜덤 요소 활성화 - true/false): §f" + cm.random_map);
                     p.sendMessage("§e final_fight (맵 끝 자기장 축소 여부 - true/false): §f" + cm.final_fight);
                     p.sendMessage("§e final_time (맵 끝 자기장 축소 시간 - 초): §f" + cm.final_time);

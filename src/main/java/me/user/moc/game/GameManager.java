@@ -38,6 +38,7 @@ public class GameManager implements Listener {
     private final Set<UUID> livePlayers = new HashSet<>();
     private ConfigManager configManager;
     private AbilityManager abilityManager; // 의존성 주입
+    private MusicManager musicManager; // [추가] 음악 관리 매니저
 
     // [Scoreboard 전용 Getter]
     public int getScore(UUID uuid) {
@@ -73,6 +74,8 @@ public class GameManager implements Listener {
         this.configManager = (plugin.getConfigManager() != null)
                 ? plugin.getConfigManager()
                 : ConfigManager.getInstance();
+
+        this.musicManager = new MusicManager(plugin); // [추가] MusicManager 초기화
 
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
         // [추가] 로그를 남겨서 장부가 잘 들어왔는지 확인합니다.
@@ -194,10 +197,7 @@ public class GameManager implements Listener {
         readyPlayers.clear();
         isRoundEnding = false; // [버그 수정] 새 라운드 시작 시 라운드 종료 잠금 해제
 
-        // [추가] 라운드 시작 시마다 랜덤 전장 재생성 (새로운 지형 설치)
-        if (configManager.spawn_point != null) {
-            arenaManager.prepareArena(configManager.spawn_point);
-        }
+        // (중복 호출 제거됨)
 
         // [무적 시작] 능력 추첨 중에는 서로 공격할 수 없게 설정합니다.
         this.isInvincible = true;
@@ -228,70 +228,95 @@ public class GameManager implements Listener {
 
         // [수정 포인트] 아레나 매니저에게 전장 준비 명령!
         // 여기서 날씨, 시간, 기반암, 에메랄드, 자기장, 월드 바닥의 아이템, 몬스터 초기화가 다 일어납니다.
-        arenaManager.prepareArena(center);
+        // [수정] 기반암 맵 백업 및 공사가 완전히 끝난 뒤에 룰렛이 시작되도록 콜백(Runnable)을 넘깁니다.
+        arenaManager.prepareArena(center, () -> {
+            // 플레이어 초기화 및 능력 배정 전 덱 생성
+            List<String> deck = new ArrayList<>();
+            if (abilityManager != null) {
+                deck.addAll(abilityManager.getAbilityCodes());
 
-        // 플레이어 초기화 및 능력 배정 전 덱 생성
-        List<String> deck = new ArrayList<>();
-        if (abilityManager != null) {
-            deck.addAll(abilityManager.getAbilityCodes());
-
-            // [추가] 배틀맵(기반암)이 없으면 알렉스(020) 능력 제외 (바닥 파괴 불가능)
-            if (!configManager.battle_map) {
-                deck.remove("020");
-                // Bukkit.getLogger().info("[MocPlugin] 배틀맵 미사용으로 알렉스(020) 능력이 제외되었습니다.");
-            }
-        } else {
-            // 만약 매니저가 없으면 비상용으로 기본 코드만 넣음 (안전장치)
-            deck.add("001");
-            Bukkit.getLogger().warning("AbilityManager가 연결되지 않아 덱을 생성하지 못했습니다.");
-        }
-
-        // 덱 섞기 (단순 셔플이 아닌 아직 한 번도 안뽑힌 능력을 10% 더 잘 나오도록 가중치 셔플 적용)
-        if (abilityManager != null) {
-            abilityManager.shuffleDeckWeighted(deck);
-        } else {
-            Collections.shuffle(deck);
-        }
-
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (isAfk(p.getName())) {
-                p.setGameMode(GameMode.SPECTATOR); // 관전 모드 변경
-                p.sendMessage("§7[MOC] 게임 열외(AFK) 상태이므로 관전 모드로 전환됩니다.");
-                p.sendMessage("§7게임에 참여하고 싶으시면 다음 판에 '/moc afk 본인닉네임'을 입력해 해제하세요.");
-                continue;
-            }
-
-            // [추가] 죽어있는 플레이어 강제 리스폰 (게임 참여를 위해)
-            if (p.isDead()) {
-                p.spigot().respawn();
-            }
-
-            // [수정] 테스트 모드면 크리에이티브, 아니면 서바이벌
-            if (configManager.test) {
-                p.setGameMode(GameMode.CREATIVE);
-                p.sendMessage("§e[TEST] §f테스트 모드가 활성화되어 '크리에이티브' 모드로 설정됩니다.");
+                // [추가] 배틀맵(기반암)이 없으면 알렉스(020) 능력 제외 (바닥 파괴 불가능)
+                if (!configManager.battle_map) {
+                    deck.remove("020");
+                }
             } else {
-                p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
+                // 만약 매니저가 없으면 비상용으로 기본 코드만 넣음 (안전장치)
+                deck.add("001");
+                Bukkit.getLogger().warning("AbilityManager가 연결되지 않아 덱을 생성하지 못했습니다.");
             }
-            if (configManager.spawn_point != null) {
-                p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
+
+            // 덱 섞기 (단순 셔플이 아닌 아직 한 번도 안뽑힌 능력을 10% 더 잘 나오도록 가중치 셔플 적용)
+            if (abilityManager != null) {
+                abilityManager.shuffleDeckWeighted(deck);
+            } else {
+                Collections.shuffle(deck);
             }
 
-            p.getInventory().clear();
-            // [버그 수정] 체력 설정 시 최대 체력 범위 내에서 설정
-            double maxHealthVal = p.getAttribute(Attribute.MAX_HEALTH).getValue();
-            p.setHealth(Math.min(20.0, maxHealthVal)); // 기본 체력으로 일단 리셋
-            p.setFoodLevel(20);
-            // [추가] 피격 무적 시간 초기화 (버그 방지)
-            p.setMaximumNoDamageTicks(20);
-            p.setNoDamageTicks(0);
+            // 모든 접속자 초기화 및 기본템 지급
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (isAfk(p.getName())) {
+                    p.setGameMode(GameMode.SPECTATOR); // 관전 모드 변경
+                    p.sendMessage("§7[MOC] 게임 열외(AFK) 상태이므로 관전 모드로 전환됩니다.");
+                    p.sendMessage("§7게임에 참여하고 싶으시면 다음 판에 '/moc afk 본인닉네임'을 입력해 해제하세요.");
+                    continue;
+                }
 
-            for (PotionEffect effect : p.getActivePotionEffects())
-                p.removePotionEffect(effect.getType());
-        }
+                // [추가] 죽어있는 플레이어 강제 리스폰 (게임 참여를 위해)
+                if (p.isDead()) {
+                    p.spigot().respawn();
+                }
 
-        // [수정] 바로 능력을 주지 않고, 3초간 룰렛 연출을 시작합니다.
-        startRouletteAnimation(deck);
+                // [수정] 테스트 모드면 크리에이티브, 아니면 서바이벌
+                if (configManager.test) {
+                    p.setGameMode(GameMode.CREATIVE);
+                    p.sendMessage("§e[TEST] §f테스트 모드가 활성화되어 '크리에이티브' 모드로 설정됩니다.");
+                } else {
+                    p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
+                }
+                if (configManager.spawn_point != null) {
+                    p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
+                }
+
+                p.getInventory().clear();
+                // [버그 수정] 체력 설정 시 최대 체력 범위 내에서 설정
+                double maxHealthVal = p.getAttribute(Attribute.MAX_HEALTH).getValue();
+                p.setHealth(Math.min(20.0, maxHealthVal)); // 기본 체력으로 일단 리셋
+                p.setFoodLevel(20);
+                // [추가] 피격 무적 시간 초기화 (버그 방지)
+                p.setMaximumNoDamageTicks(20);
+                p.setNoDamageTicks(0);
+
+                for (PotionEffect effect : p.getActivePotionEffects())
+                    p.removePotionEffect(effect.getType());
+
+                // ...기존 아이템 지급 로직...
+                p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
+                p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
+                p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
+                p.getInventory().addItem(new ItemStack(Material.GLASS, 5));
+
+                // 재생 포션 지급
+                ItemStack regenPotion = new ItemStack(Material.POTION);
+                PotionMeta pm = (PotionMeta) regenPotion.getItemMeta();
+                if (pm != null) {
+                    pm.addCustomEffect(new org.bukkit.potion.PotionEffect(PotionEffectType.REGENERATION, 20 * 15, 1),
+                            true);
+                    pm.setDisplayName("§d재생 포션");
+                    regenPotion.setItemMeta(pm);
+                }
+                p.getInventory().addItem(regenPotion);
+
+                // 철 흉갑 장착
+                p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+
+                // 포션 효과 모두 제거
+                for (PotionEffect effect : p.getActivePotionEffects())
+                    p.removePotionEffect(effect.getType());
+            }
+
+            // [수정] 공사가 완벽히 끝난 후, 3초간 룰렛 연출 시작
+            startRouletteAnimation(deck);
+        });
     }
 
     /**
@@ -513,8 +538,10 @@ public class GameManager implements Listener {
                 highestY = 64; // 안전한 높이 설정
                 targetLoc.setY(highestY + 20.0); // 플레이어 발 위치 (블록 위 + 20칸)
 
-                // [고도화] 단순 유리판 생성이 아니라, 해당 위치를 새로운 전장의 중심으로 잡고 아레나를 생성합니다.
-                arenaManager.prepareArena(targetLoc);
+                // [추가] GameManager가 ArenaManager의 prepareArena를 호출하여 중앙을 세팅합니다.
+                arenaManager.prepareArena(targetLoc, null);
+                // (방금 전에 /moc start로 이미 불렸을 수도 있지만,
+                // /moc center를 통해 능동적으로 위치를 바꿨을 경우 다시 세팅해 주어야 합니다.);
 
                 // [추가] 스폰 포인트도 안전한 곳으로 변경 (죽어도 여기로 오도록)
                 p.setBedSpawnLocation(targetLoc, true);
@@ -608,6 +635,11 @@ public class GameManager implements Listener {
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
             p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1f); // 무적 해제 느낌 팍팍
+
+            // [추가] 전투 BGM 재생 시작
+            if (musicManager != null) {
+                musicManager.playBattleBGM(p);
+            }
 
             if (afkPlayers.contains(p.getName()))
                 continue;
@@ -916,6 +948,11 @@ public class GameManager implements Listener {
             AttributeInstance knockback = p.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
             if (knockback != null)
                 knockback.setBaseValue(0.0);
+
+            // [추가] 라운드(게임) 종료 시 전투 BGM 정지
+            if (musicManager != null) {
+                musicManager.stopBattleBGM(p);
+            }
         }
 
         // [강화] 게임 데이터 초기화
@@ -924,6 +961,11 @@ public class GameManager implements Listener {
         readyPlayers.clear();
         players.clear();
         livePlayers.clear();
+
+        // [추가] 맵 복구
+        if (arenaManager != null) {
+            arenaManager.restoreArena();
+        }
 
         isRunning = false;
         configManager.spawn_point = null;
@@ -1098,6 +1140,13 @@ public class GameManager implements Listener {
             return;
         isInvincible = true; // 무적 상태 활성화.;
 
+        // [추가] 라운드 종료 시 전투 BGM 정지
+        if (musicManager != null) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                musicManager.stopBattleBGM(p);
+            }
+        }
+
         // [추가] 승자들의 능력 '게임 종료' 훅 실행 (토가 히미코 변신 해제 등)
         if (abilityManager != null) {
             for (Player winner : winners) {
@@ -1209,6 +1258,13 @@ public class GameManager implements Listener {
         if (!isRunning)
             return;
         isInvincible = true; // 무적 상태 활성화
+
+        // [추가] 스킵 시 전투 BGM 정지
+        if (musicManager != null) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                musicManager.stopBattleBGM(p);
+            }
+        }
 
         Bukkit.broadcastMessage(" ");
         Bukkit.broadcastMessage("§6==========================");
@@ -1394,11 +1450,32 @@ public class GameManager implements Listener {
     // 유틸리티 및 이벤트 리스너
     // =========================================================================
 
-    // 무적 시간 대미지 방지 isInvincible <ㅡ t 면 무적 f 면 무적해제
+    // 무적 시간 대미지 방지 (낙하 데미지 포함)
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
         if (isInvincible && e.getEntity() instanceof Player) {
             e.setCancelled(true);
+            return;
+        }
+
+        // [추가] 라운드 시작 대기 중이고, 낙하 피해(FALL) 또는 공허 피해(VOID)일 경우 방지
+        // 플레이어가 무적이 풀려도 아직 바닥 생성 전이거나 복구 중에 떨어질 수 있으므로 추가 보완.
+        if (e.getEntity() instanceof Player) {
+            EntityDamageEvent.DamageCause cause = e.getCause();
+            if (cause == EntityDamageEvent.DamageCause.FALL || cause == EntityDamageEvent.DamageCause.VOID) {
+                // 게임 시작 전(isRunning == false)이거나, 무적 시간일 때 피해 무시
+                if (!isRunning || isInvincible) {
+                    e.setCancelled(true);
+
+                    // 공허에 빠졌을 때 다시 위로 살짝 텔레포트 시켜서 무한 추락 방지
+                    if (cause == EntityDamageEvent.DamageCause.VOID) {
+                        Player p = (Player) e.getEntity();
+                        Location loc = p.getLocation();
+                        loc.setY(configManager.spawn_point != null ? configManager.spawn_point.getY() : 200);
+                        p.teleport(loc);
+                    }
+                }
+            }
         }
     }
 
@@ -1507,6 +1584,10 @@ public class GameManager implements Listener {
      * 승리한 플레이어 머리 위로 별 모양 폭죽 10개를 연속으로 발사합니다.
      */
     private void spawnFireworks(Location loc) {
+        // [중요 추가] 서버가 종료 중(/reload 등)일 땐 폭죽 태스크를 등록하면 오류가 납니다.
+        if (!plugin.isEnabled())
+            return;
+
         // 0.2초(4틱) 간격으로 폭죽을 쏘기 위한 반복 작업 시작!
         new BukkitRunnable() {
             int count = 0;
