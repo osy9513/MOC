@@ -38,6 +38,7 @@ public class ConfigManager {
     public int final_time = 120; // 게임 시작 몇 초 뒤에 자기장이 줄어드나요? (120초 = 2분)
     // public boolean map_end = true; // 전장 외곽 벽을 활성화할까요?
     public int map_size = 75; // 전장(경기장)의 크기
+    public boolean map_back_up = true; // [추가] 전장 생성하며 맵 제거 시 맵 백업 및 게임 종료 시 복구 여부
     public int win_value = 40; // 몇 점을 먼저 따면 최종 우승인가요?
     public boolean hidden = false; // 숨겨진 캐릭터가 등장하나요?
     public boolean battle_map = true; // [추가] 전장 바닥(배드락)을 생성할까요? (false=야생맵 사용)
@@ -63,6 +64,7 @@ public class ConfigManager {
         final_time = config.getInt("final_time", 120);
         // map_end = config.getBoolean("map_end", true);
         map_size = config.getInt("map_size", 75);
+        map_back_up = config.getBoolean("map_back_up", true); // [추가]
         win_value = config.getInt("win_value", 40);
         hidden = config.getBoolean("hidden", false);
         battle_map = config.getBoolean("battle_map", true);
@@ -92,6 +94,7 @@ public class ConfigManager {
         config.set("final_time", final_time);
         // config.set("map_end", map_end);
         config.set("map_size", map_size);
+        config.set("map_back_up", map_back_up); // [추가]
         config.set("win_value", win_value);
         config.set("hidden", hidden);
         config.set("battle_map", battle_map);

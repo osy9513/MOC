@@ -1,0 +1,11 @@
+{
+    "moc.music.battlegroundbgm": {
+        "category": "record",
+        "sounds": [
+            {
+                "name": "music/battlegroundbgm",
+                "stream": true
+            }
+        ]
+    }
+}

@@ -49,7 +49,7 @@ public class KiraYoshikage extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f키라 요시카게 (죠죠의 기묘한 모험)",
-                "§f시어하트 어택을 사출하여 적을 자동 추격합니다.");
+                "§f시어하트 어택을 자신의 왼쪽에 사출하여 적을 자동 추격합니다.");
     }
 
     @Override
@@ -374,7 +374,7 @@ public class KiraYoshikage extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§e전투 ● 키라 요시카게(죠죠의 기묘한 모험)");
-        p.sendMessage("§f시어하트 어택을 사출하여 적을 자동 추격합니다.");
+        p.sendMessage("§f시어하트 어택을 자신의 왼쪽에 사출하여 적을 자동 추격합니다.");
         p.sendMessage("§f시어하트 어택은 4초마다 10의 폭발 대미지를 입히며 주변 블럭을 폭발 시킵니다.");
         p.sendMessage("§f시어하트 어택은 절대 사라지지 않으며, 파괴될 경우 재소환됩니다.");
         p.sendMessage(" ");

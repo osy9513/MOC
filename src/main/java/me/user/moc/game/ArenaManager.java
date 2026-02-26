@@ -30,8 +30,16 @@ public class ArenaManager implements Listener {
     private BukkitTask borderShrinkTask; // 자기장 및 진행 관련 타이머
     private BukkitTask borderDamageTask; // 대미지 체크 타이머
     private BukkitTask generateTask; // 맵 공사 타이머 (추가됨!)
+    private BukkitTask backupTask; // [추가] 맵 백업 전용 타이머
+    private BukkitTask restoreTask; // [추가] 맵 복구 타이머
     private org.bukkit.entity.Entity centerMarker; // [추가] 중앙 마커 엔티티
     private GameManager gm;
+
+    // [추가] 맵 복구를 위한 백업 데이터 저장소
+    private org.bukkit.block.data.BlockData[][][] backupBlocks = null;
+    private Location backupCenter = null;
+    private int backupMapSize = 0;
+    private int backupMinY = 0;
 
     public ArenaManager(MocPlugin plugin) {
         this.plugin = plugin;
@@ -63,11 +71,14 @@ public class ArenaManager implements Listener {
     /**
      * [핵심] 전장을 생성하고 환경을 초기화합니다.
      */
-    public void prepareArena(Location center) {
+    public void prepareArena(Location center, Runnable onComplete) {
         this.gameCenter = center;
         World world = center.getWorld();
-        if (world == null)
+        if (world == null) {
+            if (onComplete != null)
+                onComplete.run();
             return;
+        }
 
         // 1. [환경] 날씨 맑음, 시간 낮(1000)
         world.setStorm(false);
@@ -85,11 +96,10 @@ public class ArenaManager implements Listener {
         world.getWorldBorder().setSize(config.map_size - 2);
 
         // [추가] 배틀맵 설정이 켜져있을 때만 바닥 공사를 합니다. (야생맵 보존)
-        // [추가] 배틀맵 설정이 켜져있을 때만 바닥 공사를 합니다. (야생맵 보존)
         if (config.battle_map) {
             // 3. [건축] 기반암 바닥 생성 시작 + 아이템 청소 + 몬스터 청소.
             // 특정 좌표기준으로 , 어느 높이에 설정할지 하는 함수.
-            generateSquareFloor(center, center.getBlockY() - 1);
+            generateSquareFloor(center, center.getBlockY() - 1, onComplete);
         } else {
             // 배틀맵이 아니면 바로 청소만 하고 끝냅니다.
             clearManager.allCear();
@@ -108,6 +118,9 @@ public class ArenaManager implements Listener {
                 // 여기서 바로 텔포 시키지 않고 GameManager 흐름을 따릅니다.
                 // (GameManager.startRound에서 prepareArena 호출 후 텔포 로직이 또 있음)
             }
+            if (onComplete != null) {
+                onComplete.run();
+            }
         }
     }
 
@@ -115,15 +128,21 @@ public class ArenaManager implements Listener {
      * [전장 바닥 설정 기능 - 정사각형 버전]
      * 기반암 바닥을 사각형으로 깔고 위아래를 청소한 뒤, 중앙에 에메랄드를 설치합니다.
      */
-    public void generateSquareFloor(Location center, int targetY) {
+    public void generateSquareFloor(Location center, int targetY, Runnable onComplete) {
         // [추가] 설정 확인
-        if (!config.battle_map)
+        if (!config.battle_map) {
+            if (onComplete != null)
+                onComplete.run();
             return;
+        }
 
         this.gameCenter = center;
         World world = center.getWorld();
-        if (world == null)
+        if (world == null) {
+            if (onComplete != null)
+                onComplete.run();
             return;
+        }
 
         // 1. 범위 계산 (map_size가 75라면 중심에서 양옆으로 37칸씩)
         int halfSize = config.map_size / 2;
@@ -134,6 +153,21 @@ public class ArenaManager implements Listener {
         // [추가] 만약 기존에 맵 생성 중인 태스크가 있다면 취소합니다.
         if (generateTask != null) {
             generateTask.cancel();
+            generateTask = null;
+        }
+
+        // [추가 중요! 버그 수정] 기존에 복구 중이던 태스크가 있다면
+        if (restoreTask != null) {
+            restoreTask.cancel();
+            restoreTask = null;
+            // 게임 센터가 바뀌지 않았다면 기존 백업을 그대로 재활용하여 덮어쓰기를 방지합니다!
+            if (backupCenter != null && backupCenter.getWorld().equals(world)
+                    && backupCenter.getBlockX() == cx && backupCenter.getBlockZ() == cz) {
+                Bukkit.broadcastMessage("§e[MOC] §f방금 전 백업본을 그대로 재활용합니다.");
+            } else {
+                // 게임 센터가 완전히 바뀌었다면 이전 전장은 즉결 복구
+                forceRestoreArena();
+            }
         }
 
         // 그냥 new BukkitRunnable() 하지 않고, generateTask 변수에 담습니다.
@@ -142,6 +176,70 @@ public class ArenaManager implements Listener {
         // [수정] 라운드마다 다른 지형을 위해 동적 시드 생성
         final long mapSeed = System.nanoTime();
 
+        // [추가] 기존에 백업 중이던 태스크가 있다면 취소
+        if (backupTask != null) {
+            backupTask.cancel();
+            backupTask = null;
+        }
+
+        // [추가] 맵 복사본 저장 (야생맵 첫 생성 시 한정)
+        if (config.map_back_up && backupBlocks == null) {
+            int size = (halfSize * 2) + 1;
+            int height = world.getMaxHeight() - world.getMinHeight();
+            backupBlocks = new org.bukkit.block.data.BlockData[size][height][size];
+            backupMinY = world.getMinHeight();
+            backupCenter = center.clone();
+            backupMapSize = size;
+
+            Bukkit.broadcastMessage("§e[MOC] §f전장 지형을 먼저 안전하게 백업합니다... §7(저사양 배려)");
+
+            // 1단계: 지형 백업 페이즈
+            backupTask = new BukkitRunnable() {
+                int x = cx - halfSize;
+                int minHeight = world.getMinHeight();
+                int maxHeight = world.getMaxHeight();
+
+                @Override
+                public void run() {
+                    // 초당 2줄 분량 병렬 처리 (저사양 서버 렉 완전 방지)
+                    for (int i = 0; i < 2; i++) {
+                        if (x > cx + halfSize) {
+                            // 백업 완료! 이제 2단계인 전장 생성 페이즈로 넘어감.
+                            Bukkit.broadcastMessage("§a[MOC] §f지형 백업 완료! 전장 생성을 시작합니다.");
+                            startGenerateTask(world, cx, cz, halfSize, center, targetY, mapSeed, onComplete);
+                            this.cancel();
+                            return;
+                        }
+
+                        int arrX = x - (cx - halfSize);
+                        for (int z = cz - halfSize; z <= cz + halfSize; z++) {
+                            int arrZ = z - (cz - halfSize);
+                            for (int y = minHeight; y < maxHeight; y++) {
+                                int arrY = y - minHeight;
+                                if (arrX >= 0 && arrX < backupMapSize && arrZ >= 0 && arrZ < backupMapSize) {
+                                    if (backupBlocks[arrX][arrY][arrZ] == null) {
+                                        backupBlocks[arrX][arrY][arrZ] = world.getBlockAt(x, y, z).getBlockData()
+                                                .clone();
+                                    }
+                                }
+                            }
+                        }
+                        x++;
+                    }
+                }
+            }.runTaskTimer(plugin, 0, 1);
+
+        } else {
+            // 백업 기능이 꺼져있거나 이미 백업된 경우 바로 전장 생성
+            startGenerateTask(world, cx, cz, halfSize, center, targetY, mapSeed, onComplete);
+        }
+    }
+
+    /**
+     * [추가] 전장 맵을 실제로 생성하는 2단계 페이즈 (백업과 완전히 분리됨)
+     */
+    private void startGenerateTask(World world, int cx, int cz, int halfSize, Location center, int targetY,
+            long mapSeed, Runnable onComplete) {
         generateTask = new BukkitRunnable() {
             // 시작 지점: 중심에서 -halfSize 만큼 떨어진 곳
             int x = cx - halfSize;
@@ -153,8 +251,8 @@ public class ArenaManager implements Listener {
                     removeCenterMarker();
                 }
 
-                // 서버 렉 방지를 위해 한 번에 20줄씩 공사
-                for (int i = 0; i < 20; i++) {
+                // 서버 렉 방지를 위해 한 번에 2줄씩 공사 (저사양 배려)
+                for (int i = 0; i < 2; i++) {
                     // 모든 X축 범위 공사가 끝났다면 (중심 + halfSize를 넘었을 때)
                     if (x > cx + halfSize) {
                         // 2. [완성] 기반암 작업 완료 후 중앙에 에메랄드 설치
@@ -173,6 +271,9 @@ public class ArenaManager implements Listener {
                         createCenterMarker(markerLoc); // 바닥보다 좀 더 위에
 
                         this.cancel();
+                        if (onComplete != null) {
+                            onComplete.run(); // 공사 완료 후 룰렛 실행 콜백 트리거
+                        }
                         return;
                     }
 
@@ -326,8 +427,8 @@ public class ArenaManager implements Listener {
 
             @Override
             public void run() {
-                // 한 번에 x축 5줄씩 처리하여 너무 심한 랙 막기
-                for (int i = 0; i < 5; i++) {
+                // 한 번에 x축 2줄씩 처리하여 너무 심한 랙 막기
+                for (int i = 0; i < 2; i++) {
                     if (x > cx + halfSize) {
                         this.cancel();
                         return;
@@ -748,6 +849,12 @@ public class ArenaManager implements Listener {
             borderDamageTask = null;
         }
 
+        // [추가] 맵 백업 중이었다면 그것도 취소!
+        if (backupTask != null) {
+            backupTask.cancel();
+            backupTask = null;
+        }
+
         // 3. 맵 공사(블록 설치) 중이었다면 그것도 취소! (중요)
         if (generateTask != null) {
             generateTask.cancel();
@@ -868,5 +975,107 @@ public class ArenaManager implements Listener {
             // new org.joml.Vector3f(2f, 2f, 2f), // 2배 크기
             // new org.joml.AxisAngle4f()));
         });
+    }
+
+    /**
+     * [추가] 백업해둔 데이터로 전장을 원래대로 복구합니다.
+     */
+    public void restoreArena() {
+        if (backupBlocks == null || backupCenter == null)
+            return;
+        if (restoreTask != null && !restoreTask.isCancelled())
+            return;
+        if (!config.map_back_up) {
+            backupBlocks = null;
+            return;
+        }
+
+        World world = backupCenter.getWorld();
+        if (world == null)
+            return;
+
+        int cx = backupCenter.getBlockX();
+        int cz = backupCenter.getBlockZ();
+        int halfSize = backupMapSize / 2;
+        int minHeight = backupMinY;
+        int maxHeight = minHeight + backupBlocks[0].length;
+
+        // [중요 추가] 서버 리로드/종료 시점에는 BukkitRunnable 타이머 등록이 막힙니다.
+        // 따라서 플러그인이 꺼지는 중일 땐 약간의 렉이 있더라도 '즉시 일괄 복원'을 해야 안전합니다.
+        if (!plugin.isEnabled()) {
+            forceRestoreArena();
+            return;
+        }
+
+        Bukkit.broadcastMessage("§a[MOC] §f전장 복구를 시작합니다... §7(저사양 배려)");
+
+        restoreTask = new BukkitRunnable() {
+            int x = cx - halfSize;
+
+            @Override
+            public void run() {
+                // 한 번에 x축 2줄씩 복구 (초당 처리량 완화로 저사양 서버 렉 방지)
+                for (int i = 0; i < 2; i++) {
+                    if (x > cx + halfSize) {
+                        backupBlocks = null; // 메모리 해제 최적화
+                        backupCenter = null;
+                        Bukkit.broadcastMessage("§a[MOC] §f전장 지형 복구가 완료되었습니다.");
+                        this.cancel();
+                        return;
+                    }
+
+                    int arrX = x - (cx - halfSize);
+                    for (int z = cz - halfSize; z <= cz + halfSize; z++) {
+                        int arrZ = z - (cz - halfSize);
+                        for (int y = minHeight; y < maxHeight; y++) {
+                            int arrY = y - minHeight;
+                            org.bukkit.block.data.BlockData savedData = backupBlocks[arrX][arrY][arrZ];
+                            if (savedData != null) {
+                                Block b = world.getBlockAt(x, y, z);
+                                if (!b.getBlockData().equals(savedData)) { // 바뀐 블럭만 원상복구
+                                    b.setBlockData(savedData, false);
+                                }
+                            }
+                        }
+                    }
+                    x++;
+                }
+            }
+        }.runTaskTimer(plugin, 0, 1);
+    }
+
+    /**
+     * [추가] 맵 복구 로직을 즉결로 처리하는 함수 (서버 종료, 강제 할당 시)
+     */
+    private void forceRestoreArena() {
+        if (backupBlocks == null || backupCenter == null)
+            return;
+        World world = backupCenter.getWorld();
+        if (world == null)
+            return;
+
+        int cx = backupCenter.getBlockX();
+        int cz = backupCenter.getBlockZ();
+        int halfSize = backupMapSize / 2;
+        int minHeight = backupMinY;
+
+        for (int arrX = 0; arrX < backupMapSize; arrX++) {
+            int x = cx - halfSize + arrX;
+            for (int arrZ = 0; arrZ < backupMapSize; arrZ++) {
+                int z = cz - halfSize + arrZ;
+                for (int arrY = 0; arrY < backupBlocks[0].length; arrY++) {
+                    int y = minHeight + arrY;
+                    org.bukkit.block.data.BlockData savedData = backupBlocks[arrX][arrY][arrZ];
+                    if (savedData != null) {
+                        Block b = world.getBlockAt(x, y, z);
+                        if (!b.getBlockData().equals(savedData)) {
+                            b.setBlockData(savedData, false);
+                        }
+                    }
+                }
+            }
+        }
+        backupBlocks = null;
+        backupCenter = null;
     }
 }

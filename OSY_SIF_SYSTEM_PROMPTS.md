@@ -50,6 +50,7 @@
 - `me.user.moc.ability.AbilityManager`: `getCode()`를 통한 능력 등록 및 리롤(Reroll) 로직.
 - `me.user.moc.game.GameManager`: 라운드 흐름(시작->전투->종료), 점수 계산, AFK 관리, config.yml의 test 모드 지원(혼자 남아도 라운드 진행).
 - `me.user.moc.game.ArenaManager`: 맵 생성 및 자기장(WorldBorder) 부드러운 수축 및 최종 결전 로직을 전담.
+- `me.user.moc.game.MusicManager`: 라운드 시작하여 전투 상태 돌입 시 BGM을 틀고, 라운드/게임 종료 시 노래를 끄는 음악 관리자.
 - `MOC_ResourcePack`: 리소스팩 루트 디렉토리.
 
 ### 3. 개발 규칙 (Coding Standards)
