@@ -1450,31 +1450,27 @@ public class GameManager implements Listener {
     // 유틸리티 및 이벤트 리스너
     // =========================================================================
 
-    // 무적 시간 대미지 방지 (낙하 데미지 포함)
+    // 무적 시간 대미지 방지 및 대기 중 추락 방어
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
-        if (isInvincible && e.getEntity() instanceof Player) {
-            e.setCancelled(true);
+        if (!(e.getEntity() instanceof Player))
             return;
-        }
+        Player p = (Player) e.getEntity();
 
-        // [추가] 라운드 시작 대기 중이고, 낙하 피해(FALL) 또는 공허 피해(VOID)일 경우 방지
-        // 플레이어가 무적이 풀려도 아직 바닥 생성 전이거나 복구 중에 떨어질 수 있으므로 추가 보완.
-        if (e.getEntity() instanceof Player) {
-            EntityDamageEvent.DamageCause cause = e.getCause();
-            if (cause == EntityDamageEvent.DamageCause.FALL || cause == EntityDamageEvent.DamageCause.VOID) {
-                // 게임 시작 전(isRunning == false)이거나, 무적 시간일 때 피해 무시
-                if (!isRunning || isInvincible) {
-                    e.setCancelled(true);
+        // [중요] 게임 시작(moc start) 전에는 플러그인이 데미지에 일절 관여하지 않습니다. (바닐라)
+        if (!isRunning)
+            return;
 
-                    // 공허에 빠졌을 때 다시 위로 살짝 텔레포트 시켜서 무한 추락 방지
-                    if (cause == EntityDamageEvent.DamageCause.VOID) {
-                        Player p = (Player) e.getEntity();
-                        Location loc = p.getLocation();
-                        loc.setY(configManager.spawn_point != null ? configManager.spawn_point.getY() : 200);
-                        p.teleport(loc);
-                    }
-                }
+        // 게임 진행 중이면서 '무적 시간(전투 시작 전 대기 시간)'일 때
+        if (isInvincible) {
+            // 모든 데미지를 취소합니다.
+            e.setCancelled(true);
+
+            // 공허(VOID)로 떨어졌을 경우 끝없이 떨어지지 않게 스폰 지점 상공으로 올려줍니다.
+            if (e.getCause() == EntityDamageEvent.DamageCause.VOID) {
+                Location loc = p.getLocation();
+                loc.setY(configManager.spawn_point != null ? configManager.spawn_point.getY() : 200);
+                p.teleport(loc);
             }
         }
     }
