@@ -184,6 +184,10 @@ public class ArenaManager implements Listener {
 
         // [추가] 맵 복사본 저장 (야생맵 첫 생성 시 한정)
         if (config.map_back_up && backupBlocks == null) {
+            // [중요 버그 수정] 바닥(지형)이 먼저 깎이면 동물이나 몹들이 추락사라여 백업되지 않으므로, 지형 조작 전에 먼저 생태계를 통째로
+            // 캡처/보관합니다.
+            clearManager.allCear(true);
+
             int size = (halfSize * 2) + 1;
             int height = world.getMaxHeight() - world.getMinHeight();
             backupBlocks = new org.bukkit.block.data.BlockData[size][height][size];
@@ -230,6 +234,9 @@ public class ArenaManager implements Listener {
             }.runTaskTimer(plugin, 0, 1);
 
         } else {
+            // [추가] 이미 예전 백업 데이터가 존재하거나 백업이 꺼져 있다면, 백업(덮어쓰기) 없이 단순 청소만 진행합니다.
+            clearManager.allCear(false);
+
             // 백업 기능이 꺼져있거나 이미 백업된 경우 바로 전장 생성
             startGenerateTask(world, cx, cz, halfSize, center, targetY, mapSeed, onComplete);
         }
@@ -257,8 +264,8 @@ public class ArenaManager implements Listener {
                     if (x > cx + halfSize) {
                         // 2. [완성] 기반암 작업 완료 후 중앙에 에메랄드 설치
                         center.getBlock().setType(Material.EMERALD_BLOCK);
-                        // 아이템, 몹 다 정리.
-                        clearManager.allCear();
+                        // [버그 수정] 엔티티 캡처(백업)는 이미 공사 시작 전에 끝냈으므로, 여기선 공사 도중 드랍된 아이템 찌꺼기만 지웁니다.
+                        clearManager.allCear(false);
 
                         // 플레이어들을 에메랄드 위로 소환
                         if (config.spawn_tf) {
@@ -1019,6 +1026,12 @@ public class ArenaManager implements Listener {
                     if (x > cx + halfSize) {
                         backupBlocks = null; // 메모리 해제 최적화
                         backupCenter = null;
+
+                        // [추가] 지형 복구가 끝나면 백업해뒀던 엔티티들을 모두 원래 자리에 스폰시킵니다!
+                        if (config.map_back_up) {
+                            clearManager.restoreEntities();
+                        }
+
                         Bukkit.broadcastMessage("§a[MOC] §f전장 지형 복구가 완료되었습니다.");
                         this.cancel();
                         return;
@@ -1077,5 +1090,10 @@ public class ArenaManager implements Listener {
         }
         backupBlocks = null;
         backupCenter = null;
+
+        // [추가] 지형 복구가 끝나면 엔티티도 즉시 복구합니다.
+        if (config.map_back_up) {
+            clearManager.restoreEntities();
+        }
     }
 }

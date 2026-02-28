@@ -289,25 +289,8 @@ public class GameManager implements Listener {
                 for (PotionEffect effect : p.getActivePotionEffects())
                     p.removePotionEffect(effect.getType());
 
-                // ...기존 아이템 지급 로직...
-                p.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
-                p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
-                p.getInventory().addItem(new ItemStack(Material.WATER_BUCKET));
-                p.getInventory().addItem(new ItemStack(Material.GLASS, 5));
-
-                // 재생 포션 지급
-                ItemStack regenPotion = new ItemStack(Material.POTION);
-                PotionMeta pm = (PotionMeta) regenPotion.getItemMeta();
-                if (pm != null) {
-                    pm.addCustomEffect(new org.bukkit.potion.PotionEffect(PotionEffectType.REGENERATION, 20 * 15, 1),
-                            true);
-                    pm.setDisplayName("§d재생 포션");
-                    regenPotion.setItemMeta(pm);
-                }
-                p.getInventory().addItem(regenPotion);
-
-                // 철 흉갑 장착
-                p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
+                // [수정] 룰렛 대기 시간 동안 지루함을 달래기 위해 돌풍구 16개 지급 (기본템은 룰렛 이후 지급)
+                p.getInventory().addItem(new ItemStack(Material.WIND_CHARGE, 16));
 
                 // 포션 효과 모두 제거
                 for (PotionEffect effect : p.getActivePotionEffects())
