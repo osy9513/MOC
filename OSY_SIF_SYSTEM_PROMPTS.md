@@ -208,10 +208,16 @@ public List<String> getDescription() {
             "model": { "type": "minecraft:model", "model": "minecraft:item/custom_model_name" }
           }
         ],
-        "fallback": { "type": "minecraft:model", "model": "minecraft:item/vanilla_item_name" }
+        "fallback": { "type": "minecraft:model", "model": "minecraft:item/vanilla_item_name" } // 주의: 블럭(iron_block 등)은 minecraft:block/아이템명
       }
     }
     ```
+
+    **[핵심 주의사항: Fallback 모델 경로]**
+    - `fallback`에 지정하는 모델 경로는 대상 바닐라 아이템의 종류에 따라 다릅니다.
+    - 일반 아이템 (예: `stick`, `iron_sword`, `apple`): `"minecraft:item/바닐라_아이템_이름"`
+    - **블럭 아이템 (예: `iron_block`, `stone`, `dirt`): `"minecraft:block/바닐라_블럭_이름"`**
+    - 블럭 아이템에 `minecraft:item/...`을 사용할 경우 텍스처 깨짐(Missing Texture) 버그가 발생하므로 반드시 주의하십시오.
 
 #### 2단계: 커스텀 모델 파일 (Model Geometry)
 -   **경로**: `/MOC_ResourcePack/assets/minecraft/models/item/`
