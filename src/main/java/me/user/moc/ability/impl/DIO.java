@@ -225,12 +225,12 @@ public class DIO extends Ability {
                     }
                 }
 
-                // [추가] 남은 시간 액션바 출력
-                double remainSec = (100 - ticks) / 20.0;
-                // String formatted = String.format("%.1f", remainSec); // 할당 줄이기 위해 단순 계산 권장하지만
-                // 편의상
-                String msg = "§e§l[ THE WORLD : " + String.format("%.1f", remainSec) + "s ]";
-                caster.sendActionBar(msg);
+                // [추가] 남은 시간 액션바 최적화: 2틱에 1번만 패킷 전송하여 패킷 초과 방지
+                if (ticks % 2 == 0) {
+                    double remainSec = (100 - ticks) / 20.0;
+                    String msg = "§e§l[ THE WORLD : " + String.format("%.1f", remainSec) + "s ]";
+                    caster.sendActionBar(msg);
+                }
 
                 // 엔티티 고정 & 투사체 고정
                 for (Entity entity : world.getEntities()) {
@@ -272,16 +272,18 @@ public class DIO extends Ability {
                         }
 
                         // 2. 저장된 고정 위치로 강제 이동 (텔레포트)
-                        // 플레이어의 경우 시야(Yaw, Pitch)는 자유롭게 돌릴 수 있어야 하므로,
-                        // 저장된 위치 좌표에 현재 쳐다보는 방향을 덮어씌워서 텔레포트합니다.
                         Location fixedLoc = frozenEntities.get(le.getUniqueId());
+                        Location currentLoc = le.getLocation();
 
-                        // 위치는 고정하되, 고개 돌리는 건 허용하려면 아래 로직 사용
-                        Location teleportLoc = fixedLoc.clone();
-                        teleportLoc.setYaw(le.getLocation().getYaw());
-                        teleportLoc.setPitch(le.getLocation().getPitch());
-
-                        le.teleport(teleportLoc);
+                        // [최적화] 매 틱마다 텔레포트하면 엄청난 양의 패킷이 발생하여 Kicked for exceeding packet rate limit 예외
+                        // 발생.
+                        // 따라서 엔티티가 실제로 이동했을 때(좌표 변동이 있을 때)만 텔레포트 처리
+                        if (currentLoc.distanceSquared(fixedLoc) > 0.0001) {
+                            Location teleportLoc = fixedLoc.clone();
+                            teleportLoc.setYaw(currentLoc.getYaw());
+                            teleportLoc.setPitch(currentLoc.getPitch());
+                            le.teleport(teleportLoc);
+                        }
                         // [▲▲▲ 여기까지 수정됨 ▲▲▲]
 
                         le.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 5, 255, true, true, true));
@@ -373,7 +375,7 @@ public class DIO extends Ability {
 
                             count++;
                         }
-                    }.runTaskTimer(plugin, 0L, 1L); // [수정] 4L -> 1L (매우 빠르게)
+                    }.runTaskTimer(plugin, 0L, 3L); // [최적화] 패킷 속도 조절을 위해 1L -> 3L (타격감 및 안전성 확보)
                 }
             }
         }
@@ -405,9 +407,12 @@ public class DIO extends Ability {
                 // [너프] 무다무다 스택 최대 20제한
                 if (currentStack < 20) {
                     damageAccumulation.put(targetId, currentStack + 1);
-                    attacker.sendMessage("§e무다무다무다무다무다!!! " + (currentStack + 1) + "회 타격!");
-                } else {
-                    attacker.sendMessage("§e무다무다무다무다무다!!! (최대 스택 도달)");
+                    // [최적화] 패킷 전송량 초과 방지를 위해 타격 메시지를 채팅(sendMessage) 대신 화면 중앙 타이틀(sendTitle)로 변경하여
+                    // 타격감 향상
+                    attacker.sendTitle("", "§e§l무다무다무다무다무다!!! " + (currentStack + 1) + " HIT!", 0, 15, 5);
+                } else if (currentStack == 20) {
+                    damageAccumulation.put(targetId, currentStack + 1); // 21로 올려 중복 출력 방지
+                    attacker.sendTitle("", "§c§lMAX HIT!", 0, 15, 5);
                 }
             }
         } else {

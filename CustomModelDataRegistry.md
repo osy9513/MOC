@@ -66,3 +66,5 @@
 | **pyro_flamethrower** (1) | 부싯돌과 부스러기 (`flint_and_steel`) | 파이로 (`Pyro.java`) | `models/item/pyro_flamethrower.json` |
 | **may** (15) | 철 검 (`iron_sword`) | 메이 (`May.java`) | `models/item/may.json` |
 | **jang_ball** (1) | 철 블럭 (`iron_block`) | 장거한 (`Janggeohan.java`) | `models/item/jang_ball.json` |
+| **gunmandu** (1) | 말린 켈프 (`dried_kelp`) | 오대수 (`Oldboy.java`) | `models/item/gunmandu.json` |
+| **old_boy** (16) | 철 검 (`iron_sword`) | 오대수 (`Oldboy.java`) | `models/item/old_boy.json` |
