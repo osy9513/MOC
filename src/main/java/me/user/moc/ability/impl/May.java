@@ -24,6 +24,7 @@ import org.bukkit.util.Vector;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,8 +51,10 @@ public class May extends Ability {
     }
 
     @Override
-    public java.util.List<String> getDescription() {
-        return Arrays.asList("§f돌고래로 적을 공중에 띄워 싸웁니다.");
+    public List<String> getDescription() {
+        return List.of(
+                "§e전투 ● 메이(길티기어)",
+                "§f돌고래로 적을 공중에 띄워 싸웁니다.");
     }
 
     @Override

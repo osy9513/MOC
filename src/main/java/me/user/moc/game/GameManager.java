@@ -914,6 +914,12 @@ public class GameManager implements Listener {
                 maxHealth.setBaseValue(20.0);
             p.setHealth(20.0);
 
+            // [추가] 버프/포션 및 불타는 효과 초기화 (전투 라운드 때 받은 버프 제거 방지)
+            p.setFireTicks(0);
+            for (org.bukkit.potion.PotionEffect effect : p.getActivePotionEffects()) {
+                p.removePotionEffect(effect.getType());
+            }
+
             // [추가] 공격 딜레이 초기화
             AttributeInstance attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
             if (attackSpeed != null)

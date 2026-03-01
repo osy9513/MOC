@@ -134,9 +134,12 @@ public class AizenSosuke extends Ability {
     private void stopChanting(Player p, boolean success) {
         // 태스크 취소
         BukkitRunnable task = chantTasks.remove(p.getUniqueId());
-        if (task != null) {
-            task.cancel();
+
+        // [버그 수정] 영창을 아예 시작하지도 않았는데 cleanup 등에 의해 강제 종료 호출 시 무시
+        if (task == null) {
+            return;
         }
+        task.cancel();
 
         int count = chantProgress.getOrDefault(p.getUniqueId(), 0);
         chantProgress.remove(p.getUniqueId());
