@@ -226,6 +226,7 @@ public class Jihyun extends Ability {
 
                         if (!hitEntities.contains(target.getUniqueId())) {
                             Vector originalVel = target.getVelocity().clone();
+                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             target.damage(5, p);
 
                             // 넉백 상쇄

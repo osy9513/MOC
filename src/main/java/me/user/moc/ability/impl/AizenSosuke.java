@@ -191,6 +191,7 @@ public class AizenSosuke extends Ability {
                     // 번개 & 대미지
                     target.getWorld().strikeLightningEffect(target.getLocation());
                     target.setNoDamageTicks(0);
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), caster.getUniqueId().toString()));
                     target.damage(9.0, caster);
                 }
 
@@ -202,6 +203,7 @@ public class AizenSosuke extends Ability {
                     if (e instanceof org.bukkit.entity.LivingEntity le && le != caster && !(le instanceof Player)) {
                         le.getWorld().strikeLightningEffect(le.getLocation());
                         le.setNoDamageTicks(0);
+                        le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), caster.getUniqueId().toString()));
                         le.damage(9.0, caster);
                     }
                 }

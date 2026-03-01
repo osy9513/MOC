@@ -262,6 +262,7 @@ public class Frieren extends Ability {
                     }
 
                     // 방어력 무시(고정) 데미지 30
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                     target.damage(30.0);
                     hitEnemies.add(target);
                 }

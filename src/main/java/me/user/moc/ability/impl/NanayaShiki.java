@@ -169,6 +169,7 @@ public class NanayaShiki extends Ability {
                 shooter.teleport(target.getLocation().add(0, 2.5, 0));
 
                 // 대미지 45 (하트 22.5칸)
+                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                 target.damage(45.0, shooter);
 
                 // 효과

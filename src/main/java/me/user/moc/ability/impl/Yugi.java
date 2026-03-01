@@ -474,6 +474,7 @@ public class Yugi extends Ability {
                                 if (le instanceof Player
                                         && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                                     continue;
+                                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                                 le.damage(6.0, p); // 3칸 = 6 대미지
                                 le.setNoDamageTicks(0);
                             }

@@ -301,6 +301,7 @@ public class Spiderman extends Ability {
 
                 LivingEntity victim = (LivingEntity) result.getHitEntity();
                 // [추가] 데미지 10 적용
+                victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                 victim.damage(10.0, p);
 
                 // 거미줄 함정 효과 적용

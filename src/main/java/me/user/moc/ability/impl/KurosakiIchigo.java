@@ -15,6 +15,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 
 import java.util.*;
 
@@ -68,7 +69,7 @@ public class KurosakiIchigo extends Ability {
         p.sendMessage("§f호로의 힘을 빌려 잠시 동안 강해집니다.");
         p.sendMessage("§f참월 우클릭 시 7.5초 동안 호로화 상태가 됩니다(신속2, 재생2).");
         p.sendMessage("§f호로화 상태에서 공격 시 대상 근처로 순간이동하며 공격 속도가 대폭 증가하며,");
-        p.sendMessage("§f호로화 종료 시 5초간 구속 3 효과를 받습니다.");
+        p.sendMessage("§f호로화 종료 시 7초간 구속 3, 3초간 채굴 피로 3 효과를 받습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 30초");
         p.sendMessage("§f---");
@@ -167,11 +168,16 @@ public class KurosakiIchigo extends Ability {
 
         // 공격 속도 원복 (기본값)
         if (p.getAttribute(Attribute.ATTACK_SPEED) != null) {
-            p.getAttribute(Attribute.ATTACK_SPEED).setBaseValue(4.0);
+            // [수정] 공격 딜레이 제거 설정이 꺼져 있을 때만 바닐라 기본값으로 원복
+            if (!me.user.moc.MocPlugin.getInstance().getConfigManager().disable_attack_cooldown) {
+                p.getAttribute(Attribute.ATTACK_SPEED).setBaseValue(4.0);
+            }
         }
 
-        // 구속 3 부여 (5초)
-        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 2, true, true, true));
+        // [수정] 구속 3 7초(140틱) 부여
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 140, 2, true, true, true));
+        // [수정] 채굴 피로 3 3초(60틱) 부여
+        p.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 60, 2, true, true, true));
     }
 
     @EventHandler
@@ -256,10 +262,16 @@ public class KurosakiIchigo extends Ability {
     public void cleanup(Player p) {
         super.cleanup(p);
         isHollow.remove(p.getUniqueId());
-        // 공속 초기화
-        if (p.getAttribute(Attribute.ATTACK_SPEED) != null) {
-            p.getAttribute(Attribute.ATTACK_SPEED).setBaseValue(4.0);
+        // [추가] 공격 딜레이 설정
+        AttributeInstance attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
+        if (attackSpeed != null) {
+            if (me.user.moc.MocPlugin.getInstance().getConfigManager().disable_attack_cooldown) {
+                attackSpeed.setBaseValue(100.0); // 딜레이 제거
+            } else {
+                attackSpeed.setBaseValue(4.0); // 바닐라 기본값
+            }
         }
+
     }
 
 }

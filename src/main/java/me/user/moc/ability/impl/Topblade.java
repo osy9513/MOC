@@ -181,6 +181,7 @@ public class Topblade extends Ability {
                         }
 
                         // 데미지
+                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         target.damage(8, p);
 
                         // [수정] 10칸 이상 날리는 초강력 넉백

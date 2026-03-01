@@ -406,6 +406,7 @@ public class LeeSeulbi extends Ability {
                             4)) {
                         if (ent instanceof LivingEntity target && target != p && !(target instanceof Player targetPlayer
                                 && targetPlayer.getGameMode() == org.bukkit.GameMode.SPECTATOR)) {
+                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             target.damage(30.0, p);
                             target.setFireTicks(40);
                         }
@@ -422,6 +423,7 @@ public class LeeSeulbi extends Ability {
                             6)) {
                         if (ent instanceof LivingEntity target && target != p && !(target instanceof Player targetPlayer
                                 && targetPlayer.getGameMode() == org.bukkit.GameMode.SPECTATOR)) {
+                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             target.damage(5.0, p);
                             // 바깥으로 튕겨내는 넉백
                             Vector kb = target.getLocation().toVector().subtract(impactLoc.toVector()).normalize()

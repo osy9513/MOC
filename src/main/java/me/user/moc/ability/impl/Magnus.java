@@ -253,6 +253,8 @@ public class Magnus extends Ability {
                 if (e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     continue;
 
+                living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+
                 living.damage(36.0, p); // 18칸 = 36 대미지
             }
         }

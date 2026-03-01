@@ -392,10 +392,12 @@ public class Ulquiorra extends Ability {
         double newHealth = currentHealth - damage;
 
         // 피격 모션 및 넉백을 위해 0 데미지 이벤트 발생
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
         target.damage(0.1);
         target.setNoDamageTicks(0);
 
         if (newHealth <= 0) {
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
             target.setHealth(0);
         } else {
             target.setHealth(newHealth);

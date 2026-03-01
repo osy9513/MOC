@@ -478,6 +478,7 @@ public class EmiyaShirou extends Ability {
                             continue;
 
                         // 타격
+                        le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
                         le.damage(4.0, owner);
                         le.getWorld().playSound(le.getLocation(), Sound.ENTITY_ARROW_HIT, 1f, 1f);
 

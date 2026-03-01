@@ -342,6 +342,7 @@ public class Janggeohan extends Ability {
                                         new FixedMetadataValue(plugin, p.getUniqueId().toString()));
 
                                 // 대미지 10
+                                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                                 target.damage(10, p);
 
                                 // 넉백 (0.5칸 단위의 벡터를 더해줌)

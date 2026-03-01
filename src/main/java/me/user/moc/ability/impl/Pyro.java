@@ -241,6 +241,7 @@ public class Pyro extends Ability {
                             // [규칙] 킬 판정 귀속 (MOC_LastKiller)
                             target.setMetadata("MOC_LastKiller",
                                     new FixedMetadataValue(plugin, p.getUniqueId().toString()));
+                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             target.damage(3, p);
 
                             // 불 붙이기 (시각적 효과)

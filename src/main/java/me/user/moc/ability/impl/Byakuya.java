@@ -219,6 +219,7 @@ public class Byakuya extends Ability {
                             // 거리 정밀 체크 (구 형태)
                             if (target.getLocation().distance(center) <= radius) {
                                 LivingEntity le = (LivingEntity) target;
+                                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                                 le.damage(2.0, p); // 2 데미지 (하트 1칸)
 
                                 // 피격 이펙트 (Sweep Attack)

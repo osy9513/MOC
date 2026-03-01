@@ -185,6 +185,7 @@ public class Midas extends Ability {
                 if (livingTarget instanceof Player
                         && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     return;
+                livingTarget.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                 livingTarget.damage(1.0, p);
             }
 

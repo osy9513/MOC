@@ -346,6 +346,7 @@ public class Gintoki extends Ability {
 
                 // 기획: 자신은 1, 타인은 25 데미지
                 double damage = (le.equals(shooter)) ? 1.0 : 25.0;
+                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                 le.damage(damage, shooter);
             }
         }

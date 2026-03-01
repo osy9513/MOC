@@ -260,6 +260,8 @@ public class PolarBearAbility extends Ability {
 
             // 데미지 전달
             if (e instanceof EntityDamageByEntityEvent edbe) {
+                owner.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), edbe.getDamager().getUniqueId().toString()));
                 owner.damage(e.getFinalDamage(), edbe.getDamager());
             } else {
                 owner.damage(e.getFinalDamage());

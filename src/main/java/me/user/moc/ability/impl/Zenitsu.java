@@ -159,6 +159,7 @@ public class Zenitsu extends Ability {
                 continue;
 
             LivingEntity target = (LivingEntity) entity;
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
             target.damage(8.0, p);
             p.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10);
             // [Fix] Particle.FLASH가 데이터 클래스(Color)를 요구한다는 오류가 있어 EXPLOSION으로 대체
@@ -219,6 +220,7 @@ public class Zenitsu extends Ability {
                     if (e instanceof LivingEntity le) {
                         if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                             continue;
+                        le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         le.damage(3.0, p);
                         le.setNoDamageTicks(0); // 연속 타격 가능하게
                     }
@@ -239,6 +241,7 @@ public class Zenitsu extends Ability {
                 if (e instanceof LivingEntity le && e != p) {
                     if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                         continue;
+                    le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                     le.damage(5.0, p); // 마무리 5뎀
                     le.getWorld().spawnParticle(Particle.EXPLOSION, le.getLocation().add(0, 1, 0), 1);
                 }
