@@ -170,8 +170,12 @@ public class FoxDevil extends Ability {
                         if (le instanceof Player && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                             continue;
                         try {
+                            le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             le.damage(13.0, p);
                         } catch (Exception e) {
+                            le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             le.damage(13.0);
                         }
                     }

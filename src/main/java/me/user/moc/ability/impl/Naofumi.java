@@ -383,6 +383,8 @@ public class Naofumi extends Ability {
                             return;
                         }
 
+                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+
                         target.damage(3.0, p);
                         target.setNoDamageTicks(0);
                         p.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);

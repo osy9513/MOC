@@ -252,6 +252,8 @@ public class Rimuru extends Ability {
                 if (list != null && list.contains(s)) {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p != null && !p.isDead()) {
+                        p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         p.setHealth(0); // 플레이어 사망 처리
                         // cleanup은 PlayerDeathEvent에서 호출됨
                     }
@@ -297,8 +299,12 @@ public class Rimuru extends Ability {
 
                         // 만약 공격자가 있는 경우 공격자를 명시
                         if (e instanceof EntityDamageByEntityEvent debe) {
+                            owner.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), debe.getDamager().getUniqueId().toString()));
                             owner.damage(damage, debe.getDamager());
                         } else {
+                            owner.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
                             owner.damage(damage);
                         }
                     }

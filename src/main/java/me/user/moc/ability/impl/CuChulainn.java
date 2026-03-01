@@ -263,6 +263,7 @@ public class CuChulainn extends Ability {
                             continue;
                         // 중간 장애물(적) 발견
                         if (!hitCooldowns.containsKey(victim.getUniqueId())) {
+                            victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                             victim.damage(25.0, shooter);
                             // 피격음
                             victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 1f, 1f);
@@ -286,6 +287,7 @@ public class CuChulainn extends Ability {
                     target.setNoDamageTicks(0);
 
                     // 대미지 적용 (체력 20칸 = 40)
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                     target.damage(40.0, shooter);
 
                     // 번개 효과
@@ -305,9 +307,11 @@ public class CuChulainn extends Ability {
         // 죽을지 미리 확인 (Death Message 커스텀을 위해)
         if (p.getHealth() - dmg <= 0) {
             // 죽음 처리
+            p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
             p.setHealth(0); // 즉사
             plugin.getServer().broadcastMessage("§c***랜서가 죽었다!***");
         } else {
+            p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
             p.damage(dmg);
         }
     }

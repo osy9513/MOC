@@ -243,6 +243,7 @@ public class Olaf extends Ability {
 
     private void hitTarget(LivingEntity target, Player attacker) {
         // 데미지 8 (4칸)
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
         target.damage(8.0, attacker);
         // 구속 1 (1초 = 20 ticks)
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20, 0, true, true, true));

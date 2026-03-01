@@ -143,6 +143,8 @@ public class MisakaMikoto extends Ability {
             target.setMetadata("MOC_LastKiller",
                     new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
 
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+
             target.damage(8.0, p);
             // FLASH는 Color 데이터가 필수입니다.
             target.getWorld().spawnParticle(Particle.FLASH, target.getLocation(), 1, Color.YELLOW);
@@ -303,6 +305,7 @@ public class MisakaMikoto extends Ability {
                         new org.bukkit.metadata.FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
 
                 // 전력 데미지
+                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                 target.damage(28.0, shooter);
             }
         }

@@ -174,6 +174,7 @@ public class Jjanggu extends Ability {
 
                         // [대미지 처리]
                         // 고정 피해 5 (하트 2.5칸)
+                        livingTarget.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         livingTarget.damage(5.0, p);
 
                         // 넉백 살짝 추가

@@ -338,6 +338,8 @@ public class KiraYoshikage extends Ability {
                 if (le.getUniqueId().equals(owner.getUniqueId()))
                     continue;
 
+                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
+
                 le.damage(10.0, owner);
                 le.sendMessage("§c이쪽을 봐라!");
 

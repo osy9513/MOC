@@ -219,6 +219,7 @@ public class Meliodas extends Ability {
                 if (e instanceof LivingEntity target && e != p) {
                     if (target instanceof Player && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                         continue;
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                     target.damage(finalDamage, p);
                     // 넉백 살짝
                     target.setVelocity(target.getLocation().toVector().subtract(p.getLocation().toVector()).normalize()

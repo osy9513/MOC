@@ -256,6 +256,7 @@ public class KumagawaMisogi extends Ability {
                             continue;
 
                         // 데미지 5 적용
+                        living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         living.damage(5.0, p);
 
                         // 북 메이커 로직 적용

@@ -98,6 +98,7 @@ public class Rammus extends Ability {
                         attacker.setNoDamageTicks(0);
 
                         // 그 후 데미지를 입힘 (이제 무적 시간에 막히지 않고 반드시 들어감)
+                        attacker.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), victim.getUniqueId().toString()));
                         attacker.damage(reflectDamage, victim);
                     }
                 }

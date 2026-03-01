@@ -306,6 +306,7 @@ public class MuhammadAvdol extends Ability {
                         continue;
 
                     // 히트!
+                    le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
                     le.damage(21.0, owner);
                     le.setFireTicks(21 * 20); // 21초 화상 (꺼지지 않게 하려면 매우 길게 주거나 이벤트 캔슬 필요, 일단 21초)
 

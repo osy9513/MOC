@@ -254,6 +254,7 @@ public class Naruto extends Ability {
                                 if (clone.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
                                     damage = clone.getAttribute(Attribute.ATTACK_DAMAGE).getValue();
                                 }
+                                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
                                 target.damage(damage, owner);
                             }
                         }

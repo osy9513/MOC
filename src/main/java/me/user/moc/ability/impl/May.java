@@ -313,6 +313,7 @@ public class May extends Ability {
         if (hit && target != null) {
             // 적중: 데미지 무적 무시 8 부여
             target.setNoDamageTicks(0);
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
             target.damage(8.0, p);
 
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.0f);

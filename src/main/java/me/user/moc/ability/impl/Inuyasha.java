@@ -165,6 +165,7 @@ public class Inuyasha extends Ability {
                                         && ((Player) target).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                                     continue;
                                 target.setNoDamageTicks(0);
+                                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                                 target.damage(1, p); // 20회 / 20대미지? -> 3초면 20번(6틱간격). 20 * 1 = 20
                                 target.setNoDamageTicks(0);
                             }

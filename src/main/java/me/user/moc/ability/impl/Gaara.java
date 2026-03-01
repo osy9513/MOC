@@ -222,6 +222,7 @@ public class Gaara extends Ability {
             // 엔티티 적중 시
             if (e.getHitEntity() instanceof LivingEntity le) {
                 Player shooter = (Player) s.getShooter();
+                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                 le.damage(9.0, shooter);
 
                 // 모래 블럭 설치 (엔티티 위치)

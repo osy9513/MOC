@@ -469,6 +469,7 @@ public class GonFreecss extends Ability {
 
         // 무적 뚫기 (고정 20 데미지)
         target.setNoDamageTicks(0);
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
         target.damage(20.0); // 어그로, 로그 기록용 데미지
 
         // 확실한 트루데미지를 위해 체력 직접 삭감
@@ -527,6 +528,7 @@ public class GonFreecss extends Ability {
 
                         this.cancel();
                         explodePaper(currentLoc, p);
+                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         target.damage(8.0, p);
                         return;
                     }

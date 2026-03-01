@@ -279,6 +279,7 @@ public class Kaneki extends Ability {
                         // 무적 무시 1 데미지 (True Damage)
                         if (p.getHealth() > 0) {
                             p.setNoDamageTicks(0);
+                            p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             p.damage(10.0); // 방어력 적용됨.
                         }
                     } else {

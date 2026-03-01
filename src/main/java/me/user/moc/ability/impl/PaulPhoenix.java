@@ -205,6 +205,7 @@ public class PaulPhoenix extends Ability {
         isDamaging.add(attacker.getUniqueId());
         try {
             target.setNoDamageTicks(0);
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
             target.damage(16.0, attacker);
         } finally {
             isDamaging.remove(attacker.getUniqueId());

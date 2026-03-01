@@ -225,6 +225,7 @@ public class Isaac extends Ability {
         if (e.getHitEntity() instanceof LivingEntity target) {
             if (tear.getShooter() instanceof Player shooter) {
                 if (AbilityManager.getInstance((MocPlugin) plugin).hasAbility(shooter, getCode())) {
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                     target.damage(2.0, shooter); // 2 데미지
                 }
             }
