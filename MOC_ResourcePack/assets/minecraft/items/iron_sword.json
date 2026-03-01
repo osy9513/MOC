@@ -107,6 +107,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/may"
                 }
+            },
+            {
+                "threshold": 16,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/old_boy"
+                }
             }
         ],
         "fallback": {
