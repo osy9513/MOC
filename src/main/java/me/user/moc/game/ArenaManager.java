@@ -845,10 +845,12 @@ public class ArenaManager implements Listener {
         // [▼▼▼ 변경됨: 모든 종류의 타이머를 확실하게 취소 ▼▼▼]
 
         // [추가] 바닐라 자기장 축소(애니메이션) 강제 정지
-        // 현재 크기로 다시 setSize를 호출하면 줄어들던 애니메이션(시간 경과에 따른 축소)이 즉시 멈춥니다.
+        // 현재 크기로 다시 setSize를 호출하여 줄어들던 애니메이션(시간 경과에 따른 축소)을 즉시 멈춥니다.
         if (gameCenter != null && gameCenter.getWorld() != null) {
             org.bukkit.WorldBorder border = gameCenter.getWorld().getWorldBorder();
-            border.setSize(border.getSize());
+            double currentSize = border.getSize();
+            // 시간 매개변수 없이 단일 인자로 호출하여 애니메이션을 즉시 취소하고 고정시킵니다.
+            border.setSize(currentSize);
         }
 
         // 1. 자기장 줄어들기 + (메시지출력/텔포카운트/전투타이머 포함) 취소
