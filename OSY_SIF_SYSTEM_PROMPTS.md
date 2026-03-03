@@ -329,7 +329,7 @@ public List<String> getDescription() {
 **현재 설정:**
 - **MC Version:** 1.21.11
 - **Java Version:** 21
-- **Plugin Version:** 0.1.2
+- **Plugin Version:** 0.1.3
 - **Resource Pack Version:** 1.3.0
 
 ---
