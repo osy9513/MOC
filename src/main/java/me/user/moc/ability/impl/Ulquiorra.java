@@ -256,25 +256,26 @@ public class Ulquiorra extends Ability {
                     hitsBorder = true;
                 }
 
-                // 블럭 체크 (Based on Material) OR 월드보더 충돌
-                if (nextLoc.getBlock().getType() == Material.BEDROCK || hitsBorder) {
-                    // 기반암 충돌: 슬라이딩 (반사 혹은 미끄러짐)
+                // [수정] 모든 고체 블럭 체크 (Based on Solid Block) OR 월드보더 충돌
+                Material nextType = nextLoc.getBlock().getType();
+                if ((!nextLoc.getBlock().isEmpty() && nextType.isSolid()) || hitsBorder) {
+                    // 고체 블럭 충돌: 슬라이딩 (반사 혹은 미끄러짐)
                     // 충돌 면 계산을 위해 각 축별로 검사 (보더 충돌이 아닐 때만 블록 검사 수행)
 
                     if (!hitsBorder) {
                         // X축 충돌?
                         Location testX = currentLoc.clone().add(currentDir.getX() * currentSpeed, 0, 0);
-                        if (testX.getBlock().getType() == Material.BEDROCK) {
+                        if (!testX.getBlock().isEmpty() && testX.getBlock().getType().isSolid()) {
                             currentDir.setX(-currentDir.getX() * 0.5);
                         }
                         // Y축 충돌?
                         Location testY = currentLoc.clone().add(0, currentDir.getY() * currentSpeed, 0);
-                        if (testY.getBlock().getType() == Material.BEDROCK) {
+                        if (!testY.getBlock().isEmpty() && testY.getBlock().getType().isSolid()) {
                             currentDir.setY(-currentDir.getY() * 0.5);
                         }
                         // Z축 충돌?
                         Location testZ = currentLoc.clone().add(0, 0, currentDir.getZ() * currentSpeed);
-                        if (testZ.getBlock().getType() == Material.BEDROCK) {
+                        if (!testZ.getBlock().isEmpty() && testZ.getBlock().getType().isSolid()) {
                             currentDir.setZ(-currentDir.getZ() * 0.5);
                         }
                     }
@@ -289,8 +290,7 @@ public class Ulquiorra extends Ability {
                         return;
                     }
                 } else {
-                    // 기반암이 아님 -> 관통 (아무 동작 안 함, 그냥 통과)
-                    // 다른 블럭들은 모두 무시하고 지나감
+                    // 고체 블럭이 아님(공기, 물, 풀 등) -> 관통
                 }
 
                 // 이동 적용
@@ -392,12 +392,14 @@ public class Ulquiorra extends Ability {
         double newHealth = currentHealth - damage;
 
         // 피격 모션 및 넉백을 위해 0 데미지 이벤트 발생
-        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
         target.damage(0.1);
         target.setNoDamageTicks(0);
 
         if (newHealth <= 0) {
-            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                    me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
             target.setHealth(0);
         } else {
             target.setHealth(newHealth);
