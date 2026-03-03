@@ -129,6 +129,10 @@ public class AbilityManager {
         addAbility(new May(plugin)); // 066 메이 등록
         addAbility(new Janggeohan(plugin)); // 068 장거한 등록
         addAbility(new Oldboy(plugin)); // 062 올드보이 등록
+        addAbility(new Dodongchan(plugin)); // H07 도동찬 등록
+        addAbility(new OneC(plugin)); // H08 원크 등록
+        addAbility(new SangYoung(plugin)); // H09 상영 등록
+        addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
 
         //
         //

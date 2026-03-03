@@ -106,7 +106,7 @@ public class Singed extends Ability {
         p.getInventory().setHelmet(gasMask);
 
         // 3. 채팅 메시지
-        p.getServer().broadcast(Component.text("섞을까 말까. 그것이 문제로다.")
+        p.getServer().broadcast(Component.text("신지드: 섞을까 말까. 그것이 문제로다.")
                 .color(TextColor.color(0x00FF00))); // 밝은 초록색
 
         // 4. 메인 로직 시작
