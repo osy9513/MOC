@@ -212,6 +212,13 @@ public class MocCommand implements CommandExecutor {
                     String key = args[2];
                     String value = args[3];
 
+                    // [추가] map_back_up이 true일 때 게임 진행 중이면 map_size 변경 불가
+                    if (key.equalsIgnoreCase("map_size") && cm.map_back_up && gm.isRunning()) {
+                        p.sendMessage("§c현재 게임 진행 중에는 맵 크기(map_size)를 변경할 수 없습니다.");
+                        p.sendMessage("§c(map_back_up이 활성화되어 있어 맵 복구를 위해 /moc stop 후 변경해주세요.)");
+                        return true;
+                    }
+
                     // ConfigManager에게 일을 떠넘깁니다. "이거 바꿔줘!"
                     String result = cm.setValue(key, value);
                     p.sendMessage(result);

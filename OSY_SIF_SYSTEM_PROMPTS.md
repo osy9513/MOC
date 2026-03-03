@@ -165,6 +165,11 @@ public List<String> getDescription() {
      - 예: `target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, p.getUniqueId().toString()));`
    - 이는 시스템이 `PlayerDeathEvent`에서 킬러를 찾지 못할 때(null)를 대비한 필수 안전 장치입니다.
 
+- **버프 해제 (Cleanup) 필수 적용:**
+   - 능력을 지급할 때 영구적인 포션 효과(예: 허기, 저항 등)나 능력 전용 버프를 부여하는 경우, **반드시 `cleanup(Player p)` 메서드를 오버라이드하여 해당 버프를 제거하는 로직을 추가**해야 합니다.
+   - 라운드 종료, 게임 종료, 리롤, 토가 히미코 변신 해제 등의 상황에서 이전 배틀의 버프가 남아있는 버그를 방지하기 위함입니다.
+   - 예시: `p.removePotionEffect(PotionEffectType.HUNGER); p.setFoodLevel(20);`
+
 ### 4. 능력 상세 정보(detailCheck) 작성 규칙
 모든 능력 파일의 `detailCheck(Player p)` 메서드는 다음 포맷을 엄격히 준수해야 합니다.
 1. **첫 줄 (헤더):** `[색상코드][유형] ● [이름]([원작 이름])`

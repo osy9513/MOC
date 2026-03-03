@@ -9,6 +9,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/spongebob"
                 }
+            },
+            {
+                "threshold": 2,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/mine"
+                }
             }
         ],
         "fallback": {
