@@ -11,6 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -26,27 +27,29 @@ import java.util.*;
 
 public class Chell extends Ability {
 
-    // 플레이어의 포탈 활성화 상태(파란색=true / 주황색=false) 저장
-    private final Map<UUID, Boolean> isBluePortalNext = new HashMap<>();
+    // 플레이어 UUID -> 포탈건 고유 UUID(String) 기준으로 관리 단위 변경
+    // 포탈 활성화 상태(파란색=true / 주황색=false) 저장
+    private final Map<String, Boolean> isBluePortalNext = new HashMap<>();
 
-    // 각 플레이어별 활성화된 포탈 목록. Map<UUID, List<PortalData>> (0: 파랑, 1: 주황 등)
-    // 최대 2개를 유지합니다. 파랑/주황 한쌍.
-    private final Map<UUID, PortalData> bluePortals = new HashMap<>();
-    private final Map<UUID, PortalData> orangePortals = new HashMap<>();
+    // 각 포탈건별 활성화된 포탈 목록. Map<String, List<PortalData>> (0: 파랑, 1: 주황 등)
+    private final Map<String, PortalData> bluePortals = new HashMap<>();
+    private final Map<String, PortalData> orangePortals = new HashMap<>();
 
-    // 무한 워프 방지 쿨타임 (UUID -> 최근 워프 시간 밀리초)
+    // 무한 워프 방지 (이건 대상 생명체 UUID 기준이므로 그대로 맵 유지)
     private final Map<UUID, Long> warpCooldowns = new HashMap<>();
 
-    // 포탈 파티클 소환용 스케줄러를 담기 위함
-    private final Map<UUID, BukkitRunnable> portalTaskMap = new HashMap<>();
+    // 포탈건별 파티클/워프 감지 스케줄러 관리 (Key: 포탈건 UUID)
+    private final Map<String, BukkitRunnable> portalTaskMap = new HashMap<>();
 
     private NamespacedKey portalTypeKey;
     private NamespacedKey portalOwnerKey;
+    private NamespacedKey portalGunIdKey;
 
     public Chell(MocPlugin plugin) {
         super(plugin);
         this.portalTypeKey = new NamespacedKey(plugin, "portalType");
         this.portalOwnerKey = new NamespacedKey(plugin, "portalOwner");
+        this.portalGunIdKey = new NamespacedKey(plugin, "portalGunId");
     }
 
     @Override
@@ -85,18 +88,24 @@ public class Chell extends Ability {
     public void giveItem(Player p) {
         detailCheck(p);
 
-        // 첫 발사는 무조건 파랑색으로 초기화
-        isBluePortalNext.put(p.getUniqueId(), true);
-
-        // 1. 포탈건(감자)
+        // 1. 포탈건(감자) 생성 (고유 UUID 부여)
         ItemStack portalGun = new ItemStack(Material.POTATO);
         ItemMeta gunMeta = portalGun.getItemMeta();
+        String newGunId = UUID.randomUUID().toString(); // 이 포탈건만의 고유 ID
+
         if (gunMeta != null) {
             gunMeta.setDisplayName("§b포탈건");
-            gunMeta.setLore(Arrays.asList("§e우클릭 시 파랑/주황 포탈을 번갈아 발사합니다.", "§c설치 후 포탈에 들어가면 워프합니다. (쿨타임: 8초)"));
+            gunMeta.setLore(Arrays.asList("§e우클릭 시 파랑/주황 포탈을 번갈아 발사합니다.", "§c설치 후 포탈에 들어가면 워프합니다. (쿨타임: 8초)",
+                    "§8[Serial: " + newGunId.substring(0, 8) + "]")); // 로어에 시리얼 앞자리 표시
             gunMeta.setCustomModelData(1); // 리소스팩: potal (potato.json)
+
+            // 핵심 데이터: 해당 총의 고유 UUID 주입
+            gunMeta.getPersistentDataContainer().set(portalGunIdKey, PersistentDataType.STRING, newGunId);
             portalGun.setItemMeta(gunMeta);
         }
+
+        // 첫 발사는 무조건 파랑색으로 초기화
+        isBluePortalNext.put(newGunId, true);
 
         // 2. 고공 낙하 부츠 (사슬 부츠)
         ItemStack boots = new ItemStack(Material.CHAINMAIL_BOOTS);
@@ -114,20 +123,24 @@ public class Chell extends Ability {
 
     @Override
     public void cleanup(Player p) {
-        // 기존 쿨타임 등은 super.cleanup에서 정리됩니다 (cooldowns, activeEntities 등)
         super.cleanup(p);
+    }
 
-        UUID uid = p.getUniqueId();
-        isBluePortalNext.remove(uid);
-        bluePortals.remove(uid);
-        orangePortals.remove(uid);
-        warpCooldowns.remove(uid);
+    @Override
+    public void reset() {
+        super.reset();
 
-        // 파티클 태스크 끄기
-        if (portalTaskMap.containsKey(uid)) {
-            portalTaskMap.get(uid).cancel();
-            portalTaskMap.remove(uid);
+        // 전체 포탈건 데이터를 순회하여 본인이 들고있던 시리얼 등과 무관하게 모든 데이터 초기화
+        for (BukkitRunnable task : portalTaskMap.values()) {
+            if (task != null) {
+                task.cancel();
+            }
         }
+        portalTaskMap.clear();
+        isBluePortalNext.clear();
+        bluePortals.clear();
+        orangePortals.clear();
+        warpCooldowns.clear();
     }
 
     // 아이템 섭취 방지 (포탈건은 감자이므로)
@@ -157,15 +170,24 @@ public class Chell extends Ability {
         Player p = e.getPlayer();
         if (AbilityManager.silencedPlayers.contains(p.getUniqueId()))
             return;
-        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
-            return;
+        /*
+         * if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+         * return;
+         */
 
         if (!e.getAction().name().contains("RIGHT_CLICK"))
             return;
 
         ItemStack item = p.getInventory().getItemInMainHand();
-        if (item.getType() != Material.POTATO || !item.hasItemMeta() || !item.getItemMeta().hasCustomModelData()
-                || item.getItemMeta().getCustomModelData() != 1)
+        ItemMeta meta = item.getItemMeta();
+        if (item.getType() != Material.POTATO || meta == null || !meta.hasCustomModelData()
+                || meta.getCustomModelData() != 1
+                || !meta.getPersistentDataContainer().has(portalGunIdKey, PersistentDataType.STRING))
+            return;
+
+        // 투척한 포탈건의 시리얼 넘버 추출
+        String gunId = meta.getPersistentDataContainer().get(portalGunIdKey, PersistentDataType.STRING);
+        if (gunId == null)
             return;
 
         // 쿨타임 검사 및 주기
@@ -173,24 +195,23 @@ public class Chell extends Ability {
             return;
         setCooldown(p, 8); // 쿨타임 8초
 
-        boolean isBlue = isBlueNext(p);
+        boolean isBlue = isBlueNext(gunId);
         String colorName = isBlue ? "파랑색" : "주황색";
         String colorCode = isBlue ? "§b" : "§6";
 
-        Bukkit.broadcastMessage("§f첼" + colorCode + "(포탈 발사 소리 - " + colorName + ")");
+        Bukkit.broadcastMessage("§f" + p.getName() + ": " + colorCode + "(포탈 발사 소리 - " + colorName + ")");
 
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 2.0f); // 첼 포탈 소리 대용
 
-        // 다음 발사 색상 변경
-        isBluePortalNext.put(p.getUniqueId(), !isBlue);
+        // 다음 발사 색상 변경 (포탈건 기준)
+        isBluePortalNext.put(gunId, !isBlue);
 
         // 투사체 발사. 파랑/주황 눈덩이처럼 만들기 위해 아이템 설정 가능.
         Snowball snowball = p.launchProjectile(Snowball.class);
         snowball.setVelocity(p.getLocation().getDirection().multiply(2.5));
 
-        // 투사체에 데이터 태그 (누구의 무슨 포탈인지 구별용)
-        snowball.getPersistentDataContainer().set(portalOwnerKey, PersistentDataType.STRING,
-                p.getUniqueId().toString());
+        // 투사체에 데이터 태그 (어떤 포탈건에서 나간 무슨 색 포탈인지 구별용)
+        snowball.getPersistentDataContainer().set(portalOwnerKey, PersistentDataType.STRING, gunId); // owner를 gunId로 대체
         snowball.getPersistentDataContainer().set(portalTypeKey, PersistentDataType.STRING, isBlue ? "BLUE" : "ORANGE");
 
         // 투사체 비주얼 (임시 방편: 아이템 눈덩이로 보이게). 만약 특별한 아이템으로 보이고 싶다면 setItem을 사용
@@ -198,8 +219,6 @@ public class Chell extends Ability {
         snowball.setItem(visual);
 
         registerSummon(p, snowball);
-        // 포탈이 계속 켜져있어야하므로 스케줄러가 없다면 하나 켜줍니다.
-        startPortalLoopIfNeeded(p);
     }
 
     // 투사체 적중 시 포탈 설치
@@ -211,12 +230,9 @@ public class Chell extends Ability {
             return;
         }
 
-        String ownerUID = projectile.getPersistentDataContainer().get(portalOwnerKey, PersistentDataType.STRING);
-        if (ownerUID == null)
-            return;
-
-        Player p = plugin.getServer().getPlayer(UUID.fromString(ownerUID));
-        if (p == null || !AbilityManager.getInstance().hasAbility(p, getCode()))
+        // 이제 ownerUID는 발사한 사람 UUID가 아닌 해당 '포탈건의 GunID' 입니다
+        String gunId = projectile.getPersistentDataContainer().get(portalOwnerKey, PersistentDataType.STRING);
+        if (gunId == null)
             return;
 
         // 투사체 피격 시: 블럭에 부딪혀야 함
@@ -234,19 +250,59 @@ public class Chell extends Ability {
         // 부딪친 면의 바로 앞(바깥쪽)으로 밀어내기
         spawnLoc.add(hitFace.getDirection().multiply(0.55));
 
+        // 월드 보더 체크: 부딪힌 블럭이나 포탈 생성 위치가 월드 보더 밖(또는 경계)일 경우 포탈 설치 취소
+        WorldBorder border = hitBlock.getWorld().getWorldBorder();
+        if (!border.isInside(hitBlock.getLocation()) || !border.isInside(spawnLoc)) {
+            return;
+        }
+
         // 해당 좌표 주변을 포탈 중앙으로 지정. 방향은 hitFace 참조
         String type = projectile.getPersistentDataContainer().get(portalTypeKey, PersistentDataType.STRING);
         boolean isBlue = "BLUE".equals(type);
 
-        PortalData newPortal = new PortalData(spawnLoc, hitFace, isBlue);
+        PortalData newPortal = new PortalData(spawnLoc, hitFace, isBlue, hitBlock.getLocation());
 
         if (isBlue) {
-            bluePortals.put(p.getUniqueId(), newPortal);
+            bluePortals.put(gunId, newPortal);
         } else {
-            orangePortals.put(p.getUniqueId(), newPortal);
+            orangePortals.put(gunId, newPortal);
         }
 
-        p.getWorld().playSound(spawnLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, isBlue ? 1.5f : 1.0f);
+        hitBlock.getWorld().playSound(spawnLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, isBlue ? 1.5f : 1.0f);
+
+        // 투사체가 명중하여 포탈이 최소 1개라도 생성된 이 시점에 스케줄러를 가동합니다.
+        // (발사 직후에 켜면 어느 쪽 포탈도 없어서 즉시 루프가 취소되는 버그 방지)
+        if (((Snowball) projectile).getShooter() instanceof Player shooter) {
+            startPortalLoopIfNeeded(gunId, shooter);
+        }
+    }
+
+    // 블럭 파괴 시 해당 블럭에 부착된 포탈을 찾아서 제거합니다.
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent e) {
+        Block brokenBlock = e.getBlock();
+        Location brokenLoc = brokenBlock.getLocation();
+
+        // 파랑 포탈 검사 및 제거
+        Iterator<Map.Entry<String, PortalData>> blueIt = bluePortals.entrySet().iterator();
+        while (blueIt.hasNext()) {
+            Map.Entry<String, PortalData> entry = blueIt.next();
+            if (entry.getValue().attachedBlockLoc != null && entry.getValue().attachedBlockLoc.equals(brokenLoc)) {
+                blueIt.remove();
+                // 모든 플레이어에게 안내 (주인이 명확하지 않으므로 주변만 가벼운 사운드)
+                brokenLoc.getWorld().playSound(brokenLoc, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);
+            }
+        }
+
+        // 주황 포탈 검사 및 제거
+        Iterator<Map.Entry<String, PortalData>> orangeIt = orangePortals.entrySet().iterator();
+        while (orangeIt.hasNext()) {
+            Map.Entry<String, PortalData> entry = orangeIt.next();
+            if (entry.getValue().attachedBlockLoc != null && entry.getValue().attachedBlockLoc.equals(brokenLoc)) {
+                orangeIt.remove();
+                brokenLoc.getWorld().playSound(brokenLoc, Sound.BLOCK_GLASS_BREAK, 1.0f, 1.0f);
+            }
+        }
     }
 
     // 낙하 데미지 무시 로직
@@ -257,8 +313,10 @@ public class Chell extends Ability {
         if (!(e.getEntity() instanceof Player p))
             return;
 
-        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
-            return;
+        /*
+         * if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+         * return;
+         */
 
         // 사슬 부츠 확인
         ItemStack boots = p.getInventory().getBoots();
@@ -272,27 +330,28 @@ public class Chell extends Ability {
     // ======================================
 
     // 다음 호출이 파란색인지 파악하는 로직
-    private boolean isBlueNext(Player p) {
-        return isBluePortalNext.getOrDefault(p.getUniqueId(), true);
+    private boolean isBlueNext(String gunId) {
+        return isBluePortalNext.getOrDefault(gunId, true);
     }
 
     // 포탈 위치에 파티클을 표시하고 워프를 검사하는 무한루프 스케줄러 시작
-    private void startPortalLoopIfNeeded(Player p) {
-        UUID uid = p.getUniqueId();
-        if (portalTaskMap.containsKey(uid))
+    private void startPortalLoopIfNeeded(String gunId, Player starter) {
+        if (portalTaskMap.containsKey(gunId))
             return;
 
         BukkitRunnable task = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!p.isOnline() || !AbilityManager.getInstance().hasAbility(p, getCode())) {
+                PortalData blue = bluePortals.get(gunId);
+                PortalData orange = orangePortals.get(gunId);
+
+                // 두 포탈이 모두 파괴되었거나, 소멸하면 이 타이머는 조기 종료
+                if (blue == null && orange == null) {
                     this.cancel();
-                    portalTaskMap.remove(uid);
+                    portalTaskMap.remove(gunId);
+                    isBluePortalNext.remove(gunId);
                     return;
                 }
-
-                PortalData blue = bluePortals.get(uid);
-                PortalData orange = orangePortals.get(uid);
 
                 // 파티클 출력 1x1x1
                 if (blue != null)
@@ -302,21 +361,21 @@ public class Chell extends Ability {
 
                 // 워프 체크 로직 (근처 모든 생명체 스캔)
                 if (blue != null && orange != null) {
-                    checkWarp(blue, orange, p);
-                    checkWarp(orange, blue, p);
+                    checkWarp(blue, orange, gunId);
+                    checkWarp(orange, blue, gunId);
                 } else {
-                    // 한쪽만 설치되었고 플레이어가 한쪽에 들어갔을 때의 피드백 (조건부)
+                    // 한쪽만 설치되었고 플레이어가 한쪽에 들어갔을 때의 피드백
                     if (blue != null)
-                        singlePortalCheck(blue, p);
+                        singlePortalCheck(blue, gunId);
                     if (orange != null)
-                        singlePortalCheck(orange, p);
+                        singlePortalCheck(orange, gunId);
                 }
             }
         };
         // 1틱마다 실행
-        task.runTaskTimer(plugin, 0L, 1L);
-        portalTaskMap.put(uid, task);
-        registerTask(p, (BukkitTask) task);
+        BukkitTask bTask = task.runTaskTimer(plugin, 0L, 1L);
+        portalTaskMap.put(gunId, task);
+        registerTask(starter, bTask); // 혹시 게임 종료 시 강제 취소 묶음용으로 지급자에게 묶어둠 (cleanup에서 전체 해제)
     }
 
     private void drawPortalParticle(Location center, BlockFace face, Color color) {
@@ -352,7 +411,7 @@ public class Chell extends Ability {
         }
     }
 
-    private void checkWarp(PortalData inPortal, PortalData outPortal, Player owner) {
+    private void checkWarp(PortalData inPortal, PortalData outPortal, String gunId) {
         BoundingBox box = BoundingBox.of(inPortal.loc, 0.6, 0.6, 0.6); // 플레이어 반경 감지
         if (inPortal.loc.getWorld() == null)
             return;
@@ -379,7 +438,7 @@ public class Chell extends Ability {
                     // 워프
                     e.teleport(tpLoc);
                     if (e instanceof Player) {
-                        e.sendMessage("§b[MOC] 포탈을 통과했습니다.");
+                        e.sendMessage("§e포탈을 통과했습니다.");
                     }
                     tpLoc.getWorld().playSound(tpLoc, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
                 }
@@ -387,7 +446,7 @@ public class Chell extends Ability {
         }
     }
 
-    private void singlePortalCheck(PortalData singlePortal, Player owner) {
+    private void singlePortalCheck(PortalData singlePortal, String gunId) {
         BoundingBox box = BoundingBox.of(singlePortal.loc, 0.6, 0.6, 0.6);
         if (singlePortal.loc.getWorld() == null)
             return;
@@ -411,11 +470,13 @@ public class Chell extends Ability {
         Location loc;
         BlockFace face;
         boolean isBlue;
+        Location attachedBlockLoc; // 부착된 블럭 위치 (블럭 파괴 시 포탈 제거 용도)
 
-        public PortalData(Location loc, BlockFace face, boolean isBlue) {
+        public PortalData(Location loc, BlockFace face, boolean isBlue, Location attachedBlockLoc) {
             this.loc = loc;
             this.face = face;
             this.isBlue = isBlue;
+            this.attachedBlockLoc = attachedBlockLoc;
         }
     }
 
