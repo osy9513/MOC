@@ -68,3 +68,4 @@
 | **jang_ball** (1) | 철 블럭 (`iron_block`) | 장거한 (`Janggeohan.java`) | `models/item/jang_ball.json` |
 | **gunmandu** (1) | 말린 켈프 (`dried_kelp`) | 오대수 (`Oldboy.java`) | `models/item/gunmandu.json` |
 | **old_boy** (16) | 철 검 (`iron_sword`) | 오대수 (`Oldboy.java`) | `models/item/old_boy.json` |
+| **potal** (1) | 감자 (`potato`) | 첼 (`Chell.java`) | `models/item/potal.json` |

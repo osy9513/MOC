@@ -55,6 +55,7 @@ public class KingHassan extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§5전투 ● 산의 노인(FATE)");
         p.sendMessage("§f라운드 시작 시 §7[은신, 구속 3, 재생] §f버프를 영구히 얻습니다.");
+        p.sendMessage("§f또한 시작 직후 10초 동안 §4채광 피로 10레벨§f이 부여됩니다.");
         p.sendMessage("§f최대 체력이 §c10칸(20HP)§f으로 고정되며, 핫바가 §b첫 번째 칸§f으로 고정됩니다.");
         p.sendMessage("§f다른 아이템은 사용할 수 없으며, §5산의 노인의 대검§f은 방어력을 무시합니다.");
         p.sendMessage(" ");
@@ -99,9 +100,12 @@ public class KingHassan extends Ability {
         p.addPotionEffect(
                 new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false));
 
+        // 라운드 시작 직후 즉발 킬 방지용 채광 피로 10레벨 10초 부여
+        p.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 200, 9, false, false));
+
         // 4. 이펙트 및 메시지 출력
         Bukkit.broadcastMessage("§5산의 노인 : §f듣거라. 만종은 그대의 이름을 가리켰다.");
-        p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
 
         // [수정됨] 등장(리스폰) 시 연기 이펙트 제거
         // 기존의 particleTask 부분을 삭제하여 죽은 뒤 부활할 때 시야를 가리는 효과를 없앴습니다.
@@ -143,12 +147,17 @@ public class KingHassan extends Ability {
         if (e.getEntity() instanceof LivingEntity victim) {
             double trueDamage = 32.0;
 
-            e.setDamage(0.0001);
-
-            double newHealth = Math.max(0, victim.getHealth() - trueDamage);
-            victim.setHealth(newHealth);
-
-            victim.playHurtAnimation(0);
+            if (victim.getHealth() <= trueDamage) {
+                // 즉사(킬) 판정일 경우 이벤트 자체를 취소하고 데미지로 0을 부여하여 더블 킬(Double Kill) 버그 방지
+                e.setCancelled(true);
+                victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
+                victim.setHealth(0);
+            } else {
+                e.setDamage(0.0001);
+                victim.setHealth(victim.getHealth() - trueDamage);
+                victim.playHurtAnimation(0);
+            }
         }
     }
 

@@ -185,10 +185,10 @@ public class Kaneki extends Ability {
             target.setVelocity(pull.multiply(1.5).setY(0.3));
 
             p.sendMessage("§c카구네로 대상을 포착했습니다!");
-            p.playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1f, 0.5f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1f, 0.5f);
             ((LivingEntity) target).damage(1.0, p);
         } else {
-            p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1f, 1.5f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1f, 1.5f);
         }
     }
 
@@ -279,7 +279,8 @@ public class Kaneki extends Ability {
                         // 무적 무시 1 데미지 (True Damage)
                         if (p.getHealth() > 0) {
                             p.setNoDamageTicks(0);
-                            p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                            p.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             p.damage(10.0); // 방어력 적용됨.
                         }
                     } else {

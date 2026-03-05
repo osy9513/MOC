@@ -1,5 +1,7 @@
 package me.user.moc.ability.impl;
 
+import org.bukkit.Bukkit;
+
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
 import org.bukkit.Location;
@@ -204,12 +206,12 @@ public class Naofumi extends Ability {
             int count = blockCounts.getOrDefault(p.getUniqueId(), 0) + 1;
             blockCounts.put(p.getUniqueId(), count);
 
-            p.playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 1f);
 
             if (count >= 20 && !isIronMaidenReady.contains(p.getUniqueId())) {
                 isIronMaidenReady.add(p.getUniqueId());
                 p.sendMessage("§c§l[MOC] §4아이언 메이든§c 발동 준비 완료! 방패를 든 채 공격하여 발동하세요.");
-                p.playSound(p.getLocation(), Sound.ENTITY_IRON_GOLEM_DEATH, 1f, 0.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_IRON_GOLEM_DEATH, 1f, 0.5f);
             } else if (count < 20) {
                 p.sendActionBar(net.kyori.adventure.text.Component.text("§7방어 횟수: " + count + "/20"));
             }
@@ -274,8 +276,8 @@ public class Naofumi extends Ability {
         isIronMaidenReady.remove(p.getUniqueId());
         blockCounts.put(p.getUniqueId(), 0);
 
-        p.sendMessage("§4아이언 메이든!");
-        p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f); // 웅장한 소리
+        Bukkit.broadcastMessage("§4이와타니 나오후미: 아이언 메이든!");
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f); // 웅장한 소리
 
         // [추가] 방패 쿨타임 20초(400틱) 적용 (도끼로 찍힌 효과처럼 방어를 제한함)
         p.setCooldown(Material.SHIELD, 400);
@@ -361,7 +363,7 @@ public class Naofumi extends Ability {
 
                 // 2초 시점: 쾅! 닫힘
                 if (tick == MOVE_DURATION) {
-                    p.playSound(target.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 0.5f);
+                    p.getWorld().playSound(target.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 0.5f);
                     target.sendMessage("§4아이언 메이든에 갇혔습니다!");
 
                     // Top 정확한 위치 고정
@@ -383,11 +385,12 @@ public class Naofumi extends Ability {
                             return;
                         }
 
-                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
 
                         target.damage(3.0, p);
                         target.setNoDamageTicks(0);
-                        p.playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);
+                        p.getWorld().playSound(target.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 1f);
 
                         // [Fix] 대미지 파티클 (레드스톤)
                         p.getWorld().spawnParticle(Particle.DUST, target.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5,

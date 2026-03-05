@@ -99,9 +99,9 @@ public class AmanoHina extends Ability {
         world.setStorm(true);
         world.setWeatherDuration(200); // 넉넉하게 설정 (어차피 8초 뒤에 맑게 함)
 
-        p.sendMessage("§b아마노 히나 : 비가 오려나?");
-        p.playSound(p.getLocation(), Sound.WEATHER_RAIN_ABOVE, 1f, 1f);
-        p.playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 1f); // 천둥 소리 추가
+        Bukkit.broadcastMessage("§b아마노 히나 : 비가 오려나?");
+        p.getWorld().playSound(p.getLocation(), Sound.WEATHER_RAIN_ABOVE, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 0.5f, 1f); // 천둥 소리 추가
 
         // 구름 고리 이펙트
         Location center = p.getLocation().add(0, 1, 0);
@@ -217,6 +217,10 @@ public class AmanoHina extends Ability {
         if (e.getDamager() instanceof Snowball snowball) {
             if (snowball.getPersistentDataContainer().has(tearKey, org.bukkit.persistence.PersistentDataType.BOOLEAN)) {
                 // 대미지 6으로 설정
+                if (snowball.getShooter() instanceof Player shooter) {
+                    e.getEntity().setMetadata("MOC_LastKiller",
+                            new org.bukkit.metadata.FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
+                }
                 e.setDamage(6.0);
             }
         }

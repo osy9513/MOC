@@ -250,15 +250,15 @@ public class ErenYeager extends Ability {
                 long remainingMillis = endTime - System.currentTimeMillis();
                 if (remainingMillis <= 3000 && remainingMillis > 2000 && !countdown3) {
                     p.sendActionBar(net.kyori.adventure.text.Component.text("§c[거인화 종료 임박] 3"));
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f);
                     countdown3 = true;
                 } else if (remainingMillis <= 2000 && remainingMillis > 1000 && !countdown2) {
                     p.sendActionBar(net.kyori.adventure.text.Component.text("§c[거인화 종료 임박] 2"));
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.5f);
                     countdown2 = true;
                 } else if (remainingMillis <= 1000 && remainingMillis > 0 && !countdown1) {
                     p.sendActionBar(net.kyori.adventure.text.Component.text("§c[거인화 종료 임박] 1"));
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.8f); // 피치 올림
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 0.8f); // 피치 올림
                     countdown1 = true;
                 }
 
@@ -339,7 +339,7 @@ public class ErenYeager extends Ability {
         }
 
         p.sendMessage("§e[MOC] 거인화가 해제되었습니다.");
-        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
         // [추가] 거인화 해제 시 은은한 흰 연기 파티클 1초 지속
         new BukkitRunnable() {

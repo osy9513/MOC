@@ -1,5 +1,7 @@
 package me.user.moc.ability.impl;
 
+import org.bukkit.Bukkit;
+
 import me.user.moc.MocPlugin;
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
@@ -226,7 +228,8 @@ public class Jihyun extends Ability {
 
                         if (!hitEntities.contains(target.getUniqueId())) {
                             Vector originalVel = target.getVelocity().clone();
-                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                             target.damage(5, p);
 
                             // 넉백 상쇄

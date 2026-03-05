@@ -198,7 +198,7 @@ public class Ddumbi extends Ability {
                         p.setSaturation(Math.min(p.getFoodLevel(), p.getSaturation() + 14.4f));
                         p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 200, 2)); // Level 3 = Amp 2
                         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 2)); // Level 3 = Amp 2
-                        p.sendMessage("§6뚜비 : §f커피를 마셔 힘이 넘칩니다!");
+                        Bukkit.broadcastMessage("§6뚜비 : §f커피 마싯땅");
                     }
                 }.runTaskLater(plugin, 1L);
             }
@@ -347,7 +347,7 @@ public class Ddumbi extends Ability {
             @Override
             public void run() {
                 if (as.isDead() || as.isOnGround() || ticks > 60) { // Max 3s or hit ground
-                    explode(as.getLocation());
+                    explode(p, as.getLocation());
                     as.remove();
                     display.remove();
                     this.cancel();
@@ -357,7 +357,7 @@ public class Ddumbi extends Ability {
                 // Correlation: Check collision
                 for (Entity e : as.getNearbyEntities(1.5, 1.5, 1.5)) {
                     if (e != p && e instanceof LivingEntity) {
-                        explode(as.getLocation());
+                        explode(p, as.getLocation());
                         as.remove();
                         display.remove();
                         this.cancel();
@@ -383,13 +383,15 @@ public class Ddumbi extends Ability {
         }.runTaskTimer(plugin, 1L, 1L));
     }
 
-    private void explode(Location loc) {
+    private void explode(Player p, Location loc) {
         loc.getWorld().createExplosion(loc, 2.0f, false, false); // Visual explosion
         loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
 
         for (Entity e : loc.getWorld().getNearbyEntities(loc, 4, 4, 4)) {
             if (e instanceof LivingEntity le) {
-                le.damage(15);
+                le.setMetadata("MOC_LastKiller",
+                        new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
+                le.damage(15.0, p);
             }
         }
     }
@@ -583,7 +585,7 @@ public class Ddumbi extends Ability {
                         default -> "기술";
                     };
                     p.sendActionBar(net.kyori.adventure.text.Component.text(skillName + " §a사용 가능!"));
-                    p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.5f);
                 }
                 playerTasks.remove(skillId);
             }

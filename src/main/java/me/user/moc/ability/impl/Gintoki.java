@@ -134,7 +134,7 @@ public class Gintoki extends Ability {
                 return;
 
             placeBlock.setType(Material.SNOW_BLOCK);
-            p.playSound(p.getLocation(), Sound.BLOCK_SNOW_PLACE, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.BLOCK_SNOW_PLACE, 1f, 1f);
 
             // 패턴 체크
             checkPattern(p, placeBlock);

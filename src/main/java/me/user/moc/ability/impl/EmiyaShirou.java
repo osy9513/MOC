@@ -242,7 +242,7 @@ public class EmiyaShirou extends Ability {
                                 if (p.isOnline()) {
                                     p.resetPlayerTime();
                                     // 완료 사운드
-                                    p.playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 1.0f);
+                                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2.0f, 1.0f);
                                 }
                                 this.cancel();
                                 return;

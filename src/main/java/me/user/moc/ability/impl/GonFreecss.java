@@ -467,18 +467,26 @@ public class GonFreecss extends Ability {
             }
         }
 
-        // 무적 뚫기 (고정 20 데미지)
         target.setNoDamageTicks(0);
-        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
-        target.damage(20.0); // 어그로, 로그 기록용 데미지
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
 
         // 확실한 트루데미지를 위해 체력 직접 삭감
         double realHealth = target.getHealth() - 20.0;
-        if (realHealth < 0)
-            realHealth = 0;
-        try {
-            target.setHealth(realHealth);
-        } catch (Exception ignored) {
+
+        if (realHealth <= 0) {
+            // 즉사 판정 시 데미지 이벤트 중복을 막기 위해 setHealth(0)만 호출
+            try {
+                target.setHealth(0);
+            } catch (Exception ignored) {
+            }
+        } else {
+            try {
+                target.setHealth(realHealth);
+            } catch (Exception ignored) {
+            }
+            // 어그로, 로그 기록 플래그 및 넉백을 위한 최소 데미지 (사망하지 않았을 때만 발동)
+            target.damage(0.0001, p);
         }
 
         // 타격감 (이펙트)
@@ -528,7 +536,8 @@ public class GonFreecss extends Ability {
 
                         this.cancel();
                         explodePaper(currentLoc, p);
-                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         target.damage(8.0, p);
                         return;
                     }

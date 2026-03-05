@@ -121,7 +121,7 @@ public class MisakaMikoto extends Ability {
     // 일반 레일건
     private void fireRailgun(Player p) {
         Bukkit.broadcastMessage("§b미사카 미코토 : §f있지, 레일건이라는 말 알아?");
-        p.playSound(p.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1f, 1f);
 
         // [▼▼▼ 파티클 완전 교체: 오류 방지 ▼▼▼]
         // CRIT 대신 WAX_ON (반짝이는 별) 사용 - 데이터 불필요, 안전함
@@ -143,7 +143,8 @@ public class MisakaMikoto extends Ability {
             target.setMetadata("MOC_LastKiller",
                     new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
 
-            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
 
             target.damage(8.0, p);
             // FLASH는 Color 데이터가 필수입니다.
@@ -168,7 +169,7 @@ public class MisakaMikoto extends Ability {
                         fullPower.setItemMeta(meta);
                         p.getInventory().addItem(fullPower);
                         p.sendMessage("§e[MOC] §f전력(네더의 별)이 활성화되었습니다!");
-                        p.playSound(p.getLocation(), Sound.ITEM_TOTEM_USE, 1f, 1f);
+                        p.getWorld().playSound(p.getLocation(), Sound.ITEM_TOTEM_USE, 1f, 1f);
                     }
                 }
             }.runTaskLater(plugin, 300L); // 15초 대기
@@ -194,6 +195,32 @@ public class MisakaMikoto extends Ability {
                 // [안전한 파티클 유지] CRIT
                 p.getWorld().spawnParticle(Particle.CRIT, p.getLocation(), 20, 1, 1, 1, 0.1);
 
+                // [추가] 차징 중 미코토 주변 7x7x7 광역 데미지 (반경 3.5)
+                for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), 3.5, 3.5, 3.5)) {
+                    if (e instanceof LivingEntity target && e != p) {
+                        if (target instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
+                            continue;
+
+                        // 무적 무시 및 킬 판정 메타데이터 주입
+                        target.setNoDamageTicks(0);
+                        target.setMetadata("MOC_LastKiller",
+                                new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
+
+                        // 방어력 무시 고정 피해 7뎀 (True Damage)
+                        double newHealth = target.getHealth() - 7.0;
+
+                        if (newHealth <= 0) {
+                            // 즉사 판정일 경우 이벤트 중복을 막기 위해 setHealth(0)만 호출 (추가 대미지 이벤트 X)
+                            target.setHealth(0);
+                        } else {
+                            target.setHealth(newHealth);
+                            target.playHurtAnimation(0);
+                            // 타격 판정과 넉백을 위해 최소한의 대미지만 부여
+                            target.damage(0.0001, p);
+                        }
+                    }
+                }
+
                 count++;
             }
         }.runTaskTimer(plugin, 0L, 20L);
@@ -204,7 +231,7 @@ public class MisakaMikoto extends Ability {
         // 1. 투사체(화살) 생성 - 중력 무시, 빠른 속도
         Arrow arrow = p.launchProjectile(Arrow.class);
         arrow.setShooter(p);
-        arrow.setVelocity(p.getLocation().getDirection().multiply(8.0)); // 매우 빠름 (4.0 -> 8.0)
+        arrow.setVelocity(p.getLocation().getDirection().multiply(15.0)); // 매우 빠름 (15)
         arrow.setMetadata("MisakaFullPower", new FixedMetadataValue(plugin, true));
         arrow.setSilent(true);
         arrow.setGravity(false); // 직선으로 날아감
@@ -217,14 +244,27 @@ public class MisakaMikoto extends Ability {
 
         // 3. 파티클 트레일 (노란색 전기) - Runnable로 따라가며 생성
         new BukkitRunnable() {
+            int ticks = 0;
+
             @Override
             public void run() {
+                // 최대 사거리 200블록 제한 (속도 15 * 25틱 = 375)
+                if (ticks >= 25) {
+                    triggerFullPowerExplosion(arrow.getLocation(), p, arrow);
+                    display.remove();
+                    arrow.remove();
+                    this.cancel();
+                    return;
+                }
+
                 // 화살이 사라지거나 땅에 박히면 종료 (이벤트에서 처리하지만 안전장치)
                 if (arrow.isDead() || !arrow.isValid() || arrow.isOnGround()) {
                     display.remove(); // 디스플레이 제거
                     this.cancel();
                     return;
                 }
+
+                ticks++;
 
                 // 파티클 생성 (화살 위치)
                 DustOptions electricOptions = new DustOptions(Color.YELLOW, 1.5f);
@@ -305,7 +345,8 @@ public class MisakaMikoto extends Ability {
                         new org.bukkit.metadata.FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
 
                 // 전력 데미지
-                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
+                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
                 target.damage(28.0, shooter);
             }
         }
@@ -332,7 +373,8 @@ public class MisakaMikoto extends Ability {
         p.sendMessage("§f레일건을 쏩니다.");
         p.sendMessage("§f코인 우클릭 시 1개를 소모하여 전면 직선으로 레일건을 발사합니다(사거리 15, 대미지 8).");
         p.sendMessage("§f레일건을 10회 모두 발사하면 15초 후 전력을 사용할 수 있습니다.");
-        p.sendMessage("§f전력 우클릭 시 3초 차징 후 발리하여 강력한 대미지를 줍니다(사거리 50, 대미지 28).");
+        p.sendMessage("§f전력 우클릭 시 3초간 차징 후 강력한 대미지(사거리 375, 대미지 28)를 줍니다.");
+        p.sendMessage("§f(전력 차징 중 매 초마다 주변 7x7x7 범위 내 적에게 방어력 무시 7 대미지를 줍니다.)");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 3초 / 15초");
         p.sendMessage("§f---");

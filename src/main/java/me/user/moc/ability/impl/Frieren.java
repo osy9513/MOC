@@ -168,6 +168,7 @@ public class Frieren extends Ability {
     }
 
     private void startCasting(Player p) {
+        Bukkit.broadcastMessage("§f프리렌 : 일반 공격 마법");
         UUID uuid = p.getUniqueId();
         castingPlayers.add(uuid); // 캐스팅 명단에 추가
 
@@ -224,7 +225,7 @@ public class Frieren extends Ability {
 
     private void fireZoltraak(Player p) {
         Bukkit.broadcastMessage("§f프리렌 : 졸트라크");
-        p.playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 2.0f, 1.0f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 2.0f, 1.0f);
 
         Location eyeLoc = p.getEyeLocation();
         Vector direction = eyeLoc.getDirection().normalize();
@@ -262,7 +263,8 @@ public class Frieren extends Ability {
                     }
 
                     // 방어력 무시(고정) 데미지 30
-                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                    target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                            me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                     target.damage(30.0);
                     hitEnemies.add(target);
                 }

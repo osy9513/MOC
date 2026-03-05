@@ -171,7 +171,7 @@ public class DIO extends Ability {
 
         // 월드 전체 효과음 및 시각 효과
         for (Player p : Bukkit.getOnlinePlayers()) {
-            p.playSound(p.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 2.0f, 0.5f);
+            p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 2.0f, 0.5f);
 
             // DIO가 아닌 경우 야간 투시 효과 -> timeStoppers에 없는 사람만?
             // 아니면 그냥 Ability 보유자 제외?
@@ -221,7 +221,7 @@ public class DIO extends Ability {
                 // 1초마다 째깍 소리 -> 0.1초 단위 표시를 위해 매 틱 계산
                 if (ticks % 20 == 0) {
                     for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 2.0f);
+                        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, 2.0f);
                     }
                 }
 
@@ -363,7 +363,9 @@ public class DIO extends Ability {
                                 return;
                             }
                             le.setNoDamageTicks(0);
-                            le.damage(2.0); // [수정] 성 성능 너프 (3.0 -> 2.0)
+                            le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(plugin,
+                                    caster.getUniqueId().toString()));
+                            le.damage(2.0, caster); // [수정] 성 성능 너프 (3.0 -> 2.0)
 
                             // [수정] 피 튀기는 이펙트 & 타격음 변경
                             mainWorld.playSound(le.getLocation(), Sound.ENTITY_PLAYER_ATTACK_STRONG, 0.8f, 1.0f);

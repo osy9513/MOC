@@ -522,7 +522,7 @@ public class KumagawaMisogi extends Ability {
                 if (p.isOnline() && hasAbility(p)) {
                     bookMakerActive.put(p.getUniqueId(), true);
                     p.sendMessage("§5[System] 북 메이커가 활성화되었습니다.");
-                    p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.0f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.0f);
 
                     // [New] 활성화 이펙트 (경험치 파티클) 태스크 시작
                     BukkitRunnable task = new BukkitRunnable() {

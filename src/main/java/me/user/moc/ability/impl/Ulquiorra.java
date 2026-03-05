@@ -381,28 +381,22 @@ public class Ulquiorra extends Ability {
     }
 
     private void applyTrueDamage(LivingEntity target, double damage, Player attacker) {
-        // [추가] 킬 판정 연동
-        if (attacker != null) {
-            target.setMetadata("MOC_LastKiller",
-                    new org.bukkit.metadata.FixedMetadataValue(plugin, attacker.getUniqueId().toString()));
-        }
-
         // 방어력 무시 로직
         double currentHealth = target.getHealth();
         double newHealth = currentHealth - damage;
 
-        // 피격 모션 및 넉백을 위해 0 데미지 이벤트 발생
-        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
-                me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
-        target.damage(0.1);
-        target.setNoDamageTicks(0);
-
         if (newHealth <= 0) {
+            // 즉사 판정일 경우 이벤트 중복을 막기 위해 setHealth(0)만 호출 (추가 대미지 이벤트 X)
             target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
                     me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
             target.setHealth(0);
         } else {
             target.setHealth(newHealth);
+            // 피격 모션 및 넉백을 위해 0 데미지 이벤트 발생
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                    me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
+            target.damage(0.1);
+            target.setNoDamageTicks(0);
         }
     }
 }

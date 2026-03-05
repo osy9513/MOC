@@ -137,7 +137,7 @@ public class Yugi extends Ability {
     private void drawCard(Player p) {
         // "유희 : 나의 턴, 드로우!" 전체 메시지
         plugin.getServer().sendMessage(net.kyori.adventure.text.Component.text("§e유희 : 나의 턴, 드로우!"));
-        p.playSound(p.getLocation(), Sound.BLOCK_DISPENSER_DISPENSE, 1f, 1f); // 발사기 소리
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_DISPENSER_DISPENSE, 1f, 1f); // 발사기 소리
 
         // 종이 아이템 지급 (이전 카드는 삭제하라고 했으나, 구체적으로 인벤토리의 종이를 찾아 지우는 로직 필요)
         // 여기선 "새로운 카드가 들어오면 사실상 덮어쓰기" 개념으로 메시지 띄우고 즉시 효과 발동이 더 자연스러울 수 있음.
@@ -234,7 +234,7 @@ public class Yugi extends Ability {
         // 카드 이름 파싱 (색상 코드 제거)
         String rawName = ChatColor.stripColor(name);
 
-        p.playSound(p.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1f, 1f); // 종이 넘기는 소리
+        p.getWorld().playSound(p.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1f, 1f); // 종이 넘기는 소리
 
         boolean success = true;
 
@@ -279,7 +279,7 @@ public class Yugi extends Ability {
         spawnArrow(p, dir);
         spawnArrow(p, left);
         spawnArrow(p, right);
-        p.sendMessage("§e빛의 봉인 검!");
+        Bukkit.broadcastMessage("§e유희 : 빛의 봉인 검!");
     }
 
     private void spawnArrow(Player p, Vector dir) {
@@ -294,7 +294,7 @@ public class Yugi extends Ability {
         Block target = p.getTargetBlockExact(50);
         if (target != null && target.getType() != Material.AIR) {
             p.getWorld().strikeLightning(target.getLocation());
-            p.sendMessage("§e번개!");
+            Bukkit.broadcastMessage("§e유희 : 번개!");
             return true;
         } else {
             p.sendMessage("§c50블록 이내의 블록을 바라보세요.");
@@ -330,7 +330,7 @@ public class Yugi extends Ability {
         golem.setCustomNameVisible(true);
         golem.setPlayerCreated(true);
         registerSummon(p, golem);
-        p.sendMessage("§e빅 실드 가드너 소환!");
+        Bukkit.broadcastMessage("§e유희 : 빅 실드 가드너 소환!");
 
         // AI 로직(아군을 때리는 적 공격)은 EntityDamageByEntityEvent에서 처리
     }
@@ -375,20 +375,20 @@ public class Yugi extends Ability {
             }
         }.runTaskTimer(plugin, 0L, 20L);
 
-        p.sendMessage("§e크리보 소환!");
+        Bukkit.broadcastMessage("§e유희 : 크리보 소환!");
     }
 
     private void useReborn(Player p) {
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
         p.getInventory().addItem(totem);
-        p.sendMessage("§e죽은 자의 소생: 불사의 토템 획득!");
+        Bukkit.broadcastMessage("§e유희 : 죽은 자의 소생!");
     }
 
     private void useExodia(Player p) {
         int count = exodiaCounts.getOrDefault(p.getUniqueId(), 0) + 1;
         exodiaCounts.put(p.getUniqueId(), count);
 
-        p.sendMessage("§e엑조디아 파츠 수집: " + count + "/5");
+        Bukkit.broadcastMessage("§e유희 : 엑조디아 소환(" + count + "/5)");
 
         if (count >= 5) {
             // 엑조드 파이어 발동 프로세스 시작
@@ -474,7 +474,8 @@ public class Yugi extends Ability {
                                 if (le instanceof Player
                                         && ((Player) le).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                                     continue;
-                                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                                le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                        me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                                 le.damage(6.0, p); // 3칸 = 6 대미지
                                 le.setNoDamageTicks(0);
                             }
