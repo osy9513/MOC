@@ -307,11 +307,11 @@ public class AsuiTsuyu extends Ability {
             tongueTargets.put(p.getUniqueId(), info);
 
             p.sendMessage("§a[개구리 혀] 대상을 잡았습니다! (점프: 이동 / 쉬프트: 당기기)");
-            p.playSound(p.getLocation(), Sound.ENTITY_SLIME_ATTACK, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SLIME_ATTACK, 1f, 1f);
 
         } else {
             // 허공
-            p.playSound(p.getLocation(), Sound.ENTITY_LLAMA_SPIT, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_LLAMA_SPIT, 1f, 1f);
         }
     }
 
@@ -356,7 +356,7 @@ public class AsuiTsuyu extends Ability {
         // 하지만 Minecraft Velocity Max가 보통 4.0 제한이 걸리기도 하고, 9.0이면 청크 로딩 못따라감.
         // 안전하게 3.0 (약 60블록/s) 설정.
 
-        p.playSound(p.getLocation(), Sound.ENTITY_BAT_TAKEOFF, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BAT_TAKEOFF, 1f, 1f);
 
         // 사용 후 해제
         // 사용 후 해제 (비주얼 정리 포함)
@@ -396,7 +396,7 @@ public class AsuiTsuyu extends Ability {
             // [수정] 속도 4.5로 상향 + Y축 보정 (확실하게 당기기)
             target.setVelocity(dir.multiply(4.5).setY(0.5));
             p.sendMessage("§a대상을 당겨왔습니다!");
-            p.playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1f, 1f);
         } else if (info.targetLoc != null) {
             // 블록 당기기 구현
             Block block = info.targetLoc.getBlock();
@@ -434,8 +434,8 @@ public class AsuiTsuyu extends Ability {
                 // 이펙트 및 소리
                 p.getWorld().playEffect(block.getLocation(), org.bukkit.Effect.STEP_SOUND, type);
                 p.sendMessage("§a블록을 당겨왔습니다!");
-                p.playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 1f);
-                p.playSound(p.getLocation(), Sound.BLOCK_GRASS_BREAK, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.BLOCK_GRASS_BREAK, 1f, 1f);
             } else {
                 p.sendMessage("§c잡은 블록이 이미 사라졌습니다.");
             }

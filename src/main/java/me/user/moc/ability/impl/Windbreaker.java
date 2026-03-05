@@ -161,7 +161,7 @@ public class Windbreaker extends Ability {
                 }
 
                 launchGreenArrow(p);
-                p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 1.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 1.5f);
                 count++;
             }
         }.runTaskTimer(plugin, 0L, 2L);

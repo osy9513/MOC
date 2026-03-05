@@ -97,7 +97,7 @@ public class Ueki extends Ability {
 
     private void useAbility(Player p) {
         Bukkit.broadcastMessage("§a우에키 : 쓰레기를 나무로 바꾸는 힘!");
-        p.playSound(p.getLocation(), Sound.BLOCK_CHERRY_SAPLING_PLACE, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_CHERRY_SAPLING_PLACE, 1f, 1f);
 
         int treeCount = 0;
 

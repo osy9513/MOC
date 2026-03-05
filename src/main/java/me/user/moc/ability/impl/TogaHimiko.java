@@ -269,7 +269,7 @@ public class TogaHimiko extends Ability {
                 p.setHealth(newHealth);
 
                 p.sendMessage("§d" + targetName + "(으)로 변신했습니다! (30초 지속)");
-                p.playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 1f);
             }
         }
     }
@@ -530,7 +530,7 @@ public class TogaHimiko extends Ability {
                     p.setNoDamageTicks(0);
 
                     p.sendMessage("§d변신이 해제되어 원래 모습으로 돌아왔습니다.");
-                    p.playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 0.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 0.5f);
 
                     // 데이터 정리 (지연 실행 내에서)
                     savedStates.remove(p.getUniqueId());

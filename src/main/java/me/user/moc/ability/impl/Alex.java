@@ -179,7 +179,7 @@ public class Alex extends Ability {
         Bukkit.broadcastMessage("§f ");
 
         // 효과음
-        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
         // 기반암 제거 요청
         // ArenaManager 인스턴스를 가져와서 호출

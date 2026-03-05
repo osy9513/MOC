@@ -52,14 +52,14 @@ public class Midas extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§6유틸 ● 미다스(그리스 로마 신화)");
-        p.sendMessage("§f금괴를 우클릭하면 전방으로 던집니다.");
+        p.sendMessage("§f금괴를 우클릭하면 배고픔이 2칸 회복되고 전방으로 던집니다.");
         p.sendMessage("§f던져진 금괴에 맞은 상대가 입고 있던 방어구는 §e금 방어구§f가 됩니다.");
         p.sendMessage("§f플레이어가 아닌 대상을 맞출 시 §e금 블럭§f으로 교체시킵니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0.5초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 금 갑옷, 금 칼, 발광포션, 황금 사과 64개, 금괴 64개");
-        p.sendMessage("§f장비 제거 : 철 갑옷, 철 칼, 체력재생포션, 고기 64개");
+        p.sendMessage("§f추가 장비 : 금 보호구 풀 셋, 금 칼, 발광포션, 황금 사과 64개, 금괴 64개");
+        p.sendMessage("§f장비 제거 : 철 갑옷, 철 칼, 체력재생포션, 구운 소고기 64개");
     }
 
     @Override
@@ -140,7 +140,7 @@ public class Midas extends Ability {
                 // 배고픔 회복 (2칸)
                 p.setFoodLevel(Math.min(20, p.getFoodLevel() + 4));
                 p.setSaturation(Math.min(20, p.getSaturation() + 2));
-                p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
 
                 // 투사체 발사 (눈덩이 기반, 아이템 모양 변경)
                 Snowball projectile = p.launchProjectile(Snowball.class);
@@ -150,7 +150,7 @@ public class Midas extends Ability {
                 // 메타데이터로 미다스 투사체 식별
                 projectile.addScoreboardTag("midas_gold");
 
-                p.playSound(p.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1f, 1f);
             }
         }
     }
@@ -185,7 +185,8 @@ public class Midas extends Ability {
                 if (livingTarget instanceof Player
                         && ((Player) livingTarget).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     return;
-                livingTarget.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                livingTarget.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                 livingTarget.damage(1.0, p);
             }
 

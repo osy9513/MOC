@@ -265,7 +265,7 @@ public class Pyro extends Ability {
 
         // [규칙] 재장전 시 전체 메시지 출력
         Bukkit.broadcast(Component.text("§c파이로: §f무앙무앙"));
-        p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 1.5f);
+        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 1.5f);
 
         // 15초(300틱) 후 가스 충전
         new BukkitRunnable() {
@@ -290,7 +290,7 @@ public class Pyro extends Ability {
                     gasMap.put(uuid, 200);
                     isReloading.put(uuid, false);
                     p.sendMessage("§a[파이로] §f가스가 완전히 충전되었습니다!");
-                    p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
                     this.cancel();
                 }
             }

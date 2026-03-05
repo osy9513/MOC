@@ -139,7 +139,7 @@ public class Deidara extends Ability {
                 ammo.setItemMeta(meta);
             }
             p.getInventory().addItem(ammo);
-            p.playSound(p.getLocation(), Sound.BLOCK_GRAVEL_PLACE, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.BLOCK_GRAVEL_PLACE, 1f, 1f);
 
             // [수정] 부모 클래스의 공통 쿨타임 설정 메서드 사용 (자동 알림 포함)
             setCooldown(p, 4);
@@ -164,7 +164,7 @@ public class Deidara extends Ability {
             // 관리 목록에 추가
             managedTNTs.computeIfAbsent(p.getUniqueId(), k -> new ArrayList<>()).add(tnt);
 
-            p.playSound(p.getLocation(), Sound.ENTITY_TNT_PRIMED, 1f, 1.5f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TNT_PRIMED, 1f, 1.5f);
             return;
         }
 
@@ -215,7 +215,7 @@ public class Deidara extends Ability {
             }
         }
         tnts.clear(); // 목록 비우기
-        p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.8f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.8f);
         if (count > 0) {
             p.sendMessage("§e" + count + "개의 예술을 완성했습니다.!");
             // [추가] 성공적으로 기폭을 한 경우에만 쿨타임을 걸어줍니다.
@@ -311,6 +311,18 @@ public class Deidara extends Ability {
             for (TNTPrimed tnt : tnts) {
                 if (tnt.isValid())
                     tnt.remove();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamageByEntity(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (e.getDamager() instanceof TNTPrimed tnt) {
+            if (tnt.getSource() instanceof Player p) {
+                if (AbilityManager.getInstance().hasAbility(p, getCode())) {
+                    e.getEntity().setMetadata("MOC_LastKiller",
+                            new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
+                }
             }
         }
     }

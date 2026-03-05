@@ -137,7 +137,7 @@ public class SpongeBob extends Ability {
                 p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 300, 0, true, true, true)); // 힘 1
 
                 p.sendMessage("§d햄버거 좋아~");
-                p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
                 return;
             }
         }
@@ -210,7 +210,7 @@ public class SpongeBob extends Ability {
 
                 // Particle/Sound
                 if (ticks % 10 == 0) {
-                    p.playSound(p.getLocation(), Sound.BLOCK_BREWING_STAND_BREW, 0.5f, 1.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BREWING_STAND_BREW, 0.5f, 1.5f);
                     p.spawnParticle(Particle.SMOKE, b.getLocation().add(0.5, 1, 0.5), 5, 0.2, 0.2, 0.2, 0);
                 }
 
@@ -238,7 +238,7 @@ public class SpongeBob extends Ability {
 
         p.getWorld().dropItem(b.getLocation().add(0.5, 1, 0.5), burger);
         Bukkit.broadcastMessage("§e스펀지밥: 주문하신 게살버거 나왔습니다!");
-        p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
     }
 
     @EventHandler

@@ -147,6 +147,8 @@ public class TheKingOfGockgangE extends Ability {
             if (entity instanceof LivingEntity && entity != p) {
                 if (entity instanceof Player && ((Player) entity).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     continue;
+                entity.setMetadata("MOC_LastKiller",
+                        new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
                 ((LivingEntity) entity).damage(3.0, p);
             }
         }

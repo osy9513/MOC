@@ -1,5 +1,7 @@
 package me.user.moc.ability.impl;
 
+import org.bukkit.Bukkit;
+
 import me.user.moc.MocPlugin;
 import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
@@ -101,7 +103,7 @@ public class Topblade extends Ability {
     }
 
     private void useSkill(Player p) {
-        p.sendMessage("§c탑블레이드 : 고고 탑블레이드~");
+        Bukkit.broadcastMessage("§c탑블레이드 : 고고 탑블레이드~");
 
         // 초기 방향 설정 (현재 바라보는 방향)
         final Vector direction = p.getLocation().getDirection().setY(0).normalize().multiply(0.8); // 0.8 블록/틱 = 16 블록/초
@@ -157,7 +159,7 @@ public class Topblade extends Ability {
                     // 반대 방향으로 튕기기 (단순 반전)
                     currentVelocity.multiply(-1);
                     // [수정] 사람과 부딪친 것과 같은 이팩트 출력
-                    p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
                     p.getWorld().spawnParticle(Particle.EXPLOSION, p.getLocation(), 1);
                     p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
                 }
@@ -206,7 +208,7 @@ public class Topblade extends Ability {
                         p.setVelocity(currentVelocity.clone().setY(p.getVelocity().getY()));
 
                         // 효과
-                        p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
+                        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 1f, 2f);
                         p.getWorld().spawnParticle(Particle.EXPLOSION, p.getLocation(), 1);
                         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
 

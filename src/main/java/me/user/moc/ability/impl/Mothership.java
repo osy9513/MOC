@@ -144,7 +144,7 @@ public class Mothership extends Ability {
 
                     if (count > 0) {
                         p.sendMessage("§e모선 소환까지... " + count + "초");
-                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 2f);
+                        p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 2f);
                         count--;
                     } else {
                         // 소환 시작
@@ -469,6 +469,9 @@ public class Mothership extends Ability {
                         continue;
                     }
 
+                    // 킬 메타데이터 주입
+                    e.setMetadata("MOC_LastKiller",
+                            new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
                     ((LivingEntity) e).damage(10.0, owner); // 10 데미지
 
                     // [추가] 넉백 적용

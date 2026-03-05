@@ -132,8 +132,9 @@ public class AbilityManager {
         addAbility(new Dodongchan(plugin)); // H07 도동찬 등록
         addAbility(new OneC(plugin)); // H08 원크 등록
         addAbility(new SangYoung(plugin)); // H09 상영 등록
+        addAbility(new UchihaItachi(plugin)); // 067 우치하 이타치
         addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
-
+        addAbility(new Chell(plugin)); // 070 첼
         //
         //
         //

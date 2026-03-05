@@ -124,7 +124,7 @@ public class Jjanggu extends Ability {
         if (Math.random() < 0.20) {
             int currentFood = p.getFoodLevel();
             p.setFoodLevel(Math.max(0, currentFood - 2));
-            p.sendMessage("§f짱구: 아이 배고프당");
+            Bukkit.broadcastMessage("§f짱구: 아이 배고프당");
         }
 
         // 1. 신속 효과 부여 (0.2초 = 4틱)
@@ -132,7 +132,7 @@ public class Jjanggu extends Ability {
         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 4, 30, true, true, true));
 
         // 2. 부리부리 소리 (돼지 소리?)
-        p.playSound(p.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1f, 1.5f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PIG_AMBIENT, 1f, 1.5f);
 
         // 3. 충돌 감지 태스크 실행 (0.2초 동안)
         new BukkitRunnable() {
@@ -185,7 +185,7 @@ public class Jjanggu extends Ability {
                         Bukkit.broadcastMessage("§c짱구 : §e부리부리~");
 
                         // 타격음
-                        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f);
                     }
                 }
 
@@ -228,7 +228,7 @@ public class Jjanggu extends Ability {
                     p.setFoodLevel(20);
                     p.setSaturation(20f); // 포화도도 가득
                     p.sendMessage("§a[짱구] §f초코비를 먹어 배가 빵빵해졌습니다!");
-                    p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_BURP, 1f, 1f);
                 }
             }.runTaskLater(plugin, 1L);
         }

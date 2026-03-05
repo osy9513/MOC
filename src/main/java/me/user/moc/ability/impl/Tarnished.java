@@ -242,6 +242,6 @@ public class Tarnished extends Ability {
         }
 
         p.getInventory().setArmorContents(armor);
-        p.playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_DIAMOND, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ITEM_ARMOR_EQUIP_DIAMOND, 1f, 1f);
     }
 }

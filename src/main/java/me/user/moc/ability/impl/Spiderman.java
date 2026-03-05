@@ -272,9 +272,9 @@ public class Spiderman extends Ability {
         if (!checkCooldown(p))
             return;
 
-        p.sendMessage("§a거미줄 발사!");
-        p.playSound(p.getLocation(), Sound.ENTITY_SPIDER_STEP, 1f, 2f);
-        p.playSound(p.getLocation(), Sound.ITEM_CROSSBOW_SHOOT, 1f, 1f);
+        Bukkit.broadcastMessage("§a스파이더맨 : 거미줄 발사!");
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SPIDER_STEP, 1f, 2f);
+        p.getWorld().playSound(p.getLocation(), Sound.ITEM_CROSSBOW_SHOOT, 1f, 1f);
 
         setCooldown(p, 15);
 
@@ -301,7 +301,8 @@ public class Spiderman extends Ability {
 
                 LivingEntity victim = (LivingEntity) result.getHitEntity();
                 // [추가] 데미지 10 적용
-                victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                 victim.damage(10.0, p);
 
                 // 거미줄 함정 효과 적용
@@ -363,7 +364,7 @@ public class Spiderman extends Ability {
             block.setType(Material.COBWEB);
             lastWebLocation.put(p.getUniqueId(), loc);
 
-            p.playSound(p.getLocation(), Sound.BLOCK_WOOL_PLACE, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.BLOCK_WOOL_PLACE, 1f, 1f);
 
             BukkitTask task = new BukkitRunnable() {
                 @Override
@@ -426,8 +427,8 @@ public class Spiderman extends Ability {
         UUID uid = p.getUniqueId();
         isZipping.add(uid);
 
-        p.playSound(p.getLocation(), Sound.ENTITY_HORSE_JUMP, 1f, 1.5f);
-        p.sendMessage("§e웹스윙!");
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_HORSE_JUMP, 1f, 1.5f);
+        Bukkit.broadcastMessage("§e스파이더맨: 웹스윙!");
 
         BukkitTask task = new BukkitRunnable() {
             @Override

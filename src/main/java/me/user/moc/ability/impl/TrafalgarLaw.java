@@ -343,7 +343,8 @@ public class TrafalgarLaw extends Ability {
         p.getWorld().playSound(p.getLocation(), "moc.law.shambles", 1.0f, 1.0f);
 
         // 피해 및 상태이상
-        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+        target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
         target.damage(DAMAGE_AMOUNT, p); // 8 데미지 (하트 4칸)
         // target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 40, 0)); //
         // 멀미 2초 (40 ticks)

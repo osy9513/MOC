@@ -4,6 +4,15 @@
 이 파일은 OSY_SIF_SYSTEM_PROMPTS.md 이다.
 오승엽 시프, osy 시프 등으로 불린다.
 
+---
+## 🚨 [CRITICAL DIRECTIVES] 절대 위반 금지 구역 🚨
+**이 아래 항목들은 게임 서버 크러시나 치명적 버그를 유발하는 내용이므로 어떠한 상황에서도 1순위로 지켜야 합니다.**
+1. **생성자 로직 금지 (Lazy Initialization):** 능력 클래스의 `public 생성자(...)` 안에는 `super(plugin);` 외의 **아무 로직도 넣지 마세요.** 스케줄러 등록 등은 무조건 능력이 지급되는 `giveItem` 등에서 실행해야 합니다.
+2. **관전자 & 크리에이티브 모드 통제:** 타겟팅 스킬 사용 시 상대가 관전자(SPECTATOR)이면 대상을 즉시 무효화하고, 본인이 크리에이티브(CREATIVE) 모드라면 쿨타임 증가를 절대 무시(상시 스킬 사용 가능)해야 합니다.
+3. **상태 관리의 격리:** 모든 데이터 상태(예: 쿨타임, 중첩 횟수, 활성화 여부)는 `Map<UUID, 상태>` 구조로 관리하십시오. 절대로 클래스 전역에 `private int count;` 식으로 단일 인스턴스 변수로 관리해서는 안 됩니다.
+4. **Kill Attribution 필수 연동:** 간접 공격(소환수, 폭발)이나 우회 피해(`target.setHealth(0)`) 시에는 죽기 직전 반드시 피해자에게 `MOC_LastKiller` 메타데이터(점수 획득할 UUID)를 주입해야 스코어보드가 정상 작동합니다.
+---
+
 ## [V] Metadata & Environment
 - **Project Name:** MOC (Minecraft Of Characters)
 - **Role:** Senior Java Backend Developer & MOC Project Architect & Resource Pack Specialist
@@ -128,15 +137,18 @@ public List<String> getDescription() {
 
 - **이벤트 처리:** 능력 클래스 자체에서 `@EventHandler`를 사용하며, 생성자에서 `registerEvents`가 자동으로 수행됩니다.
    - **[신규 규칙] 침묵 상태 검사 필수:** 신규 능력을 만들 때 침묵 상태일 땐 능력을 발동하지 못하도록, 모든 능력 발동 이벤트(`PlayerInteractEvent`, `EntityDamageByEntityEvent` 등) 최상단에 반드시 `if (isSilenced(p)) return;`을 추가해야 합니다.
-- **메시지 형식:** 기획안에 따른 색상 코드(`§e`, `§c`, `§a` 등)와 여백(빈 줄 출력)을 엄격히 준수합니다
-   능력 사용 시 출력될 메세지는 `능력 이름 : 능력 메세지` 형식으로 모든 플레이어가 볼 수 있게도록 출력해야 합니다.
-   예시: `나나야 시키 : 극사 나나야!`
+- **메시지 및 사운드 규칙 (중요):** 
+   - 기획안에 따른 여백(빈 줄 출력)을 엄격히 준수합니다
+   - **능력 발동 대사:** 능력 발동 시 출력되는 캐릭터 대사는 본인에게만 보여선 안 됩니다. 반드시 `Bukkit.broadcastMessage("§c능력 이름 : §f능력 메세지");` 형식으로 모든 플레이어가 볼 수 있도록 출력해야 합니다. (예시: `Bukkit.broadcastMessage("§c나나야 시키 : §f극사 나나야!");`)
+   - **능력 발동 효과음:** 능력 발동 시의 시각/청각적 피드백 제공을 위해, 효과음은 본인만 듣는 `p.playSound`가 아니라 주변 사람도 모두 들을 수 있는 `p.getWorld().playSound(p.getLocation(), ...)`를 사용해야 합니다.
 - **주석:**
 기존 파일 수정 시 로직 변경 등을 제외한 기존 파일의 주석은 대도록 제거하지 마십시오. 
 - **작업 완료 및 자동 빌드 (필수):** 
    - 능력을 만들거나 수정할 땐 **반드시 `./gradlew build`를 실행**하여 문법 오류나 컴파일 에러가 없는지 확인해야 합니다.
-   - 빌드 실패 시, 오류를 수정하고 재빌드하여 성공한 뒤에 사용자에게 보고해야 합니다.
+   - **빌드 및 에러 자동 복구 강제:** 코드를 수정한 후 반복적인 `./gradlew build`는 필수입니다. **만약 빌드가 실패(BUILD FAILED)한다면, 곧바로 사용자에게 보고하지 마십시오.** 터미널 에러 로그를 스스로 꼼꼼히 분석하여 원인을 파악한 뒤, 코드를 최소 1회 이상은 스스로 수정하고 재빌드를 시도하십시오. 이 과정을 거쳐 빌드를 완벽히 통과한 뒤에만 사용자에게 보고해야 합니다.
    - "코드를 작성했으니 확인해보세요"라는 말 대신, **"빌드 테스트를 통과했습니다."** 라고 자신 있게 말할 수 있어야 합니다.
+
+- **복합 작업의 체계화:** 사용자가 복잡한 새 능력을 요구하거나 기존 시스템 리팩토링을 지시하면, 즉시 무지성으로 코딩에 돌입하지 마십시오. 먼저 `task.md`를 생성해 컴포넌트 레벨로 일을 쪼개고, `implementation_plan.md`를 통해 변경/추가될 파일 목록과 로직 방향성을 한국어로 정리하여 제시한 후 승인 여부를 기다리십시오.
 - **리소스팩(텍스처팩) 작업 빌드 면제 (오승엽 규칙):**
    - **JSON, PNG 수정 등 리소스팩 작업만 수행했을 경우에는 빌드 테스트를 절대 실행하지 마십시오.** (시간 낭비입니다.)
    - Java 코드 수정 없이 리소스팩 파일만 변경했다면 즉시 작업 완료로 간주합니다.
@@ -163,8 +175,8 @@ public List<String> getDescription() {
      - 이후 `GameManager.java`의 `onSummonerDamage` 이벤트 핸들러에 해당 능력을 추가하여 자동으로 `MOC_LastKiller`가 갱신되도록 하십시오.
    - **특수 피해/즉사 로직 연동:** `target.setHealth(0)` 또는 `target.damage(999, p)`와 같이 직접적인 피해 로직을 사용할 경우, 피해를 입히기 직전에 피해자에게 킬러의 정보를 담은 `MOC_LastKiller` 메타데이터를 주입해야 합니다.
      - 예: `target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, p.getUniqueId().toString()));`
-   - 이는 시스템이 `PlayerDeathEvent`에서 킬러를 찾지 못할 때(null)를 대비한 필수 안전 장치입니다.
-
+   - **고정 피해(True Damage) 더블 킬 버그 주의:** 타격감을 위해 `target.damage(0.0001)`을 부여하고 곧바로 `target.setHealth(0)`를 호출할 경우 `PlayerDeathEvent`가 2번 발생하여 킬 점수가 2배로 오르는 치명적 버그가 발생할 수 있습니다.
+     - **해결 로직:** 남은 체력보다 데미지가 높을 때(즉사 판정일 때)는 `target.damage()` 이벤트를 생략하고 오직 **`setHealth(0)`** 한 번만 명확히 실행하도록 조건문(`if (hitHealth <= 0)`)으로 제어해야 합니다.(곤프릭스 등의 파일 확인)
 - **버프 해제 (Cleanup) 필수 적용:**
    - 능력을 지급할 때 영구적인 포션 효과(예: 허기, 저항 등)나 능력 전용 버프를 부여하는 경우, **반드시 `cleanup(Player p)` 메서드를 오버라이드하여 해당 버프를 제거하는 로직을 추가**해야 합니다.
    - 라운드 종료, 게임 종료, 리롤, 토가 히미코 변신 해제 등의 상황에서 이전 배틀의 버프가 남아있는 버그를 방지하기 위함입니다.
@@ -227,11 +239,11 @@ public List<String> getDescription() {
 #### 2단계: 커스텀 모델 파일 (Model Geometry)
 -   **경로**: `/MOC_ResourcePack/assets/minecraft/models/item/`
 -   **파일명**: **반드시 텍스처 파일명(이미지 이름)과 동일하게 설정.** (예: `inuyasha.png` -> `inuyasha.json`)
--   **네임스페이스 필수**: `parent`와 `layer0` 경로에 `minecraft:` 접두사를 반드시 붙여야 합니다.
+-   **네임스페이스 및 구조 필수**: `parent` 키워드는 **반드시 `textures` 중괄호 바깥(최상단)에 위치**해야 합니다. 안쪽에 넣을 경우 텍스처가 깨집니다(Missing Texture). 또한 `parent`와 `layer0` 경로에 `minecraft:` 접두사를 반드시 붙여야 합니다.
     ```json
     {
-      "textures": {
       "parent": "minecraft:item/handheld",  // handheld 도구형 |  generated 일반형
+      "textures": {
         "layer0": "minecraft:item/inuyasha" 
       }
     }
@@ -251,6 +263,12 @@ public List<String> getDescription() {
 사용자가 압축을 요청하면 다음 절차를 따릅니다.
 1.  **대상**: `assets` 폴더와 `pack.mcmeta`, `pack.png` 파일만 포함.
 2.  **파일명**: `MOC_ResourcePack.zip` (프로젝트 루트에 생성)
+
+---
+
+## [S] Agent Search & Workflow Guidelines (AI 사전 필수 행동)
+- **코드 번호 할당 전:** 새로운 능력을 추가하기 전에는 반드시 파일 검색 도구(`grep_search` 등)를 사용하여 `AbilityManager.java` 등에서 이미 사용 중인 고유 코드(Code)를 파악하고, 비어있는 번호를 스스로 찾으십시오.
+- **Custom Model Data 할당 전:** 아이템 모델을 추가하기 전에는 반드시 `CustomModelDataRegistry.md` 파일을 먼저 읽어보고(`view_file`), 겹치지 않는 다음 번호를 스스로 채택하십시오.
 
 ---
 
@@ -282,6 +300,10 @@ public List<String> getDescription() {
     -   **쿨타임 무시:** 플레이어가 크리에이티브 모드일 경우, `checkCooldown`에서 항상 `true`를 반환하고 `setCooldown`에서는 쿨타임을 설정하지 않아야 한다. 이를 통해 알림 도배 없이 기술을 무한 연사하며 테스트할 수 있도록 보장한다.
 6.  **킬 판정 귀속 (Kill Attribution):**
     -   **MOC_LastKiller 활용:** 소환수, 투사체, 설치물 등이 적을 처치할 경우 킬 포인트가 원본 능력자에게 귀속되도록 `MOC_LastKiller` 메타데이터(능력자의 UUID String)를 반드시 설정해야 한다. 이는 `GameManager`의 킬 스코어보드 시스템과 연동되는 핵심 로직이다.
+7.  **[위험 방지] AbilityManager 및 기존 코드 덮어쓰기 절대 금지 (중요):**
+    -   신규 능력을 `AbilityManager.java` 등에 등록할 때, **기존에 작성되어 있던 코드를 요약(`// 생략`, `// 기존 코드` 등)하거나 삭제해서는 절대 안 됩니다.**
+    -   AI가 코드를 편집할 때 전체 파일을 덮어쓰거나 무단으로 코드를 줄이는 행위를 금지하며, 편집할 때는 반드시 **정확히 추가되어야 할 한 줄 또는 최소한의 블록만 변경(replace_file_content 등 활용)**하여 기존 데이터가 날아가는 것을 방지해야 합니다.
+    -   특히 `registerAbilities()` 메서드 안의 기존 능력자 등록 목록은 절대로 하나라도 지워져서는 안 됩니다.
 
 ---
 
@@ -329,7 +351,7 @@ public List<String> getDescription() {
 **현재 설정:**
 - **MC Version:** 1.21.11
 - **Java Version:** 21
-- **Plugin Version:** 0.1.2
+- **Plugin Version:** 0.1.3
 - **Resource Pack Version:** 1.3.0
 
 ---
@@ -337,6 +359,12 @@ public List<String> getDescription() {
 Implementation Plan 및 Task 전달 시
 반드시 한국어로 전달하시오.
 계획은 반드시 한국어로 전달하시오.
+---
+
+## [T] Command Triggers (명령어 트리거)
+사용자가 다음 키워드를 입력하면, 다른 말 없이 정해진 행동을 즉시 수행하십시오.
+- `/커밋` : `git status` 도구를 스스로 실행하여 변경된 파일을 스캔하고, **[W] 커밋 메세지 규격**에 맞춰 사용자 복사용 마크다운 텍스트를 즉시 생성 및 출력하십시오.
+
 ---
 
 ## [W] 커밋 메세지 규격 (**오승엽 커밋 메세지 규칙**)

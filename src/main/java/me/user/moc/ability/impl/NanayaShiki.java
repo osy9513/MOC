@@ -51,7 +51,7 @@ public class NanayaShiki extends Ability {
         ItemMeta meta = sword.getItemMeta();
         if (meta != null) {
             meta.setDisplayName("§b나나츠요루");
-            meta.setLore(Arrays.asList("§7우클릭 시 단검을 투척합니다.", "§7적중 시 대상에게 순간이동하며 치명적인 피해를 입힙니다.", "§8(쿨타임 18초)"));
+            meta.setLore(Arrays.asList("§7우클릭 시 단검을 투척합니다.", "§7적중 시 대상에게 순간이동하며 치명적인 피해를 입힙니다.", "§8(쿨타임 15초)"));
             meta.setUnbreakable(true);
             meta.setCustomModelData(4); // 리소스팩: nanayashiki
             sword.setItemMeta(meta);
@@ -93,7 +93,7 @@ public class NanayaShiki extends Ability {
 
         // 4. 쿨타임 체크 및 발동
         if (checkCooldown(p)) {
-            setCooldown(p, 18);
+            setCooldown(p, 15);
             fireKnife(p);
         }
     }
@@ -117,7 +117,7 @@ public class NanayaShiki extends Ability {
         visual.setItemStack(thrownKnife);
 
         arrow.addPassenger(visual);
-        p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1f, 1f);
 
         // [추가] 사거리(15칸) 제한 로직
         final org.bukkit.Location startLoc = p.getLocation();
@@ -168,12 +168,13 @@ public class NanayaShiki extends Ability {
                 // 시선 처리는 유지 (shooter.getLocation().getYaw/Pitch 사용 가능하지만 일단 그대로 둠)
                 shooter.teleport(target.getLocation().add(0, 2.5, 0));
 
-                // 대미지 45 (하트 22.5칸)
-                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
-                target.damage(45.0, shooter);
+                // 대미지 25
+                target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), shooter.getUniqueId().toString()));
+                target.damage(25.0, shooter);
 
                 // 효과
-                shooter.playSound(shooter.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 1f);
+                shooter.getWorld().playSound(shooter.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1f, 1f);
                 target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 20);
             }
 
@@ -187,10 +188,10 @@ public class NanayaShiki extends Ability {
         p.sendMessage("§c전투 ● 나나야 시키(월희)");
         p.sendMessage("§f극사 나나야를 사용합니다.");
         p.sendMessage("§f나나츠요루 우클릭 시 칼을 던집니다(사거리 15).");
-        p.sendMessage("§f적중 시 대상 위로 순간이동하며 45의 치명적인 대미지를 입힙니다.");
+        p.sendMessage("§f적중 시 대상 위로 순간이동하며 25의 대미지를 입힙니다.");
         p.sendMessage("§f[패시브] 나나야 체술: 공격 시 25% 확률로 5의 추가 고정 피해를 입힙니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 18초");
+        p.sendMessage("§f쿨타임 : 15초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 나나츠요루");
         p.sendMessage("§f장비 제거 : 철 칼");

@@ -228,7 +228,7 @@ public class Rimuru extends Ability {
         }
         p.setHealth(Math.min(maxHp, p.getHealth() + healAmount));
 
-        p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
         Bukkit.broadcastMessage("§f[리무루] 포식 횟수: "
                 + stack + "회 / 현재 크기: " + newSize + "");
     }
@@ -566,8 +566,8 @@ public class Rimuru extends Ability {
                         p.addPotionEffect(
                                 new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 40, 40, true, true, true));
                         if (!waterState.contains(p.getUniqueId())) {
-                            p.sendMessage("§b리무루 템페스트 : §f수압 추진!");
-                            p.playSound(p.getLocation(), Sound.ENTITY_DOLPHIN_SPLASH, 1f, 1f);
+                            Bukkit.broadcastMessage("§b리무루 템페스트 : §f수압 추진!");
+                            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_DOLPHIN_SPLASH, 1f, 1f);
                             waterState.add(p.getUniqueId());
                         }
                     } else {

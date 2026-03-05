@@ -113,7 +113,7 @@ public class Ddangkong extends Ability {
             // 전화 통화 중 체크
             if (isCalling.contains(p.getUniqueId())) {
                 p.sendActionBar(Component.text("§c[!] 선임과 통화 중이라 능력을 사용할 수 없습니다!"));
-                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
                 return;
             }
 
@@ -309,7 +309,7 @@ public class Ddangkong extends Ability {
                         isCalling.remove(uuid);
                         if (p.isOnline()) {
                             MocPlugin.getInstance().getServer().broadcast(Component.text("§e땅콩 : 휴... 끊었다..."));
-                            p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 2.0f); // 안도감
+                            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 2.0f); // 안도감
                         }
                     }
                 }

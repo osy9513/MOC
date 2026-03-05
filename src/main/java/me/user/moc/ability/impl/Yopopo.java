@@ -103,10 +103,10 @@ public class Yopopo extends Ability {
             yopopo.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(4.0);
         }
 
-        // [추가] 이동속도 50% 증가 (기본 좀비 속도 = 0.23 -> 50% 증가 = 0.345)
+        // [추가] 이동속도 90% 증가 (기본 좀비 속도 = 0.23 -> 90% 증가 = 0.437)
         if (yopopo.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
             double baseSpeed = yopopo.getAttribute(Attribute.MOVEMENT_SPEED).getBaseValue();
-            yopopo.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(baseSpeed * 1.5);
+            yopopo.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(baseSpeed * 1.9);
         }
 
         // 방어 속성 초기화
@@ -165,13 +165,14 @@ public class Yopopo extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§a복합 ● 요뽀뽀(갓슈벨!!/금색의 갓슈!!)");
         p.sendMessage("§f귀여운 요뽀뽀이가 당신을 도와 싸웁니다!");
+        p.sendMessage("§f요뽀뽀 책 사용법.");
         p.sendMessage("§f(요뽀뽀 체력 120)");
         p.sendMessage("§f[좌클릭] 요뽀뽀 책을 생명체를 바라보며 클릭 시 요뽀뽀가 라이터를 들고 돌진합니다.");
         p.sendMessage("§f[우클릭] 요뽀뽀가 5초간 춤을 춥니다. 춤을 출 동안엔 주변 적들이 요뽀뽀를 공격하게 유도하며,");
         p.sendMessage("§f춤추는 동안 요뽀뽀는 어떠한 데미지도 받지 않고 체력이 채워집니다.");
         p.sendMessage("§f[쉬프트 2번] 연속으로 웅크리기(Shift)를 2번 하면 요뽀뽀가 주인 옆으로 귀환하며 얌전해집니다.");
         p.sendMessage("§f");
-        p.sendMessage("§f쿨타임 : 10초");
+        p.sendMessage("§f쿨타임 : 우클릭 쿨타임 10초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 요뽀뽀 책");
         p.sendMessage("§f장비 제거 : 없음");
@@ -256,7 +257,7 @@ public class Yopopo extends Ability {
                 Bukkit.broadcastMessage("§a요뽀뽀: 요뽀뽀이!");
 
                 // 명령 후 사운드 재생
-                p.playSound(p.getLocation(), Sound.ENTITY_ZOMBIE_AMBIENT, 1f, 1.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ZOMBIE_AMBIENT, 1f, 1.5f);
             } else {
                 p.sendMessage("§c[!] 지시할 유효한 생명체가 없습니다.");
                 // 명령 취소 및 무기 원상복구
@@ -368,6 +369,12 @@ public class Yopopo extends Ability {
         if (e.getDamager() instanceof Zombie z) {
             // 주인이 지정된 요뽀뽀인지 확인
             if (isYopopo(z)) {
+                Player owner = getOwner(z);
+                if (owner != null) {
+                    e.getEntity().setMetadata("MOC_LastKiller",
+                            new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
+                }
+
                 // 손에 라이터를 들고 있다면 화염 효과 부여
                 ItemStack hand = z.getEquipment().getItemInMainHand();
                 if (hand != null && hand.getType() == Material.FLINT_AND_STEEL) {
@@ -429,7 +436,7 @@ public class Yopopo extends Ability {
                 yopopo.getEquipment().setItemInMainHand(null);
 
                 p.sendMessage("§a[!] 요뽀뽀가 당신의 곁으로 돌아와 얌전해졌습니다.");
-                p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
             } else {
                 p.sendMessage("§c요뽀뽀는 현재 춤을 추느라 바쁩니다!");
             }

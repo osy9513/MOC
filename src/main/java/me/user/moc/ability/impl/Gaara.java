@@ -180,7 +180,7 @@ public class Gaara extends Ability {
     private void firePassiveSand(Player p) {
         LivingEntity target = findTarget(p, 13);
         if (target != null) {
-            p.playSound(p.getLocation(), Sound.BLOCK_SAND_PLACE, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), Sound.BLOCK_SAND_PLACE, 1f, 1f);
 
             // 눈덩이를 발사체로 사용 (비주얼은 모래처럼 보이게 하려면 ItemDisplay를 태워야 하나 복잡하므로 단순 눈덩이+파티클)
             Snowball sandProjectile = p.launchProjectile(Snowball.class);
@@ -357,7 +357,7 @@ public class Gaara extends Ability {
             if (sandToGive > 0) {
                 p.getInventory().removeItem(new ItemStack(mat, removeAmount));
                 p.getInventory().addItem(new ItemStack(Material.SAND, sandToGive));
-                p.playSound(p.getLocation(), Sound.BLOCK_SAND_BREAK, 0.3f, 1.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.BLOCK_SAND_BREAK, 0.3f, 1.5f);
                 p.sendMessage("§e[가아라] " + mat.name() + " " + removeAmount + "개를 모래 " + sandToGive + "개로 변경했습니다.");
             }
         }

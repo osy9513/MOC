@@ -199,7 +199,7 @@ public class Umamusume extends Ability {
         Bukkit.broadcast(Component.text("§d§lURA Finals!! 우승은~! 우마무스메 " + p.getName() + " 팀 입니다~!"));
         Bukkit.broadcast(Component.text("§f "));
 
-        p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
 
         // 2. 말의 스탯 저장
         double maxHealth = Objects.requireNonNull(horse.getAttribute(Attribute.MAX_HEALTH)).getValue();
@@ -338,6 +338,7 @@ public class Umamusume extends Ability {
         p.sendMessage("트레이너로서 우마무스메를 육성하여 레이스에서 승리하세요!");
         p.sendMessage(" ");
         p.sendMessage("§f시작 시 당신의 담당 우마무스메(말)가 지급됩니다.");
+        p.sendMessage("§f10% 확률로 전설의 '고루도싯푸'가 등장합니다. (스탯 2배)");
         p.sendMessage("§f모든 플레이어는 말에게 아이템을 우클릭하여 먹일 수 있습니다.");
         p.sendMessage("§f아이템 1개당 말의 크기 +1%, 체력 +1칸, 이동속도 +1% 증가합니다.");
         p.sendMessage("§f말을 타고 " + (int) TARGET_DISTANCE + "블럭을 이동하면 우승합니다.");
@@ -346,8 +347,7 @@ public class Umamusume extends Ability {
         p.sendMessage("§f말이 집으로 돌아가고, 트레이너는 말의 최대 체력과 이동속도를 영구히 얻습니다.");
         p.sendMessage(" ");
         p.sendMessage("§c[주의]");
-        p.sendMessage("§f말이 사망 시 15초간 구속 III에 걸리며 우승이 불가능해집니다.");
-        p.sendMessage("§f10% 확률로 전설의 '고루도싯푸'가 등장합니다. (스탯 2배)");
+        p.sendMessage("§f말이 사망 시 15초간 구속 III에 걸립니다...");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");

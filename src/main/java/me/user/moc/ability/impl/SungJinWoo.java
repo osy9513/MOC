@@ -171,7 +171,7 @@ public class SungJinWoo extends Ability {
         gui.setItem(17, createGuiItem(Material.SCULK_SENSOR, "§c[Lv.20] 총군단장 워든", p.getLevel() >= 20));
 
         p.openInventory(gui);
-        p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_ENDER_CHEST_OPEN, 1f, 1f);
+        p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.BLOCK_ENDER_CHEST_OPEN, 1f, 1f);
     }
 
     private ItemStack createGuiItem(Material mat, String name, boolean canAfford) {
@@ -207,7 +207,7 @@ public class SungJinWoo extends Ability {
 
         int reqLevel = getRequiredLevel(slot);
         if (reqLevel == -1 || p.getLevel() < reqLevel) {
-            p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             p.sendMessage("§c레벨이 부족합니다!");
             return;
         }
@@ -215,7 +215,7 @@ public class SungJinWoo extends Ability {
         // 레벨 차감
         p.setLevel(p.getLevel() - reqLevel);
         p.closeInventory();
-        p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EVOKER_CAST_SPELL, 1f, 0.8f);
+        p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.ENTITY_EVOKER_CAST_SPELL, 1f, 0.8f);
 
         // 소환 로직 호출
         spawnShadow(p, slot);

@@ -144,7 +144,7 @@ public class CuChulainn extends Ability {
             }.runTaskLater(plugin, 200L);
 
             p.sendMessage("§c[!] §f대상에게 게이 볼그의 저주를 걸었습니다. (10초)");
-            p.playSound(p.getLocation(), Sound.ENTITY_VEX_CHARGE, 1f, 0.5f);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_VEX_CHARGE, 1f, 0.5f);
 
             // 쿨타임 9초 설정
             setLeftCooldown(p, 9);

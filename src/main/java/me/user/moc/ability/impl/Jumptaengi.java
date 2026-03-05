@@ -1,5 +1,7 @@
 package me.user.moc.ability.impl;
 
+import org.bukkit.Bukkit;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -141,8 +143,8 @@ public class Jumptaengi extends Ability {
         projectile.setShooter(p);
         projectile.setMetadata("JumptaengiBall", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
 
-        p.playSound(p.getLocation(), Sound.ENTITY_WITCH_THROW, 1f, 1.5f);
-        p.sendMessage("§d점탱이 : 털박이가 되어라 호잇");
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITCH_THROW, 1f, 1.5f);
+        Bukkit.broadcastMessage("§d점탱이 : 털박이가 되어라 호잇");
 
         // [Effect] 발사체 트레일
         BukkitTask trailTask = new BukkitRunnable() {
@@ -259,7 +261,7 @@ public class Jumptaengi extends Ability {
                         p.getInventory().clear();
 
                         p.sendMessage("§c인벤토리가 초기화되었습니다.");
-                        p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 0.5f);
                         p.getWorld().spawnParticle(org.bukkit.Particle.LARGE_SMOKE, p.getLocation(), 10, 0.2, 0.5, 0.2,
                                 0.05);
                     }
@@ -325,7 +327,7 @@ public class Jumptaengi extends Ability {
                     // 복구 메시지
                     if (p.isOnline()) {
                         p.sendMessage("§a변신이 해제되어 원래 모습으로 돌아왔습니다.");
-                        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
                     }
                 } else {
                     // 아이템 복구 안함 (재변신 등을 위해) -> 맵에서만 제거

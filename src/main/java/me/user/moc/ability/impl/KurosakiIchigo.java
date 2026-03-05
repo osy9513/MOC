@@ -115,7 +115,7 @@ public class KurosakiIchigo extends Ability {
     private void activateHollow(Player p) {
         isHollow.add(p.getUniqueId());
         p.getServer().broadcastMessage("§c§l쿠로사키 이치고 : §f내가 지킨다!!");
-        p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 0.5f);
 
         // 지속 효과 (7.5초)
         // 신속 2, 재생 2
@@ -253,7 +253,7 @@ public class KurosakiIchigo extends Ability {
                 p.teleport(teleLoc);
 
                 p.getWorld().spawnParticle(Particle.SWEEP_ATTACK, target.getLocation().add(0, 1, 0), 1);
-                p.playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
             }
         }
     }

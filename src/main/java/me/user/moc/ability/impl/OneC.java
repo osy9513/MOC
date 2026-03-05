@@ -120,7 +120,7 @@ public class OneC extends Ability {
             plugin.getServer()
                     .broadcastMessage("§e[" + target.getName() + "] 의 능력이 [" + abilityName + "] (으)로 변경되었습니다.");
 
-            target.playSound(target.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f);
+            target.getWorld().playSound(target.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f);
         }
 
         // 이벤트 취소는 하지 않고, 직접적으로 데미지를 주고 이펙트 등을 가함.

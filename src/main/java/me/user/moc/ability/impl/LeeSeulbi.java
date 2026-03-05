@@ -214,7 +214,7 @@ public class LeeSeulbi extends Ability {
                 if (states.getOrDefault(p.getUniqueId(), SubwayState.NONE) == SubwayState.SUMMONING) {
                     states.put(p.getUniqueId(), SubwayState.SUMMONED);
                     p.sendMessage("§a[!] 지하철 소환 완료. 다시 쉬프트+좌클릭하여 투척하세요!");
-                    p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.5f, 1.5f);
+                    p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.5f, 1.5f);
                 }
             }
         }.runTaskLater(plugin, 60L);

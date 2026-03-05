@@ -113,7 +113,7 @@ public class Olaf extends Ability {
         // 메시지 출력
         p.getServer().broadcastMessage("§c올라프 : 형씨마시아!");
         // 효과음
-        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.5f);
+        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.5f);
 
         Location startLoc = p.getEyeLocation().subtract(0, 0.2, 0); // 눈높이보다 살짝 아래
         Vector dir = startLoc.getDirection().normalize();
@@ -293,7 +293,7 @@ public class Olaf extends Ability {
                     cooldowns.remove(p.getUniqueId());
 
                     p.sendMessage("§a[!] 도끼 회수");
-                    p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                    p.getWorld().playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
 
                 } else {
                     // 주인이 아님 -> 줍기 불가
