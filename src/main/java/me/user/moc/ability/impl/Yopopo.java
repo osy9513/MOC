@@ -90,7 +90,11 @@ public class Yopopo extends Ability {
         Location spawnLoc = p.getLocation().clone().add(1, 0, 1);
         Zombie yopopo = spawnLoc.getWorld().spawn(spawnLoc, Zombie.class);
         yopopo.setBaby(); // 아기 좀비
-        yopopo.setCustomName("§a요뽀뽀");
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            yopopo.setCustomName("§d토가의 요뽀뽀");
+        } else {
+            yopopo.setCustomName("§a요뽀뽀");
+        }
         yopopo.setCustomNameVisible(true);
         yopopo.setRemoveWhenFarAway(false);
 

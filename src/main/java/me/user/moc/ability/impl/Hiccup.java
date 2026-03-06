@@ -113,7 +113,11 @@ public class Hiccup extends Ability {
         dragon.teleport(spawnLoc);
 
         // 커스텀 이름 및 메타데이터 설정 (주인 인식 및 킬러 연동)
-        dragon.setCustomName("§8[ §0투슬리스 §8]");
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            dragon.setCustomName("§8[ §d토가의 투슬리스 §8]");
+        } else {
+            dragon.setCustomName("§8[ §0투슬리스 §8]");
+        }
         dragon.setCustomNameVisible(true);
         dragon.setMetadata("HiccupOwner", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
         dragon.setMetadata("MOC_Summon", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
