@@ -784,6 +784,17 @@ public class GameManager implements Listener {
 
     // 아이템 지급 로직 (요청하신 순서 준수)
     private void giveBattleItems(Player p) {
+        giveBasicItems(p);
+
+        // 고유 능력 아이템 (AbilityManager가 지급)
+        if (abilityManager != null) {
+            abilityManager.giveAbilityItems(p);
+        }
+
+        p.sendMessage("§a[MOC] 모든 전투 아이템이 지급되었습니다! 행운을 빕니다.");
+    }
+
+    public void giveBasicItems(Player p) {
         p.getInventory().clear();
 
         // 1. 철 칼
@@ -796,12 +807,12 @@ public class GameManager implements Listener {
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
 
         // 6. [추가] 1레벨 체력 재생 포션 (1분)
-        // 1.21 버전 대응 코드
         ItemStack regenPotion = new ItemStack(Material.POTION);
-        PotionMeta meta = (PotionMeta) regenPotion.getItemMeta();
+        org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) regenPotion.getItemMeta();
         if (meta != null) {
-            // 커스텀 이펙트로 정확히 1분(1200틱), 레벨 1(amplifier 0) 부여
-            meta.addCustomEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 60, 0), true);
+            meta.addCustomEffect(
+                    new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.REGENERATION, 20 * 60, 0),
+                    true);
             meta.setDisplayName("§d재생의 물약 (1분)");
             meta.setCustomModelData(2); // 리소스팩: health_potion
             regenPotion.setItemMeta(meta);
@@ -811,21 +822,7 @@ public class GameManager implements Listener {
         // 7. 철 흉갑 자동으로 입혀주기
         p.getInventory().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
 
-        // [추가] 점수판 가동
-        if (plugin.getScoreboardManager() != null) {
-            plugin.getScoreboardManager().start();
-        }
-        // // [▲▲▲ 여기까지 변경됨 ▲▲▲]
-
-        // 인벤토리 새로고침 (아이템이 바뀐 걸 유저 화면에 즉시 적용)
         p.updateInventory();
-
-        // 8. 고유 능력 아이템 (AbilityManager가 지급)
-        if (abilityManager != null) {
-            abilityManager.giveAbilityItems(p);
-        }
-
-        p.sendMessage("§a[MOC] 모든 전투 아이템이 지급되었습니다! 행운을 빕니다.");
     }
 
     // =========================================================================
@@ -835,11 +832,6 @@ public class GameManager implements Listener {
         if (!isRunning) {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
             return;
-        }
-
-        // [추가] 점수판 중지 (동기화 이슈 방지 위해 가장 먼저 끔)
-        if (plugin.getScoreboardManager() != null) {
-            plugin.getScoreboardManager().stop();
         }
 
         // [버그 수정] 예약된 시작 태스크가 있다면 취소
@@ -1320,9 +1312,16 @@ public class GameManager implements Listener {
 
             int score = scores.getOrDefault(uuid, 0);
 
-            String abilityCode = (abilityManager != null && abilityManager.getPlayerAbilities() != null)
-                    ? abilityManager.getPlayerAbilities().get(uuid)
-                    : null;
+            String abilityCode = null;
+            if (abilityManager != null && abilityManager.getPlayerAbilities() != null) {
+                abilityCode = abilityManager.getPlayerAbilities().get(uuid);
+                // [버그 수정] 토가 히미코가 변신 상태일 때 게임이 끝나면(능력 해제보다 스코어보드 출력이 더 빠름) 변신한 소환수 이름으로 출력되는 버그
+                // 수정
+                me.user.moc.ability.Ability togaAb = abilityManager.getAbility("047");
+                if (togaAb instanceof me.user.moc.ability.impl.TogaHimiko toga && toga.isTransformed(uuid)) {
+                    abilityCode = "047"; // 변신 중이라도 통계창에서는 본체(토가 히미코)로 표기
+                }
+            }
             String abilityName = "없음";
             int usage = 0;
 

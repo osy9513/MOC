@@ -40,6 +40,8 @@ public class Yopopo extends Ability {
     private final Map<UUID, Zombie> yopopoMap = new HashMap<>();
     // 요뽀뽀가 현재 춤추고 있는지 여부를 저장
     private final Set<UUID> dancingYopopos = new HashSet<>();
+    // 요뽀뽀가 주인에게 달려서 복귀 중인지 여부를 저장 (Entity UUID 기준)
+    private final Set<UUID> returningYopopos = new HashSet<>();
 
     public Yopopo(JavaPlugin plugin) {
         super(plugin);
@@ -88,7 +90,11 @@ public class Yopopo extends Ability {
         Location spawnLoc = p.getLocation().clone().add(1, 0, 1);
         Zombie yopopo = spawnLoc.getWorld().spawn(spawnLoc, Zombie.class);
         yopopo.setBaby(); // 아기 좀비
-        yopopo.setCustomName("§a요뽀뽀");
+        if (me.user.moc.ability.impl.TogaHimiko.isToga(p)) {
+            yopopo.setCustomName("§d토가의 요뽀뽀");
+        } else {
+            yopopo.setCustomName("§a요뽀뽀");
+        }
         yopopo.setCustomNameVisible(true);
         yopopo.setRemoveWhenFarAway(false);
 
@@ -170,7 +176,7 @@ public class Yopopo extends Ability {
         p.sendMessage("§f[좌클릭] 요뽀뽀 책을 생명체를 바라보며 클릭 시 요뽀뽀가 라이터를 들고 돌진합니다.");
         p.sendMessage("§f[우클릭] 요뽀뽀가 5초간 춤을 춥니다. 춤을 출 동안엔 주변 적들이 요뽀뽀를 공격하게 유도하며,");
         p.sendMessage("§f춤추는 동안 요뽀뽀는 어떠한 데미지도 받지 않고 체력이 채워집니다.");
-        p.sendMessage("§f[쉬프트 2번] 연속으로 웅크리기(Shift)를 2번 하면 요뽀뽀가 주인 옆으로 귀환하며 얌전해집니다.");
+        p.sendMessage("§f[쉬프트 2번] 연속으로 웅크리기(Shift)를 2번 하면 요뽀뽀가 주인 곁으로 재빨리 달려오며 얌전해집니다.");
         p.sendMessage("§f");
         p.sendMessage("§f쿨타임 : 우클릭 쿨타임 10초");
         p.sendMessage("§f---");
@@ -187,11 +193,16 @@ public class Yopopo extends Ability {
     private void cleanupYopopo(UUID uuid) {
         if (yopopoMap.containsKey(uuid)) {
             Zombie yopopo = yopopoMap.get(uuid);
-            if (yopopo != null && yopopo.isValid()) {
-                yopopo.remove();
+            if (yopopo != null) {
+                // 기존 버그 수정: dancingYopopos는 엔티티 UUID를 기준이므로 owner UUID가 아닌 yopopo.getUniqueId()
+                // 사용
+                dancingYopopos.remove(yopopo.getUniqueId());
+                returningYopopos.remove(yopopo.getUniqueId());
+                if (yopopo.isValid()) {
+                    yopopo.remove();
+                }
             }
             yopopoMap.remove(uuid);
-            dancingYopopos.remove(uuid);
         }
     }
 
@@ -428,15 +439,15 @@ public class Yopopo extends Ability {
 
             // 춤추는 중이 아닐 때만 귀환 가능
             if (!dancingYopopos.contains(yopopo.getUniqueId())) {
-                // 요뽀뽀 텔레포트
-                yopopo.teleport(p.getLocation().clone().add(0, 0, 1)); // 주인 바로 옆 (Z축 1)
+                // 기존 강제 텔레포트 삭제하고 복귀 모드 활성화 (달려옴)
+                returningYopopos.add(yopopo.getUniqueId());
 
                 // 타겟 및 공격 상태 초기화 (얌전해짐)
                 yopopo.setTarget(null);
                 yopopo.getEquipment().setItemInMainHand(null);
 
-                p.sendMessage("§a[!] 요뽀뽀가 당신의 곁으로 돌아와 얌전해졌습니다.");
-                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1.5f);
+                Bukkit.broadcastMessage("§a" + p.getName() + ": 요뽀뽀 돌아와!");
+                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ZOMBIE_AMBIENT, 1f, 1.5f);
             } else {
                 p.sendMessage("§c요뽀뽀는 현재 춤을 추느라 바쁩니다!");
             }
@@ -460,7 +471,7 @@ public class Yopopo extends Ability {
     }
 
     /**
-     * 무조건 요뽀뽀를 얌전하게 만드는 패시브 태스크. (때려도 반격 안함)
+     * 무조건 요뽀뽀를 얌전하게 만드는 패시브 태스크. (때려도 반격 안함 및 귀환 처리)
      */
     private void startPassiveTask() {
         new BukkitRunnable() {
@@ -481,16 +492,46 @@ public class Yopopo extends Ability {
                         if (z.getTarget() != null) {
                             z.setTarget(null);
                         }
+
+                        // 주인이 부른 상태(귀환 중)라면 주인을 향해 달리기
+                        if (returningYopopos.contains(z.getUniqueId())) {
+                            Player owner = getOwner(z);
+                            if (owner != null && owner.isOnline()) {
+                                if (z.getWorld().equals(owner.getWorld())) {
+                                    double dist = z.getLocation().distance(owner.getLocation());
+                                    // 2블럭 이내로 다가오면 도착 판정 (귀환 종료)
+                                    if (dist <= 2.0) {
+                                        z.getPathfinder().stopPathfinding();
+                                        returningYopopos.remove(z.getUniqueId());
+                                    } else if (dist > 1500.0) {
+                                        // 주인이 1500블럭 밖으로 너무 멀어지면 달려서 못 따라가므로 텔레포트
+                                        z.teleport(owner.getLocation());
+                                        returningYopopos.remove(z.getUniqueId());
+                                    } else {
+                                        // 주인을 향해 Paper API를 사용해 호다닥 달리기 (1.5배 속도)
+                                        z.getPathfinder().moveTo(owner, 1.5);
+                                    }
+                                } else {
+                                    // 다른 월드면 바로 텔레포트
+                                    z.teleport(owner.getLocation());
+                                    returningYopopos.remove(z.getUniqueId());
+                                }
+                            } else {
+                                returningYopopos.remove(z.getUniqueId());
+                            }
+                        }
                     } else if (hand != null && hand.getType() == Material.FLINT_AND_STEEL) {
                         // 공격대상을 못 찾았거나 대상이 없고, 춤을 안 추고 있다면 아무도 공격 안하게 변경
                         if (z.getTarget() == null || z.getTarget().isDead() || z.getTarget().equals(getOwner(z))) {
                             z.setTarget(null);
                             z.getEquipment().setItemInMainHand(null);
                         }
+                        // 다시 공격 명령이 내려지면 복귀 명령어 취소
+                        returningYopopos.remove(z.getUniqueId());
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0L, 5L); // 0.25초마다 타겟 강제 해제
+        }.runTaskTimer(plugin, 0L, 5L); // 0.25초마다 타겟 강제 해제 및 귀환 갱신
     }
 
     /**
@@ -515,6 +556,7 @@ public class Yopopo extends Ability {
                 // 맵에서 제거
                 yopopoMap.remove(owner.getUniqueId());
                 dancingYopopos.remove(z.getUniqueId());
+                returningYopopos.remove(z.getUniqueId());
             }
             e.getDrops().clear(); // 유품 방지
             e.setDroppedExp(0);

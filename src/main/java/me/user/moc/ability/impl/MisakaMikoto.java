@@ -16,6 +16,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -228,6 +230,10 @@ public class MisakaMikoto extends Ability {
 
     // [▼▼▼ 새로운 메서드: 블레이즈 막대 투사체 발사 ▼▼▼]
     private void launchFullPowerProjectile(Player p) {
+        // 발사 순간 0.5초(10틱) 동안 이동 및 점프 불가 (구속 및 디버프 점프)
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 10, 225, true, true, true));
+        applyJumpSilence(p, 10);
+
         // 1. 투사체(화살) 생성 - 중력 무시, 빠른 속도
         Arrow arrow = p.launchProjectile(Arrow.class);
         arrow.setShooter(p);
@@ -245,6 +251,7 @@ public class MisakaMikoto extends Ability {
         // 3. 파티클 트레일 (노란색 전기) - Runnable로 따라가며 생성
         new BukkitRunnable() {
             int ticks = 0;
+            org.bukkit.Location lastLoc = p.getEyeLocation(); // 시작 지점 저장
 
             @Override
             public void run() {
@@ -265,18 +272,49 @@ public class MisakaMikoto extends Ability {
                 }
 
                 ticks++;
+                org.bukkit.Location currentLoc = arrow.getLocation();
 
-                // 파티클 생성 (화살 위치)
-                DustOptions electricOptions = new DustOptions(Color.YELLOW, 1.5f);
-                // DUST (노랑) + WAX_ON (별)
-                arrow.getWorld().spawnParticle(Particle.DUST, arrow.getLocation(), 5, 0.2, 0.2, 0.2, 0,
-                        electricOptions);
-                arrow.getWorld().spawnParticle(Particle.WAX_ON, arrow.getLocation(), 2, 0.1, 0.1, 0.1, 0);
+                // [이펙트 강화] 이전 위치부터 현재 위치까지 선을 그으며 블레이즈 막대와 파티클 나열
+                if (lastLoc != null && currentLoc != null && lastLoc.getWorld().equals(currentLoc.getWorld())) {
+                    double dist = lastLoc.distance(currentLoc);
+                    if (dist > 0) {
+                        Vector stepDir = currentLoc.toVector().subtract(lastLoc.toVector()).normalize();
+                        // 1.5칸 간격으로 촘촘히 설치 (잔상 이펙트)
+                        for (double d = 0; d <= dist; d += 1.5) {
+                            org.bukkit.Location trailLoc = lastLoc.clone().add(stepDir.clone().multiply(d));
+
+                            // 진행 방향을 바라보게 설정
+                            trailLoc.setDirection(stepDir);
+
+                            // 블레이즈 막대(ItemDisplay) 생성
+                            ItemDisplay trailDisplay = (ItemDisplay) trailLoc.getWorld().spawnEntity(trailLoc,
+                                    EntityType.ITEM_DISPLAY);
+                            trailDisplay.setItemStack(new ItemStack(Material.BLAZE_ROD));
+
+                            // 이펙트 생성 (노랑 + 별)
+                            DustOptions electricOptions = new DustOptions(Color.YELLOW, 1.5f);
+                            trailLoc.getWorld().spawnParticle(Particle.DUST, trailLoc, 2, 0.1, 0.1, 0.1, 0,
+                                    electricOptions);
+                            trailLoc.getWorld().spawnParticle(Particle.WAX_ON, trailLoc, 1, 0.1, 0.1, 0.1, 0);
+
+                            // 1초(20틱) 후 잔상(블레이즈 막대) 제거
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    if (trailDisplay.isValid()) {
+                                        trailDisplay.remove();
+                                    }
+                                }
+                            }.runTaskLater(plugin, 20L);
+                        }
+                    }
+                }
+                lastLoc = currentLoc;
 
                 // [추가] 판정 범위 확대 (반경 3.0) 수동 충돌 체크
                 // 화살의 히트박스는 작으므로, 주변 3칸 내에 적이 있으면 맞은 것으로 처리
                 // (단, 본인은 제외)
-                for (Entity target : arrow.getWorld().getNearbyEntities(arrow.getLocation(), 3.0, 3.0, 3.0)) {
+                for (Entity target : arrow.getWorld().getNearbyEntities(currentLoc, 3.0, 3.0, 3.0)) {
                     if (target instanceof LivingEntity && target != p) {
                         if (target instanceof Player pl && pl.getGameMode() == GameMode.SPECTATOR)
                             continue;

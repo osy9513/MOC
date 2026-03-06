@@ -58,10 +58,10 @@ public class UchihaItachi extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§c전투 ● 우치하 이타치(나루토)");
         p.sendMessage("§f맨손 쉬프트 좌클릭 시 10초 동안 바라본 블럭 및 생명체가");
-        p.sendMessage("§f검은 붉꽃에 의해 0.25초에 1데미지를 받으며 불탑니다.");
-        p.sendMessage("§f10초 뒤 2초간 실명에 걸립니다.");
+        p.sendMessage("§f검은 불꽃에 의해 4초간 0.5초에 1데미지를 받으며 불탑니다.");
+        p.sendMessage("§f지속시간(10초)이 끝난 뒤 쿨타임이 돌며 6초간 실명에 걸립니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 15초");
+        p.sendMessage("§f쿨타임 : 20초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
@@ -96,7 +96,6 @@ public class UchihaItachi extends Ability {
             return;
 
         // 5. 능력 사용 성공
-        setCooldown(p, 15); // 15초 쿨타임 지정
         startAmaterasu(p);
     }
 
@@ -104,7 +103,7 @@ public class UchihaItachi extends Ability {
         activeAmaterasu.add(p.getUniqueId());
 
         // 전체 메세지 출력 ("우치하 이타치: 아마테라스")
-        Bukkit.broadcastMessage("§c우치하 이타치: §0아마테라스");
+        Bukkit.broadcastMessage("§c우치하 이타치: §8아마테라스");
 
         // 발동 사운드 (선택적)
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 1f, 0.5f);
@@ -118,6 +117,7 @@ public class UchihaItachi extends Ability {
                 // 이타치가 죽거나 다른 능력을 가지게 되면 취소
                 if (!p.isOnline() || p.isDead() || !AbilityManager.getInstance().hasAbility(p, getCode())) {
                     activeAmaterasu.remove(p.getUniqueId());
+                    setCooldown(p, 20);
                     cancel();
                     return;
                 }
@@ -186,8 +186,10 @@ public class UchihaItachi extends Ability {
                 if (ticks >= MAX_TICKS) {
                     // 10초 종료 시
                     activeAmaterasu.remove(p.getUniqueId());
-                    // 이타치 본인에게 2초간 실명
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 40, 0, false, false));
+                    // 쿨타임 측정 시작
+                    setCooldown(p, 20);
+                    // 이타치 본인에게 6초간 실명 (120틱)
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 120, 0, false, false));
                     cancel();
                 }
             }
@@ -204,24 +206,25 @@ public class UchihaItachi extends Ability {
         World w = loc.getWorld();
         if (w == null)
             return;
-        w.spawnParticle(Particle.SQUID_INK, loc, 5, 0.2, 0.2, 0.2, 0.01);
-        w.spawnParticle(Particle.SMALL_FLAME, loc, 2, 0.2, 0.2, 0.2, 0.0);
+        w.spawnParticle(Particle.SQUID_INK, loc, 20, 0.5, 0.5, 0.5, 0.05);
+        w.spawnParticle(Particle.LARGE_SMOKE, loc, 10, 0.5, 0.5, 0.5, 0.02);
+        w.spawnParticle(Particle.FLAME, loc, 5, 0.3, 0.3, 0.3, 0.02);
     }
 
     /**
-     * 타겟에게 10초간 검은 불꽃(피격 피해)을 입히는 별도 스케줄러 실행
-     * 파티클 4초, 도트뎀 10초(0.25초당 1데미지)
+     * 타겟에게 지정된 시간 동안 검은 불꽃(피격 피해)을 입히는 별도 스케줄러 실행
+     * 파티클 4초, 도트뎀 4초(0.5초당 1데미지)
      */
     private void applyAmaterasuBurn(Player itachi, LivingEntity target) {
         // 이미 불타고 있으면 스케줄 중복 방지 (원한다면 갱신 처리 가능)
         if (burningTargets.containsKey(target.getUniqueId()))
             return;
 
-        target.setFireTicks(200); // 바닥 바닐라 불 효과도 붙여줌
+        target.setFireTicks(80); // 바닥 바닐라 불 효과도 4초로 변경
 
         BukkitTask burnTask = new BukkitRunnable() {
             int intervals = 0;
-            final int MAX_INTERVALS = 40; // 10초 (0.25초 * 40회 = 10초)
+            final int MAX_INTERVALS = 8; // 4초 (0.5초 * 8회 = 4초)
 
             @Override
             public void run() {
@@ -231,7 +234,7 @@ public class UchihaItachi extends Ability {
                     return;
                 }
 
-                // 매 0.25초 (5틱)마다 1데미지 무적 무시 판정
+                // 매 0.5초 (10틱)마다 1데미지 무적 무시 판정
                 if (target instanceof Damageable dmg) {
                     // MOC_LastKiller 주입 (킬 판정)
                     target.setMetadata("MOC_LastKiller",
@@ -241,10 +244,8 @@ public class UchihaItachi extends Ability {
                     dmg.damage(1.0, itachi); // 1.0 데미지
                 }
 
-                // 처음 4초간만 파티클 진행 (16회 * 0.25 = 4초)
-                if (intervals < 16) {
-                    spawnAmaterasuParticles(target.getLocation().add(0, 1, 0));
-                }
+                // 지정된 시간(4초) 동안 무조건 파티클 뿜어내기
+                spawnAmaterasuParticles(target.getLocation().add(0, 1, 0));
 
                 intervals++;
 
@@ -253,7 +254,7 @@ public class UchihaItachi extends Ability {
                     cancel();
                 }
             }
-        }.runTaskTimer(plugin, 0L, 5L); // 0.25초(5틱) 간격
+        }.runTaskTimer(plugin, 0L, 10L); // 0.5초(10틱) 간격
 
         burningTargets.put(target.getUniqueId(), burnTask);
 

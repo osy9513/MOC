@@ -89,7 +89,7 @@ public class EmiyaShirou extends Ability {
         p.sendMessage("§f기존의 무한 검제 영창을 자동으로 시작합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f[무한의 검제]");
-        p.sendMessage("§f영창 완료 후 자신 주변 5x5 지형에서 검이 1초 간격으로 바닥에서 솟아오릅니다.");
+        p.sendMessage("§f영창 완료 후 자신 주변 5x5 지형에서 검이 5초 간격으로 바닥에서 10개씩 솟아오릅니다.");
         p.sendMessage("§f검 주변에 적이 발견되면 자동으로 날아가 꽂히며 §c4의 데미지§f를 줍니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초");
@@ -285,7 +285,7 @@ public class EmiyaShirou extends Ability {
 
     private void startUBW(Player p) {
         UUID uuid = p.getUniqueId();
-        // 검 생성 스케줄러 (1초마다 3개씩, 무제한)
+        // 검 생성 스케줄러 (5초마다 10개씩, 무제한)
         BukkitTask spawnTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -295,8 +295,8 @@ public class EmiyaShirou extends Ability {
                     return;
                 }
 
-                // [수정] 한 번에 2개씩 소환
-                for (int k = 0; k < 2; k++) {
+                // [수정] 한 번에 10개씩 소환
+                for (int k = 0; k < 10; k++) {
                     // 실시간 플레이어 위치 추적하여 주변에 소환
                     Location center = p.getLocation();
                     // 5x5 범위 (반경 2.5) 내 랜덤 위치
@@ -335,7 +335,7 @@ public class EmiyaShirou extends Ability {
                     spawnRisingSwordAction(p, spawnLoc);
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L); // 1초마다 실행
+        }.runTaskTimer(plugin, 0L, 100L); // 5초마다 실행
 
         registerTask(p, spawnTask);
     }
@@ -478,7 +478,8 @@ public class EmiyaShirou extends Ability {
                             continue;
 
                         // 타격
-                        le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
+                        le.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), owner.getUniqueId().toString()));
                         le.damage(4.0, owner);
                         le.getWorld().playSound(le.getLocation(), Sound.ENTITY_ARROW_HIT, 1f, 1f);
 

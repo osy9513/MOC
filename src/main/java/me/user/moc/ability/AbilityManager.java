@@ -65,7 +65,7 @@ public class AbilityManager {
         addAbility(new Saitama(plugin)); // 사이타마 등록
         addAbility(new Ranga(plugin)); // 란가 등록
         addAbility(new AsuiTsuyu(plugin)); // 아스이 츠유 등록
-        addAbility(new Byakuya(plugin)); // 뱌쿠야 등록
+        addAbility(new Byakuya(plugin)); // 쿠야 등록
         addAbility(new GoldSilverAxe(plugin)); // 금도끼 은도끼 등록
         addAbility(new Alex(plugin)); // 알렉스 등록
         addAbility(new Zenitsu(plugin)); // 아가츠마 젠이츠 등록
@@ -135,6 +135,7 @@ public class AbilityManager {
         addAbility(new UchihaItachi(plugin)); // 067 우치하 이타치
         addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
         addAbility(new Chell(plugin)); // 070 첼
+        addAbility(new Hiccup(plugin)); // 071 히컵
         //
         //
         //
@@ -316,8 +317,17 @@ public class AbilityManager {
      * [추가] 라운드 시작(전투 돌입) 시 최종 확정된 능력들에 대해서만 사용 횟수를 1씩 증가시킵니다.
      */
     public void recordFinalUsages() {
-        for (String code : playerAbilities.values()) {
+        for (java.util.Map.Entry<java.util.UUID, String> entry : playerAbilities.entrySet()) {
+            String code = entry.getValue();
             if (code != null) {
+                // 토가 히미코 변신 중일 때는 껍데기(타겟 능력)가 아닌 본체(토가 히미코) 기준으로 카운팅
+                Ability togaAb = getAbility("047");
+                if (togaAb instanceof me.user.moc.ability.impl.TogaHimiko) {
+                    me.user.moc.ability.impl.TogaHimiko toga = (me.user.moc.ability.impl.TogaHimiko) togaAb;
+                    if (toga.isTransformed(entry.getKey())) {
+                        code = "047";
+                    }
+                }
                 gameUsageCounts.put(code, gameUsageCounts.getOrDefault(code, 0) + 1);
             }
         }
