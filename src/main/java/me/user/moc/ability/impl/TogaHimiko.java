@@ -238,38 +238,45 @@ public class TogaHimiko extends Ability {
                     return;
                 }
 
-                // 3. 변신 실행
-                // [중첩 방지] 이미 변신 중이라면, 먼저 해제하고 다시 변신?
-                // -> 네. savedStates가 덮어씌워지면 원래대로 못 돌아오므로,
-                // 이미 변신 중이라면 '원래 상태'는 유지한 채 변신 대상만 갱신해야 함.
-                if (isTransformed.contains(p.getUniqueId())) {
-                    // 현재 변신 중인 능력의 소환수 등을 정리
-                    String currentAbCode = am.getPlayerAbilities().get(p.getUniqueId());
-                    Ability currentAb = am.getAbility(currentAbCode);
-                    if (currentAb != null)
-                        currentAb.cleanup(p);
+                // [버그 수정] 포션을 다 마시고 나면 바닐라 시스템상 '빈 유리병'이 플레이어의 손(또는 인벤토리)으로 반환되는데,
+                // 이 유리병이 방금 새로 지급받은 능력 전용 고유템 슬롯을 덮어씌워버리는 버그 발생 방지용으로 에어 반환 세팅
+                e.setReplacement(new ItemStack(Material.AIR));
 
-                    // (주의) savedStates는 건드리지 않음 (최초의 원본이므로)
-                } else {
-                    // 최초 변신: 원본 저장
-                    saveOriginalState(p);
-                }
+                // [중요 수정] 변신 로직을 이벤트가 완전히 끝난 직후(1틱 뒤)에 실행하도록 지연시킵니다.
+                // 만약 이 안에서 인벤토리를 즉시 초기화해버리면, 바닐라 엔진이 이벤트 종료 후 빈 병 처리를 할 때 배열 꼬임이 발생합니다.
+                final String finalTargetName = targetName;
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!p.isOnline())
+                            return;
 
-                transformToTarget(p, target, am);
+                        // 3. 변신 실행
+                        if (isTransformed.contains(p.getUniqueId())) {
+                            // 현재 변신 중인 능력의 소환수 등을 정리
+                            String currentAbCode = am.getPlayerAbilities().get(p.getUniqueId());
+                            Ability currentAb = am.getAbility(currentAbCode);
+                            if (currentAb != null)
+                                currentAb.cleanup(p);
+                        } else {
+                            // 최초 변신: 원본 저장
+                            saveOriginalState(p);
+                        }
 
-                // 체력 비례/절대값 유지: 현재 체력을 복사
-                // (어빌리티 변경 시 MaxHealth가 먼저 바뀌지만, 혹시를 대비해 기존 체력을 읽어둠)
-                double currentHealthBefore = p.getHealth();
+                        // 체력 비례/절대값 유지: 현재 체력을 복사
+                        double currentHealthBefore = p.getHealth();
 
-                transformToTarget(p, target, am);
+                        transformToTarget(p, target, am);
 
-                // 체력 4칸(8.0) 회복 후 최대 체력 초과 방지
-                double newHealth = Math.min(currentHealthBefore + 8.0,
-                        p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
-                p.setHealth(newHealth);
+                        // 체력 4칸(8.0) 회복 후 최대 체력 초과 방지
+                        double newHealth = Math.min(currentHealthBefore + 8.0,
+                                p.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
+                        p.setHealth(newHealth);
 
-                p.sendMessage("§d" + targetName + "(으)로 변신했습니다! (30초 지속)");
-                p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 1f);
+                        p.sendMessage("§d" + finalTargetName + "(으)로 변신했습니다! (30초 지속)");
+                        p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 1f);
+                    }
+                }.runTaskLater(plugin, 1L);
             }
         }
     }
@@ -398,9 +405,8 @@ public class TogaHimiko extends Ability {
             am.changeAbilityTemporary(p, actualCodeToGive);
             ignoringCleanup.remove(p.getUniqueId());
 
-            // 3. 인벤토리 복사 (중요: giveItem 보다 먼저 수행해야 새로 받은 고유 아이템이 덮어씌워지지 않음)
-            p.getInventory().setContents(target.getInventory().getContents());
-            p.getInventory().setArmorContents(target.getInventory().getArmorContents());
+            // 3. 인벤토리 완전 초기화 후 기본템 재지급 (상대방 인벤토리를 그대로 복붙하면 기존 아이템과 겹쳐서 증식/사라짐 버그 발생)
+            ((MocPlugin) plugin).getGameManager().giveBasicItems(p);
 
             // [중요] 능력을 부여받았으므로 초기화 로직(소환, 태스크 시작 등)을 수행해야 합니다.
             Ability newAbility = am.getAbility(actualCodeToGive);
