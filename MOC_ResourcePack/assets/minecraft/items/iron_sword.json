@@ -114,6 +114,13 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/old_boy"
                 }
+            },
+            {
+                "threshold": 17,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/mic"
+                }
             }
         ],
         "fallback": {
