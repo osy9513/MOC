@@ -187,7 +187,7 @@ public class Oldboy extends Ability {
             int count = consumedCounts.getOrDefault(p.getUniqueId(), 0) + 1;
             consumedCounts.put(p.getUniqueId(), count);
 
-            p.sendMessage("§e" + count + "년 동안 군만두를 먹었습니다...");
+            Bukkit.broadcastMessage("§e누군가 " + count + "년 동안 군만두를 먹었습니다...");
 
             if (count >= 15 && !hasCleared.getOrDefault(p.getUniqueId(), false)) {
                 hasCleared.put(p.getUniqueId(), true);
@@ -214,7 +214,7 @@ public class Oldboy extends Ability {
                     hMeta.setLore(lore);
                     hammer.setItemMeta(hMeta);
                 }
-                p.getInventory().addItem(hammer);
+                p.getInventory().setItem(0, hammer); // 1번 칸으로 세팅
 
                 // 배고픔 보정 (선택 사항: 감옥에서 버틸만큼만 채워줌)
                 p.setFoodLevel(20);

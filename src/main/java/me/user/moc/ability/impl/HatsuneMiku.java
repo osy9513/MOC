@@ -58,7 +58,7 @@ public class HatsuneMiku extends Ability {
         p.sendMessage("§b전투 ● 하츠네 미쿠(보컬로이드)");
         p.sendMessage("§f마이크 우클릭 시 하츠네 미쿠가 되어");
         p.sendMessage("§f10초에 걸쳐 미쿠미쿠 빔을 준비합니다.");
-        p.sendMessage("§f준비가 끝나면 전방 15칸까지 5초간 2.5 데미지의 미쿠미쿠 빔을 마구 쏩니다.");
+        p.sendMessage("§f준비가 끝나면 전방 15칸까지 5초간 6 데미지의 미쿠미쿠 빔을 마구 쏩니다.");
         p.sendMessage("§f미쿠미쿠 빔 발동 중엔 공격을 할 수 없습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 17초");
@@ -219,7 +219,7 @@ public class HatsuneMiku extends Ability {
                                     // 바닐라 기본 무적 틱(NoDamageTicks)의 쿨타임을 활용해 데미지가 중복 난사되지 않게 됨
                                     target.setMetadata("MOC_LastKiller",
                                             new FixedMetadataValue(plugin, p.getUniqueId().toString()));
-                                    target.damage(2.5, p);
+                                    target.damage(6.0, p);
                                 }
                             }
                         }

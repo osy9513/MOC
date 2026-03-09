@@ -72,7 +72,7 @@ public class Hiccup extends Ability {
         p.sendMessage("§f브레스는 블럭이나 생명체에 부딪치면");
         p.sendMessage("§f폭발하여 10의 데미지를 주고 해당 자리에 초당 8 데미지를 주는 장판이 8초간 설치됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f투슬리스가 공격 받을 시 20% 확률로 히컵이 떨어집니다.");
+        p.sendMessage("§f투슬리스가 공격 받을 시 10% 확률로 히컵이 떨어집니다.");
         p.sendMessage("§f[드래곤의 공포] 몸이 경직되어 투슬리스 얼굴 근처에선 맘처럼 안 움직여집니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 15초.");
@@ -547,8 +547,8 @@ public class Hiccup extends Ability {
             // 데미지를 정상적으로 받았고 취소되지 않았을 때
             if (!e.isCancelled() && e.getDamage() > 0) {
                 if (!targetDragon.getPassengers().isEmpty()) {
-                    // 20% 확률 판정
-                    if (Math.random() <= 0.20) {
+                    // 10% 확률 판정
+                    if (Math.random() <= 0.10) {
                         for (org.bukkit.entity.Entity passenger : targetDragon.getPassengers()) {
                             if (passenger instanceof Player p) {
                                 targetDragon.removePassenger(p);

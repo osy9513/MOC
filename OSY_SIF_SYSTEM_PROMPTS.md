@@ -296,8 +296,8 @@ public List<String> getDescription() {
     -   인벤토리 초기화, 스탯 변경 등 **되돌릴 수 없는 강력한 로직**을 실행하기 전에는 반드시 `AbilityManager.hasAbility()`를 통해 **현재 플레이어가 여전히 해당 능력자인지 확인**해야 합니다.
     -   (예: 토가 히미코가 에렌 예거로 변신했다가 해제된 후, 에렌 예거의 `revertTitan`이 뒤늦게 실행되어 토가의 인벤토리를 날리는 것을 방지)
 4.  **관전자(Spectator) 처리 (필수):**
-    -   **능력 발동 금지:** 관전자는 능력발동을 절대 할 수 없다.
-    -   **타겟팅 금지:** 능력자는 관전자를 대상으로 능력을 발동할 수 없다.
+    -   **능력 발동 금지:** 관전자는 능력을 절대 사용할 수 없으며 `checkCooldown` 혹은 이벤트 이벤트 최상단에서 `p.getGameMode() == GameMode.SPECTATOR`를 검사하여 즉시 차단해야 합니다.
+    -   **타겟팅 금지 (매우 중요):** 능력자가 범위 피해를 주거나 타겟을 찾을 때(`getNearbyEntities`, `rayTraceEntities` 등) 대상이 관전자(SPECTATOR)인 경우 **반드시** 조건문으로 검사하여 제외해야 합니다. (예: `if (target instanceof Player t && t.getGameMode() == GameMode.SPECTATOR) continue;`)
 5.  **크리에이티브 모드 쿨타임 면제 (테스트 편의성):**
     -   **쿨타임 무시:** 플레이어가 크리에이티브 모드일 경우, `checkCooldown`에서 항상 `true`를 반환하고 `setCooldown`에서는 쿨타임을 설정하지 않아야 한다. 이를 통해 알림 도배 없이 기술을 무한 연사하며 테스트할 수 있도록 보장한다.
 6.  **킬 판정 귀속 (Kill Attribution):**

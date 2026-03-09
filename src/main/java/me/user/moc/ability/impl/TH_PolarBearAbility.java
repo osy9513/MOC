@@ -126,9 +126,10 @@ public class TH_PolarBearAbility extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§b유틸 ● 북극곰(무한도전)");
-        p.sendMessage("§f체력 3줄 5반(71칸)의 북극곰으로 변신합니다.");
+        p.sendMessage("§f체력 3줄 5반(HP 71)의 북극곰으로 변신합니다.");
         p.sendMessage("§f[배부름] 배고픔 5칸 초과 : 신속 2, 힘 2");
         p.sendMessage("§f[배고픔] 배고픔 5칸 이하 : 힘 4 (신속 없음)");
+        p.sendMessage("§f북극곰은 늘 배고픕니다. 허기 50렙");
         p.sendMessage("§f생명체를 죽이면 생소고기 2개를 얻습니다.");
         p.sendMessage("§c생소고기 이외엔 음식을 섭취할 수 없습니다.");
         p.sendMessage(" ");
@@ -482,6 +483,7 @@ public class TH_PolarBearAbility extends Ability {
                     } else {
                         p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 3, true, true, true));
                     }
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 40, 49, true, false, false));
 
                     // [변신 로직]
                     List<PolarBear> bears = getVisualBears(p);

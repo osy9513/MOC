@@ -120,6 +120,7 @@ public class KumagawaMisogi extends Ability {
         p.sendMessage("§f사망에 이르는 피해를 입으면 '올 픽션'이 발동하여");
         p.sendMessage("§f최대 체력이 1칸 줄어든 상태로 부활합니다.");
         p.sendMessage("§f최대 체력이 5칸이 되면 5초 후 '북 메이커'가 활성화됩니다.");
+        p.sendMessage("§f북 메이커 활성화 중엔 무적입니다.");
         p.sendMessage("§f북 메이커 활성화 시 나사로 생명체를 공격하면");
         p.sendMessage("§f대상의 최대 체력을 5칸으로 만들고 능력을 제거하며");
         p.sendMessage("§f영구적으로 위더 상태를 부여합니다.");
@@ -256,7 +257,8 @@ public class KumagawaMisogi extends Ability {
                             continue;
 
                         // 데미지 5 적용
-                        living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                        living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
                         living.damage(5.0, p);
 
                         // 북 메이커 로직 적용
@@ -342,7 +344,7 @@ public class KumagawaMisogi extends Ability {
 
         // "해당 생명체의 최대 체력은 미소기와 동일하게 5칸(10)이 되고"
         if (target instanceof Player playerTarget) {
-            plugin.getServer().broadcast(Component.text("§c북 메이커를 피하지 않고 받아주면 안될까?")); // 전체 출력
+            plugin.getServer().broadcast(Component.text("§c쿠마가와 미소기: 북 메이커를 피하지 않고 받아주면 안될까?")); // 전체 출력
 
             AttributeInstance maxHealth = playerTarget.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) {
@@ -513,6 +515,38 @@ public class KumagawaMisogi extends Ability {
         // "쿠마가와 미소기: 나는 나쁘지 않아"
         plugin.getServer().broadcast(Component.text("§c쿠마가와 미소기: 나는 나쁘지 않아"));
 
+        // [New] 5초 각성(무적) 대기 시간 동안 엄청난 양의 책과 종이가 팝콘처럼 튀는 이펙트
+        BukkitRunnable popcornTask = new BukkitRunnable() {
+            int tick = 0;
+
+            @Override
+            public void run() {
+                if (tick >= 100 || !p.isOnline() || p.isDead() || !bookMakerPending.contains(p.getUniqueId())) {
+                    this.cancel();
+                    return;
+                }
+                Location loc = p.getLocation().add(0, 1.0, 0);
+
+                // 책과 종이 팝콘 파티클 (사방으로 퍼지게 속도 계수 적용)
+                p.getWorld().spawnParticle(Particle.ITEM, loc, 20, 0.5, 0.5, 0.5, 0.4, new ItemStack(Material.BOOK));
+                p.getWorld().spawnParticle(Particle.ITEM, loc, 20, 0.5, 0.5, 0.5, 0.4, new ItemStack(Material.PAPER));
+                p.getWorld().spawnParticle(Particle.ENCHANT, loc.clone().add(0, 1.0, 0), 40, 0.5, 0.5, 0.5, 1.0);
+
+                // 효과음: 책 넘기는 소리 (너무 시끄럽지 않게 4틱에 한 번씩)
+                if (tick % 4 == 0) {
+                    p.getWorld().playSound(loc, Sound.ITEM_BOOK_PAGE_TURN, 2.0f, (float) (0.8 + Math.random() * 0.4));
+                    p.getWorld().playSound(loc, Sound.ITEM_BOOK_PUT, 1.5f, (float) (0.8 + Math.random() * 0.4));
+                }
+                tick++;
+            }
+        };
+        // 기존 effectTask가 있다면 덮어쓰기 전 정리
+        if (effectTasks.containsKey(p.getUniqueId())) {
+            effectTasks.get(p.getUniqueId()).cancel();
+        }
+        effectTasks.put(p.getUniqueId(), popcornTask);
+        popcornTask.runTaskTimer(plugin, 0L, 1L);
+
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -524,7 +558,7 @@ public class KumagawaMisogi extends Ability {
                     p.sendMessage("§5[System] 북 메이커가 활성화되었습니다.");
                     p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.0f);
 
-                    // [New] 활성화 이펙트 (경험치 파티클) 태스크 시작
+                    // [New] 활성화 이후 지속 이펙트 태스크 시작
                     BukkitRunnable task = new BukkitRunnable() {
                         @Override
                         public void run() {
@@ -532,8 +566,6 @@ public class KumagawaMisogi extends Ability {
                                 this.cancel();
                                 return;
                             }
-                            // [New] 몸에서 책이 떨어지는 이펙트
-                            // Enchantment Table 파티클 + 책 아이템 파티클 섞기
                             p.getWorld().spawnParticle(Particle.ENCHANT, p.getLocation().add(0, 1, 0), 10, 0.5, 0.5,
                                     0.5, 0.5);
                             p.getWorld().spawnParticle(Particle.ITEM, p.getLocation().add(0, 2.5, 0), 3, 0.3, 0.3, 0.3,

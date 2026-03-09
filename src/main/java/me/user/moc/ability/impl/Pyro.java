@@ -69,7 +69,7 @@ public class Pyro extends Ability {
             meta.setLore(Arrays.asList(
                     "§f좌클릭 시 약 1초 동안 화염을 20회 연속 발사합니다.",
                     "§f발사당 가스를 1 소모하며, 200 가스 소모 시 15초간 재충전됩니다.",
-                    "§c데미지: 적중 시 3"));
+                    "§c데미지: 적중 시 5"));
             meta.setCustomModelData(1); // 리소스팩: firefire
             flamethrower.setItemMeta(meta);
         }
@@ -91,7 +91,7 @@ public class Pyro extends Ability {
         p.sendMessage("§c전투 ● 파이로(팀 포트리스2)");
         p.sendMessage("§f화염방사기를 사용하여 전방을 불바다로 만듭니다.");
         p.sendMessage("§f좌클릭 시 약 1초 동안 가스를 소모하며 20회 연속 화염을 발사합니다.");
-        p.sendMessage("§f전방 10칸 부채꼴 범위에 적중 시 3의 데미지를 줍니다.");
+        p.sendMessage("§f전방 10칸 부채꼴 범위에 적중 시 5의 데미지를 줍니다.");
         p.sendMessage("§f200 가스를 모두 소모하면 15초 후 가스가 다시 충전됩니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 15초");
@@ -241,8 +241,9 @@ public class Pyro extends Ability {
                             // [규칙] 킬 판정 귀속 (MOC_LastKiller)
                             target.setMetadata("MOC_LastKiller",
                                     new FixedMetadataValue(plugin, p.getUniqueId().toString()));
-                            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
-                            target.damage(3, p);
+                            target.setMetadata("MOC_LastKiller",
+                                    new FixedMetadataValue(plugin, p.getUniqueId().toString()));
+                            target.damage(5, p);
 
                             // 불 붙이기 (시각적 효과)
                             target.setFireTicks(20);

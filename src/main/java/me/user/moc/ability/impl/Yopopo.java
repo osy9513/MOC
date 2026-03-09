@@ -115,6 +115,10 @@ public class Yopopo extends Ability {
             yopopo.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(baseSpeed * 1.9);
         }
 
+        // [추가] 공속 2배 (성급함 효과 부여)
+        yopopo.addPotionEffect(
+                new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, 19, false, false, false));
+
         // 방어 속성 초기화
         if (yopopo.getAttribute(Attribute.ARMOR) != null) {
             yopopo.getAttribute(Attribute.ARMOR).setBaseValue(0.0);

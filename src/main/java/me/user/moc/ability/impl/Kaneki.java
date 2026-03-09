@@ -90,8 +90,9 @@ public class Kaneki extends Ability {
         p.sendMessage("§c전투 ● 카네키 켄(도쿄 구울)");
         p.sendMessage("§f배고픔이 줄어들 수록 강한 재생 버프를 받습니다.");
         p.sendMessage("§f배고픔이 5칸 이하면 폭주하여 힘 3, 신속 3 버프를 얻습니다.");
-        p.sendMessage("§f배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
         p.sendMessage("§f폭주 시 카구네가 활성화 되며, 좌클릭 시 카구네로 상대를 끌고 옵니다 (사거리 11블럭).");
+        p.sendMessage("§f피격 시 30% 확률로 배고픔이 1칸 줄어듭니다.");
+        p.sendMessage("§f배고픔이 0이 되면 매 순간 고통을 받으며 죽어갑니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 7초 (카구네)");
         p.sendMessage("§f---");
@@ -317,6 +318,24 @@ public class Kaneki extends Ability {
                 Location point = back.clone().add(tailDir.clone().multiply(d)).add(0, wave + (d * 0.3), 0);
                 p.getWorld().spawnParticle(Particle.DUST, point, 1,
                         new Particle.DustOptions(Color.RED, 1.0f));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamage(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+        if (!(e.getEntity() instanceof Player p))
+            return;
+
+        // 능력이 있는지 확인
+        if (!me.user.moc.ability.AbilityManager.getInstance((me.user.moc.MocPlugin) plugin).hasAbility(p, getCode()))
+            return;
+
+        // 피격 시 30% 확률로 배고픔 1칸 감소
+        if (Math.random() < 0.3) {
+            int currentFood = p.getFoodLevel();
+            if (currentFood > 0) {
+                p.setFoodLevel(Math.max(0, currentFood - 2));
             }
         }
     }

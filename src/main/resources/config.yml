@@ -23,7 +23,7 @@ final_fight: true
 final_time: 120
 
 # 전장(경기장) 크기 (반경 블록 수)
-map_size: 75
+map_size: 100
 
 # 우승 승점 (목표 점수)
 win_value: 40

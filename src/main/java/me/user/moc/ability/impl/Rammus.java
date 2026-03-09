@@ -55,11 +55,14 @@ public class Rammus extends Ability {
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 가시박힌 껍질");
-        p.sendMessage("§f장비 제거 : 없음");
+        p.sendMessage("§f장비 제거 : 철칼");
     }
 
     @Override
     public void giveItem(Player p) {
+        // 1. [기존 장비 제거]
+        p.getInventory().remove(Material.IRON_SWORD);
+
         ItemStack helmet = new ItemStack(Material.TURTLE_HELMET);
         ItemMeta meta = helmet.getItemMeta();
         if (meta != null) {
@@ -98,7 +101,8 @@ public class Rammus extends Ability {
                         attacker.setNoDamageTicks(0);
 
                         // 그 후 데미지를 입힘 (이제 무적 시간에 막히지 않고 반드시 들어감)
-                        attacker.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), victim.getUniqueId().toString()));
+                        attacker.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                                me.user.moc.MocPlugin.getInstance(), victim.getUniqueId().toString()));
                         attacker.damage(reflectDamage, victim);
                     }
                 }
