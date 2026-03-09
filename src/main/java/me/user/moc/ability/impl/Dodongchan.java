@@ -49,7 +49,7 @@ public class Dodongchan extends Ability {
         p.sendMessage("§c유틸 ● 도동찬(바집소)");
         p.sendMessage("§f배고픈 동찬이가 된다. 검은 정장이 잘 어울린다.");
         p.sendMessage("§f동까스 망치를 우클릭 시 돌풍구를 쏜다.");
-        p.sendMessage("§f배고프다. 허기 100 상시 유지");
+        p.sendMessage("§f배고프다. 허기 255 상시 유지");
         p.sendMessage("§f든든하다. 저항 2 상시 유지");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 10초");
@@ -102,11 +102,11 @@ public class Dodongchan extends Ability {
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
         p.getInventory().addItem(new ItemStack(Material.COOKED_BEEF, 64));
 
-        // 패시브: 저항 2, 허기 50 영구 지속
+        // 패시브: 저항 2, 허기 255 영구 지속
         p.addPotionEffect(
                 new PotionEffect(PotionEffectType.RESISTANCE, PotionEffect.INFINITE_DURATION, 1, false, false, true));
         p.addPotionEffect(
-                new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 99, false, false, true));
+                new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 254, false, false, true));
 
         // 게임 시작 시 배고픔 3칸(6포인트)인 채로 시작
         p.setFoodLevel(6);

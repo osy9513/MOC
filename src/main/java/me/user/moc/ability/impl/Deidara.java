@@ -92,14 +92,14 @@ public class Deidara extends Ability {
         p.sendMessage("§c전투 ● 데이다라(나루토)");
         p.sendMessage("§f[점토] 우클릭 시 폭죽 탄약 1개를 생성합니다.");
         p.sendMessage("§f[폭죽 탄약] 우클릭 시 소모하며 점화된 TNT를 발사합니다. (터지지 않음)");
-        p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다. (쿨타임: 3초)");
+        p.sendMessage("§f[부싯돌] 우클릭 시 발사했던 모든 TNT를 일제히 폭발시킵니다.");
         p.sendMessage(" ");
         p.sendMessage("§c[C0 - 자폭]");
         p.sendMessage("§f인벤토리에 폭죽 탄약이 20개 이상일 때 부싯돌을 우클릭하면 발동.");
         p.sendMessage("§f1초 뒤 자신의 위치에 §cTNT 20개 분량의 대폭발§f을 일으킵니다.");
         p.sendMessage("§f이 폭발은 물 속에서도 피해를 주며, 자신도 휘말릴 수 있습니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 4초");
+        p.sendMessage("§f쿨타임 : 점토 4초, 부싯돌 3초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 점토, 부싯돌");
         p.sendMessage("§f장비 제거 : 철 칼");

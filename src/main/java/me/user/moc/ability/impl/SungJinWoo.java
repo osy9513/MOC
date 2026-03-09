@@ -68,7 +68,7 @@ public class SungJinWoo extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§b유틸 ● 성진우(나 혼자만 레벨업)");
         p.sendMessage("§fE급 헌터에서 국가권력급 헌터가 됩니다.");
-        p.sendMessage("§f7.5초마다 레벨이 1씩 오릅니다.");
+        p.sendMessage("§f3초마다 레벨이 1씩 오릅니다.");
         p.sendMessage("§f맨손 쉬프트 좌클릭 시 레벨을 소모하여 소환할 수 있는 선택 창이 출력됩니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
@@ -108,10 +108,10 @@ public class SungJinWoo extends Ability {
                     return;
                 }
 
-                // 레벨업 (7.5초마다 1)
+                // 레벨업 (3초마다 1)
                 p.setLevel(p.getLevel() + 1);
             }
-        }.runTaskTimer(plugin, 150L, 150L); // 150틱 = 7.5초
+        }.runTaskTimer(plugin, 60L, 60L); // 60틱 = 3초
 
         // 부모의 태스크 리스트에 등록하여 사망/리셋 시 자동 종료되도록 함
         List<BukkitTask> tList = activeTasks.getOrDefault(p.getUniqueId(), new java.util.ArrayList<>());
@@ -167,8 +167,8 @@ public class SungJinWoo extends Ability {
         gui.setItem(20, createGuiItem(Material.GOLDEN_APPLE, "§b[Lv.9] 기사 좀벌레", p.getLevel() >= 9));
 
         gui.setItem(15, createGuiItem(Material.SADDLE, "§4[Lv.10] 장군 파괴수", p.getLevel() >= 10));
-        gui.setItem(16, createGuiItem(Material.WITHER_SKELETON_SKULL, "§5[Lv.15] 원수 위더", p.getLevel() >= 15));
-        gui.setItem(17, createGuiItem(Material.SCULK_SENSOR, "§c[Lv.20] 총군단장 워든", p.getLevel() >= 20));
+        gui.setItem(16, createGuiItem(Material.WITHER_SKELETON_SKULL, "§5[Lv.30] 원수 위더", p.getLevel() >= 30));
+        gui.setItem(17, createGuiItem(Material.SCULK_SENSOR, "§c[Lv.40] 총군단장 워든", p.getLevel() >= 40));
 
         p.openInventory(gui);
         p.getWorld().playSound(p.getLocation(), org.bukkit.Sound.BLOCK_ENDER_CHEST_OPEN, 1f, 1f);
@@ -244,9 +244,9 @@ public class SungJinWoo extends Ability {
             case 15:
                 return 10;
             case 16:
-                return 15;
+                return 30; // 15에서 더블
             case 17:
-                return 20;
+                return 40; // 20에서 더블
             default:
                 return -1;
         }
@@ -304,12 +304,12 @@ public class SungJinWoo extends Ability {
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
             case 16:
-                name = "§5[Lv.15] 원수 위더";
+                name = "§5[Lv.30] 원수 위더";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.WITHER);
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
             case 17:
-                name = "§c[Lv.20] 총군단장 워든";
+                name = "§c[Lv.40] 총군단장 워든";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.WARDEN);
                 summon.getAttribute(org.bukkit.attribute.Attribute.SCALE).setBaseValue(1.3);
                 break;
