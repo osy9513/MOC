@@ -69,3 +69,6 @@
 | **gunmandu** (1) | 말린 켈프 (`dried_kelp`) | 오대수 (`Oldboy.java`) | `models/item/gunmandu.json` |
 | **old_boy** (16) | 철 검 (`iron_sword`) | 오대수 (`Oldboy.java`) | `models/item/old_boy.json` |
 | **potal** (1) | 감자 (`potato`) | 첼 (`Chell.java`) | `models/item/potal.json` |
+| **mic** (17) | 철 검 (`iron_sword`) | 하츠네 미쿠 (`HatsuneMiku.java`) | `models/item/mic.json` |
+| **soju** (1) | 초록색 염료 (`green_dye`) | 알아서해 (`Alaseohae.java`) | `models/item/soju.json` |
+| **supermraio** (1) | 붉은 버섯 (`red_mushroom`) | 마리오 (`Mario.java`) | `models/item/supermraio.json` |

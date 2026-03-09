@@ -130,10 +130,14 @@ public class AbilityManager {
         addAbility(new Janggeohan(plugin)); // 068 장거한 등록
         addAbility(new Oldboy(plugin)); // 062 올드보이 등록
         addAbility(new Dodongchan(plugin)); // H07 도동찬 등록
+        addAbility(new Alaseohae(plugin)); // H10 알아서해 (바집소) 등록
         addAbility(new OneC(plugin)); // H08 원크 등록
         addAbility(new SangYoung(plugin)); // H09 상영 등록
         addAbility(new UchihaItachi(plugin)); // 067 우치하 이타치
-        addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
+        addAbility(new me.user.moc.ability.impl.HatsuneMiku(plugin)); // 072
+        addAbility(new me.user.moc.ability.impl.Mario(plugin)); // 073
+
+        // H 계열 (등급외/유틸 등) addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
         addAbility(new Chell(plugin)); // 070 첼
         addAbility(new Hiccup(plugin)); // 071 히컵
         //

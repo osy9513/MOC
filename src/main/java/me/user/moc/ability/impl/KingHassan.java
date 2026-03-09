@@ -30,6 +30,14 @@ import me.user.moc.ability.AbilityManager;
 
 public class KingHassan extends Ability {
 
+    private final java.util.Map<java.util.UUID, Long> attackBlockTime = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Override
+    public void reset() {
+        super.reset();
+        attackBlockTime.clear();
+    }
+
     public KingHassan(JavaPlugin plugin) {
         super(plugin);
     }
@@ -55,7 +63,7 @@ public class KingHassan extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§5전투 ● 산의 노인(FATE)");
         p.sendMessage("§f라운드 시작 시 §7[은신, 구속 3, 재생] §f버프를 영구히 얻습니다.");
-        p.sendMessage("§f또한 시작 직후 10초 동안 §4채광 피로 10레벨§f이 부여됩니다.");
+        p.sendMessage("§f또한 시작 직후 10초 동안 §4어떠한 공격도 불가능§f합니다.");
         p.sendMessage("§f최대 체력이 §c10칸(20HP)§f으로 고정되며, 핫바가 §b첫 번째 칸§f으로 고정됩니다.");
         p.sendMessage("§f다른 아이템은 사용할 수 없으며, §5산의 노인의 대검§f은 방어력을 무시합니다.");
         p.sendMessage(" ");
@@ -78,7 +86,7 @@ public class KingHassan extends Ability {
         ItemStack sword = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = sword.getItemMeta();
         meta.setDisplayName("§5산의 노인의 대검");
-        meta.setLore(List.of("§7기본 공격 시 방어력을 무시합니다.", "§c방어력 무시 32 대미지"));
+        meta.setLore(List.of("§7기본 공격 시 방어력을 무시합니다.", "§c고정 19 대미지"));
         meta.setUnbreakable(true);
         meta.setCustomModelData(2); // 리소스팩: kinghassan
         sword.setItemMeta(meta);
@@ -100,8 +108,20 @@ public class KingHassan extends Ability {
         p.addPotionEffect(
                 new PotionEffect(PotionEffectType.REGENERATION, PotionEffect.INFINITE_DURATION, 0, false, false));
 
-        // 라운드 시작 직후 즉발 킬 방지용 채광 피로 10레벨 10초 부여
-        p.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 200, 9, false, false));
+        // 라운드 시작 직후 즉발 킬 방지용 10초 공격 금지 타이머 설정
+        attackBlockTime.put(p.getUniqueId(), System.currentTimeMillis() + 10000L);
+
+        // 10초 후 공격 가능 알림 태스크 등록 (죽거나 라운드 끝나면 cleanup에서 자동 취소됨)
+        org.bukkit.scheduler.BukkitTask attackEnableTask = new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (p.isOnline() && AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
+                    p.sendActionBar(net.kyori.adventure.text.Component.text("§a[!] 이제부터 산의 노인의 암살이 시작됩니다!"));
+                    p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
+                }
+            }
+        }.runTaskLater(plugin, 200L);
+        registerTask(p, attackEnableTask);
 
         // 4. 이펙트 및 메시지 출력
         Bukkit.broadcastMessage("§5산의 노인 : §f듣거라. 만종은 그대의 이름을 가리켰다.");
@@ -115,6 +135,7 @@ public class KingHassan extends Ability {
     public void cleanup(Player p) {
         super.cleanup(p);
         if (p.isOnline()) {
+            attackBlockTime.remove(p.getUniqueId());
             p.removePotionEffect(PotionEffectType.INVISIBILITY);
             p.removePotionEffect(PotionEffectType.SLOWNESS); // @@@@@@@@@@@@@@@
             p.removePotionEffect(PotionEffectType.REGENERATION);
@@ -144,8 +165,28 @@ public class KingHassan extends Ability {
         if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
             return;
 
+        // [추가] 라운드 시작 10초 이내에는 일반 타격 및 대미지 적용 전면 취소
+        if (attackBlockTime.containsKey(attacker.getUniqueId())) {
+            long endTime = attackBlockTime.get(attacker.getUniqueId());
+            if (System.currentTimeMillis() < endTime) {
+                double left = (endTime - System.currentTimeMillis()) / 1000.0;
+                attacker.sendActionBar(net.kyori.adventure.text.Component
+                        .text("§c전투 시작 후 10초간은 공격할 수 없습니다. (" + String.format("%.1f", left) + "초)"));
+                e.setCancelled(true);
+                return;
+            } else {
+                attackBlockTime.remove(attacker.getUniqueId());
+            }
+        }
+
         if (e.getEntity() instanceof LivingEntity victim) {
-            double trueDamage = 32.0;
+            // [수정] 피격 무적 시간일 경우 데미지 무시 (피격 무적 무시 현상 해결)
+            if (victim.getNoDamageTicks() > victim.getMaximumNoDamageTicks() / 2.0F) {
+                e.setCancelled(true);
+                return;
+            }
+
+            double trueDamage = 19.0;
 
             if (victim.getHealth() <= trueDamage) {
                 // 즉사(킬) 판정일 경우 이벤트 자체를 취소하고 데미지로 0을 부여하여 더블 킬(Double Kill) 버그 방지

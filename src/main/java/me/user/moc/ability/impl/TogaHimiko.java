@@ -114,7 +114,7 @@ public class TogaHimiko extends Ability {
         p.sendMessage("§f개성 - 변신을 얻습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f토가의 단검으로 다른 유저를 공격 시");
-        p.sendMessage("§f인벤토리에 공격한 유저의 닉네임이 적힌 마실 수 있는 포션이 생긴다.");
+        p.sendMessage("§f공격한 유저의 닉네임이 적힌 마실 수 있는 포션이 생긴다.");
         p.sendMessage("§f해당 포션을 우클릭 시 마시고 30초 동안 상대로 변신한다.");
         p.sendMessage("§f상대의 능력을 사용할 수 있고 30초 후 다시 토가 히미코로 돌아온다.");
         p.sendMessage(" ");

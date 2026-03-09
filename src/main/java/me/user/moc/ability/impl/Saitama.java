@@ -68,7 +68,7 @@ public class Saitama extends Ability {
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
-        p.sendMessage("§f장비 제거 : 철 갑옷, 철 흉갑");
+        p.sendMessage("§f장비 제거 : 철 칼, 철 흉갑");
     }
 
     @Override

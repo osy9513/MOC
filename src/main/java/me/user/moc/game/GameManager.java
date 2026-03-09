@@ -175,6 +175,19 @@ public class GameManager implements Listener {
 
         Bukkit.broadcastMessage("§f스폰 위치 : " + spawn.getBlockX() + ", " + spawn.getBlockY() + ", " + spawn.getBlockZ());
         // Bukkit.broadcastMessage("§f게임 모드 : 개인전");
+
+        // [추가] MOC 시작 시 즉시 체력을 60으로 설정하여 시작을 알림
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (isAfk(p.getName()))
+                continue;
+
+            AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) {
+                maxHealth.setBaseValue(60.0);
+            }
+            p.setHealth(60.0);
+        }
+
         Bukkit.broadcastMessage("§7잠시 후 능력을 추첨합니다.");
         Bukkit.broadcastMessage("§e========================================");
 
