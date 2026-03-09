@@ -60,7 +60,7 @@ public class FoxDevil extends Ability {
         p.sendMessage("§f블럭을 바라보며 맨손으로 좌클릭 + 쉬프트를 동시에 눌러 체력을 3칸을 소모하여");
         p.sendMessage("§f해당 블럭에(100블럭 제한) 여우의 악마를 소환해 5*5*5 범위 내 생명체에게 13 데미지를 줌.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 6초.");
+        p.sendMessage("§f쿨타임 : 3초.");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
@@ -108,7 +108,7 @@ public class FoxDevil extends Ability {
             return;
 
         // 5. 발동 (쿨타임, 체력 소모, 메시지)
-        setCooldown(p, 6);
+        setCooldown(p, 3);
 
         if (p.getGameMode() != org.bukkit.GameMode.CREATIVE) {
             // [안전장치] 체력이 6 이하면 죽을 수도 있음. (3칸 = 6)
