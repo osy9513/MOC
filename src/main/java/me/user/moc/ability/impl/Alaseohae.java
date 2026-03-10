@@ -41,7 +41,7 @@ public class Alaseohae extends Ability {
 
     @Override
     public List<String> getDescription() {
-        return Arrays.asList("§e소주 킬러.");
+        return Arrays.asList("§b유틸 ● 알아서해(바집소)", "§e소주 킬러.");
     }
 
     @Override
@@ -51,7 +51,7 @@ public class Alaseohae extends Ability {
         p.sendMessage("§f맞은 상대는 멀미 100와 채굴 피로 100가 10초간 걸립니다.");
         p.sendMessage("§f알아서해가 맞을 경우 멀미 3와 힘 3가 10초간 걸립니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 30초");
+        p.sendMessage("§f쿨타임 : 20초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 소주병");
         p.sendMessage("§f장비 제거 : 철칼");
@@ -131,8 +131,8 @@ public class Alaseohae extends Ability {
         // 투척 사운드
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.0f);
 
-        // 쿨타임 30초 부여
-        setCooldown(p, 30.0);
+        // 쿨타임 20초 부여
+        setCooldown(p, 20.0);
     }
 
     @EventHandler
