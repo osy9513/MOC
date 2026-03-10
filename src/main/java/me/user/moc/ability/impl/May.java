@@ -71,7 +71,7 @@ public class May extends Ability {
             meta.setDisplayName("§b닻");
             meta.setLore(Arrays.asList(
                     "§7[우클릭] 돌고래를 소환하며 전방으로 돌진합니다.",
-                    "§7돌고래 충돌 시 피격 무적을 무시하고 적에게 8 데미지를 줍니다.",
+                    "§7돌고래 충돌 시 피격 무적을 무시하고 적에게 6 데미지를 줍니다.",
                     "§7적중 시 남은 쿨타임이 초기화되어 5초 내로 재사용할 수 있습니다.(최대 5연속)"));
             meta.setCustomModelData(15); // CustomModelData = 15
             meta.setUnbreakable(true);
@@ -87,7 +87,7 @@ public class May extends Ability {
         p.sendMessage(" ");
         p.sendMessage("§f닻을 우클릭하면 돌고래를 타고 전방에 포물선 방향으로 돌진합니다.");
         p.sendMessage("§f돌진 중 적과 부딪치면 상대의 피격 무적을 무시한 채");
-        p.sendMessage("§f8 데미지를 주며 적과 함께 공중에 뜹니다.");
+        p.sendMessage("§f6 데미지를 주며 적과 함께 공중에 뜹니다.");
         p.sendMessage("§f이때 쿨타임이 초기화 되어 3초 이내 돌진을 또 할 수 있습니다.");
         p.sendMessage("§f이는 최대 5번까지 가능합니다.");
         p.sendMessage(" ");
@@ -313,8 +313,9 @@ public class May extends Ability {
         if (hit && target != null) {
             // 적중: 데미지 무적 무시 8 부여
             target.setNoDamageTicks(0);
-            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
-            target.damage(8.0, p);
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                    me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+            target.damage(6.0, p);
 
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.0f, 1.0f);
 

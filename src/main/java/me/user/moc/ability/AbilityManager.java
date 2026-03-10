@@ -546,50 +546,96 @@ public class AbilityManager {
         p.sendMessage("§e=================");
     }
 
-    // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
-
-    /**
-     * 모든 능력자 목록을 번호 순서대로 채팅창에 출력합니다.
-     *
-     * @param sender 메시지를 받을 대상 (명령어 사용자)
-     */
-    /**
-     * 모든 능력자 목록을 번호 순서대로 채팅창에 출력합니다.
-     * 
-     * @param sender 메시지를 받을 대상 (명령어 사용자)
-     */
-    public void showAbilityList(org.bukkit.command.CommandSender sender) {
+    public void showAbilityList(org.bukkit.command.CommandSender sender, String[] args) {
         // [▼▼▼ 여기서부터 변경됨 ▼▼▼]
 
         // 1. [지도에서 알맹이 빼기]
-        // abilities는 '지도'라서 바로 반복문을 돌릴 수 없습니다.
-        // abilities.values()를 사용하여 지도 안의 '능력 객체'들만 쏙 뽑아 새로운 리스트를 만듭니다.
         List<Ability> sortedList = new ArrayList<>(this.abilities.values());
 
         // 2. [정렬] 리스트에 담긴 능력들을 번호(getCode) 순서대로 정렬합니다.
         sortedList.sort((a, b) -> a.getCode().compareTo(b.getCode()));
 
-        // 3. 채팅창 디자인 (여백을 주어 깔끔하게 보이게 함)
+        // 3. 인자 파싱 (페이지 번호 또는 'H' 처리)
+        int page = 1;
+        boolean showHidden = false;
+
+        if (args.length > 1) {
+            String param = args[1].toUpperCase();
+            if (param.equals("H")) {
+                showHidden = true;
+            } else {
+                try {
+                    page = Integer.parseInt(param);
+                } catch (NumberFormatException e) {
+                    page = 1; // 숫자가 아니면 1페이지로 간주
+                }
+            }
+        }
+
+        // 4. 필터링 로직
+        List<Ability> displayList = new ArrayList<>();
+        for (Ability ability : sortedList) {
+            String code = ability.getCode().toUpperCase();
+            // 토가 히미코 전용 능력 분기점 (리스트에서 항상 숨김)
+            if (code.startsWith("TH"))
+                continue;
+
+            if (showHidden) {
+                // H 모드: 'H'로 시작하는 히든 능력만 필터링
+                if (code.startsWith("H")) {
+                    displayList.add(ability);
+                }
+            } else {
+                // 일반 모드: 'H'로 시작하지 않는 일반 능력만 필터링
+                if (!code.startsWith("H")) {
+                    displayList.add(ability);
+                }
+            }
+        }
+
+        // 5. 페이징 계산 (페이지당 30개씩)
+        int itemsPerPage = 30;
+        int totalItems = displayList.size();
+        int totalPages = (int) Math.ceil((double) totalItems / itemsPerPage);
+
+        // 방어 로직: 총 페이지 수가 0이면 1로, 요청 페이지가 한계를 넘으면 조정
+        if (totalPages == 0)
+            totalPages = 1;
+        if (page < 1)
+            page = 1;
+        if (page > totalPages)
+            page = totalPages;
+
+        int startIndex = (page - 1) * itemsPerPage;
+        int endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+        // 6. 채팅창 디자인 (여백을 주어 깔끔하게 보이게 함)
         for (int i = 0; i < 5; i++)
             sender.sendMessage(" "); // 빈 줄 출력
-        sender.sendMessage("§a§l[ 능력자 목록 ]");
+
+        if (showHidden) {
+            sender.sendMessage("§a§l[ 히든 능력자 목록 ]");
+        } else {
+            sender.sendMessage("§a§l[ 능력자 목록 - " + page + " / " + totalPages + " 페이지 ]");
+        }
         sender.sendMessage("§7코드 §f| §e능력자명");
         sender.sendMessage("§7--------------------");
 
-        // 4. [반복문 실행]
-        // 이제 'abilities'가 아니라, 위에서 정렬한 'sortedList'를 사용해야 에러가 안 납니다!
-        for (Ability ability : sortedList) {
-            // [Fix] 토가 히미코 전용 능력(TH로 시작)은 리스트에서 숨김
-            if (ability.getCode().startsWith("TH")) {
-                continue;
+        // 7. [출력 실행]
+        if (displayList.isEmpty()) {
+            sender.sendMessage("§c출력할 능력이 없습니다.");
+        } else {
+            for (int i = startIndex; i < endIndex; i++) {
+                Ability ability = displayList.get(i);
+                sender.sendMessage("§b" + ability.getCode() + " §f| §f" + ability.getName());
             }
-            // 예: 001 | 우에키
-            sender.sendMessage("§b" + ability.getCode() + " §f| §f" + ability.getName());
         }
 
         sender.sendMessage(" "); // 마무리 빈 줄
 
-        // [▲▲▲ 여기까지 변경됨 ▲▲▲]
+        if (!showHidden && totalPages > 1) {
+            sender.sendMessage("§7다른 페이지 보기: /moc list [1~" + totalPages + "]");
+        }
+        sender.sendMessage("§7히든 능력 보기: /moc list H");
     }
-    // [▲▲▲ 여기까지 변경됨 ▲▲▲]
 }

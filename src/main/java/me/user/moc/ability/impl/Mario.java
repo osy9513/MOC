@@ -333,8 +333,11 @@ public class Mario extends Ability {
                                                                                                         // 피격 면역
 
                             Location loc = p.getLocation();
-                            // 돌풍구 파티클 효과 출력 (EXPLOSION)
-                            p.getWorld().spawnParticle(Particle.EXPLOSION, loc, 1);
+                            // 돌풍구 파티클 효과 11x11 (반경 5.5) 범위로 화려하게 출력
+                            p.getWorld().spawnParticle(Particle.EXPLOSION_EMITTER, loc, 1);
+                            p.getWorld().spawnParticle(Particle.GUST, loc, 120, 5.5, 0.5, 5.5, 0.1);
+                            p.getWorld().spawnParticle(Particle.CLOUD, loc, 100, 5.5, 0.5, 5.5, 0.1);
+                            p.getWorld().playSound(loc, Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1.0f, 0.8f);
                             p.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.2f);
 
                             // 착지 시 주변 반경 11x11 범위(직경 약 11, 박스 충돌)에 데미지 적용
