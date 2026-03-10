@@ -399,6 +399,11 @@ public class KumagawaMisogi extends Ability {
             return;
         if (!hasAbility(attacker))
             return;
+
+        // 관전자 타겟팅 금지
+        if (e.getEntity() instanceof Player pTarget && pTarget.getGameMode() == GameMode.SPECTATOR)
+            return;
+
         if (!(e.getEntity() instanceof LivingEntity target))
             return;
 

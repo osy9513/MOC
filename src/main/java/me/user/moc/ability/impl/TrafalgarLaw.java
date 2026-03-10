@@ -30,7 +30,7 @@ public class TrafalgarLaw extends Ability {
     private final Map<UUID, Location> roomCenters = new HashMap<>(); // 룸 중심 좌표
     private final Map<UUID, Long> clickCooldown = new HashMap<>(); // 클릭 디바운스 (버그 수정)
 
-    private static final int ROOM_RADIUS = 15;
+    private static final int ROOM_RADIUS = 22; // 기존 15에서 50% 증가한 약 22 적용
     // [버프] 지속시간 5초 -> 13초 (+8초)
     private static final int ROOM_DURATION_SEC = 13;
     private static final int DAMAGE_AMOUNT = 5; // 체력 2.5칸 (기존 8에서 5로 하향)
@@ -208,8 +208,11 @@ public class TrafalgarLaw extends Ability {
 
             @Override
             public void run() {
-                // 시간 만료 혹은 플레이어 접속 종료 시 중단
-                if (System.currentTimeMillis() - startTime > durationMillis || !p.isOnline()) {
+                // 시간 만료 혹은 플레이어 접속 종료, 혹은 roomExpiry가 삭제되거나 만료된 경우(룸 취소 시) 중단
+                if (System.currentTimeMillis() - startTime > durationMillis || !p.isOnline() || !isRoomActive(p)) {
+                    if (p.isOnline()) {
+                        p.sendMessage("§cROOM이 해제되었습니다.");
+                    }
                     this.cancel();
                     return;
                 }

@@ -155,7 +155,7 @@ public class MocCommand implements CommandExecutor {
                 // p.sendMessage("§c현재 진행 중인 게임이 없습니다.");
                 // return true;
                 // }
-                am.showAbilityList(p);
+                am.showAbilityList(p, args);
 
                 p.sendMessage(" ");
                 p.sendMessage("§cset 사용법: /moc set [플레이어이름] [능력]");

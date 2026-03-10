@@ -166,7 +166,7 @@ public class SungJinWoo extends Ability {
         gui.setItem(11, createGuiItem(Material.IRON_BOOTS, "§f[Lv.6] 정예 좀벌레 병사", p.getLevel() >= 6));
         gui.setItem(20, createGuiItem(Material.GOLDEN_APPLE, "§b[Lv.9] 기사 좀벌레", p.getLevel() >= 9));
 
-        gui.setItem(15, createGuiItem(Material.SADDLE, "§4[Lv.10] 장군 파괴수", p.getLevel() >= 10));
+        gui.setItem(15, createGuiItem(Material.SADDLE, "§4[Lv.20] 장군 파괴수", p.getLevel() >= 20));
         gui.setItem(16, createGuiItem(Material.WITHER_SKELETON_SKULL, "§5[Lv.30] 원수 위더", p.getLevel() >= 30));
         gui.setItem(17, createGuiItem(Material.SCULK_SENSOR, "§c[Lv.40] 총군단장 워든", p.getLevel() >= 40));
 
@@ -242,7 +242,7 @@ public class SungJinWoo extends Ability {
             case 20:
                 return 9;
             case 15:
-                return 10;
+                return 20;
             case 16:
                 return 30; // 15에서 더블
             case 17:
@@ -297,7 +297,7 @@ public class SungJinWoo extends Ability {
                 summon = spawnSilverfish(w, loc, true, true);
                 break;
             case 15:
-                name = "§4[Lv.10] 장군 파괴수";
+                name = "§4[Lv.20] 장군 파괴수";
                 summon = (org.bukkit.entity.LivingEntity) w.spawnEntity(loc, org.bukkit.entity.EntityType.RAVAGER);
                 summon.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(150);
                 summon.setHealth(150);

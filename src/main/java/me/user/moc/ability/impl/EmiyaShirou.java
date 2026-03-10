@@ -89,7 +89,7 @@ public class EmiyaShirou extends Ability {
         p.sendMessage("§f기존의 무한 검제 영창을 자동으로 시작합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f[무한의 검제]");
-        p.sendMessage("§f영창 완료 후 자신 주변 5x5 지형에서 검이 5초 간격으로 바닥에서 10개씩 솟아오릅니다.");
+        p.sendMessage("§f영창 완료 후 자신 주변 11x11 지형에서 검이 5초 간격으로 바닥에서 10개씩 솟아오릅니다.");
         p.sendMessage("§f검 주변에 적이 발견되면 자동으로 날아가 꽂히며 §c4의 데미지§f를 줍니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초");
@@ -299,9 +299,9 @@ public class EmiyaShirou extends Ability {
                 for (int k = 0; k < 10; k++) {
                     // 실시간 플레이어 위치 추적하여 주변에 소환
                     Location center = p.getLocation();
-                    // 5x5 범위 (반경 2.5) 내 랜덤 위치
-                    double dx = (Math.random() * 5.0) - 2.5;
-                    double dz = (Math.random() * 5.0) - 2.5;
+                    // 11x11 범위 (반경 5.5) 내 랜덤 위치
+                    double dx = (Math.random() * 11.0) - 5.5;
+                    double dz = (Math.random() * 11.0) - 5.5;
 
                     // [Fix] Y좌표 보정: getHighestBlockYAt은 실내에서 천장을 잡거나 땅굴에서 지상을 잡는 문제가 있음
                     // 따라서 플레이어의 Y좌표 기준으로 아래로 탐색하여 바닥을 찾음
