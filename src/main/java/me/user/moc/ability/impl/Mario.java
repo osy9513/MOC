@@ -69,7 +69,7 @@ public class Mario extends Ability {
         p.sendMessage("§b복합 ● 마리오(마리오)");
         p.sendMessage("§f슈퍼버섯 우클릭 시 15초간 추가 체력 5칸과 점프 강화2 버프가 걸립니다.");
         p.sendMessage("§f점프 상태에서 쉬프트 누를 경우 힙 드롭을 합니다.");
-        p.sendMessage("§f힙 드롭 시 반경 3x3 범위에 8 데미지를 주고 적중 시 자동으로 점프합니다.");
+        p.sendMessage("§f힙 드롭 시 반경 11x11 범위에 8 데미지를 주고 적중 시 자동으로 점프합니다.");
         p.sendMessage("§f힙 드롭은 1.5초의 쿨타임이 있습니다.");
         p.sendMessage("§f힙 드롭 착지 시 1.5초간 낙하 데미지는 받지 않습니다.");
         p.sendMessage(" ");
@@ -268,6 +268,9 @@ public class Mario extends Ability {
     public void onPlayerToggleSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
 
+        if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
+
         if (!AbilityManager.getInstance().hasAbility(p, getCode()))
             return;
 
@@ -334,9 +337,9 @@ public class Mario extends Ability {
                             p.getWorld().spawnParticle(Particle.EXPLOSION, loc, 1);
                             p.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.2f);
 
-                            // 착지 시 주변 반경 3x3 범위(직경 약 3~4, 박스 충돌)에 데미지 적용
+                            // 착지 시 주변 반경 11x11 범위(직경 약 11, 박스 충돌)에 데미지 적용
                             boolean hitSomething = false;
-                            for (org.bukkit.entity.Entity target : p.getNearbyEntities(1.5, 1.5, 1.5)) {
+                            for (org.bukkit.entity.Entity target : p.getNearbyEntities(5.5, 5.5, 5.5)) {
                                 if (target instanceof LivingEntity le && target != p) {
                                     le.damage(8.0, p);
                                     hitSomething = true;
@@ -360,6 +363,10 @@ public class Mario extends Ability {
     // 패시브: 피격/회복 시 체력 계산하여 작아지는 판정 추가
     @EventHandler
     public void onHealthCheck(EntityDamageEvent e) {
+        // [수정] 전투 시작 전(평화 시간 등)에는 작아지는 판정을 하지 않음
+        if (!me.user.moc.MocPlugin.getInstance().getGameManager().isBattleStarted())
+            return;
+
         if (e.getEntity() instanceof Player p) {
             if (AbilityManager.getInstance().hasAbility(p, getCode())) {
 

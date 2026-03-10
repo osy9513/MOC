@@ -189,11 +189,8 @@ public class KingHassan extends Ability {
             double trueDamage = 19.0;
 
             if (victim.getHealth() <= trueDamage) {
-                // 즉사(킬) 판정일 경우 이벤트 자체를 취소하고 데미지로 0을 부여하여 더블 킬(Double Kill) 버그 방지
-                e.setCancelled(true);
-                victim.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
-                        me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
-                victim.setHealth(0);
+                // 막타일 때 데미지를 아주 크게 주어 이벤트 내에서 정상적으로 죽게 만들어 2킬 버그 수정
+                e.setDamage(2000.0);
             } else {
                 e.setDamage(0.0001);
                 victim.setHealth(victim.getHealth() - trueDamage);

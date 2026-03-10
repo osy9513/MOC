@@ -393,8 +393,8 @@ public class AsuiTsuyu extends Ability {
             Entity target = info.targetEntity;
             Vector dir = p.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
 
-            // [수정] 속도 4.5로 상향 + Y축 보정 (확실하게 당기기)
-            target.setVelocity(dir.multiply(4.5).setY(0.5));
+            // [수정] 속도 4.5로 상향 + Y축 보정 (낙하 데미지 6~8 유도)
+            target.setVelocity(dir.multiply(4.5).setY(1.2));
             p.sendMessage("§a대상을 당겨왔습니다!");
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1f, 1f);
         } else if (info.targetLoc != null) {

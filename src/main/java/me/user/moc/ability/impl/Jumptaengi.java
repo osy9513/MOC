@@ -184,6 +184,10 @@ public class Jumptaengi extends Ability {
         if (projectile.getShooter() instanceof Player shooter && shooter.equals(victim))
             return;
 
+        // [수정] 이미 고양이(변신 중)인 대상은 무시하여 변신 및 인벤토리 초기화 중복 실행 방지
+        if (disguisedCats.containsKey(victim.getUniqueId()))
+            return;
+
         // 변신 로직 실행
         transformToCat(victim);
     }
