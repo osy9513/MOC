@@ -176,6 +176,7 @@ public class Mario extends Ability {
         // 크기 조절: 1.5배
         if (p.getAttribute(Attribute.SCALE) != null) {
             p.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+            p.sendMessage("§a커졌다!");
         }
 
         spawnPopcornParticle(p, Material.RED_MUSHROOM);
