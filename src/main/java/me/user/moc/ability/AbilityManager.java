@@ -99,7 +99,7 @@ public class AbilityManager {
         addAbility(new FoxDevil(plugin)); // 042 여우의 악마
         addAbility(new Gintoki(plugin)); // 043 긴토키
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
-        addAbility(new Yesung(plugin)); // H02 예성이
+        addAbility(new Yesung(plugin)); // H02 루키
         addAbility(new TungTungTungSahur(plugin)); // 016 퉁퉁퉁 사후르
         addAbility(new DIO(plugin)); // 045 DIO
         addAbility(new Jigsaw(plugin)); // 049 직쏘

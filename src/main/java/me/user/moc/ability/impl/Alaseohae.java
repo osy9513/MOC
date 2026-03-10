@@ -41,12 +41,12 @@ public class Alaseohae extends Ability {
 
     @Override
     public List<String> getDescription() {
-        return Arrays.asList("§b유틸 ● 알아서해(바집소)", "§e소주 킬러.");
+        return Arrays.asList("§d히든 ● 알아서해(바집소)", "§e소주 킬러.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§b유틸 ● 알아서해(바집소)");
+        p.sendMessage("§d히든 ● 알아서해(바집소)");
         p.sendMessage("§f소주병을 우클릭하면 전방에 소주병을 던져 술을 뿌립니다.");
         p.sendMessage("§f맞은 상대는 멀미 100와 채굴 피로 100가 10초간 걸립니다.");
         p.sendMessage("§f알아서해가 맞을 경우 멀미 3와 힘 3가 10초간 걸립니다.");

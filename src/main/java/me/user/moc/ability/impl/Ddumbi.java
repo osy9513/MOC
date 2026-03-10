@@ -115,7 +115,7 @@ public class Ddumbi extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§e복합 ● 뚜비(가족)");
+        p.sendMessage("§d히든 ● 뚜비(가족)");
         p.sendMessage("§f가수가 되.");
         p.sendMessage(" ");
         p.sendMessage("§d[이렇게 좋은 날] §f재생 음표 발사 (본인/아군 재생 II 5초)");
@@ -132,7 +132,7 @@ public class Ddumbi extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§e복합 ● 뚜비(가족)",
+                "§d히든 ● 뚜비(가족)",
                 "§fCD를 사용하여 다양한 음표 공격/지원을 하고,",
                 "§f커피를 마셔 버프를 얻습니다.");
     }
