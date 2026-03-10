@@ -39,9 +39,6 @@ public class SungJinWoo extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        // 능력 발동 시 채팅에 출력될 메세지
-        p.getServer().broadcastMessage("§f성진우 : 일어나라.");
-
         // 철칼 제거
         p.getInventory().remove(Material.IRON_SWORD);
 
@@ -316,6 +313,10 @@ public class SungJinWoo extends Ability {
         }
 
         if (summon != null) {
+            // 소환 성공 시 서버 전체에 소환 대사 메세지 출력
+            // 성진우가 몬스터(그림자) 소환에 성공했을 때 해당 메세지를 출력하여 게임 내 시각적/청각적 효과를 더해줍니다.
+            owner.getServer().broadcastMessage("§f성진우 : 일어나라.");
+
             // [중요] 킬 판정 및 AI 연동을 위한 소유자 메타데이터 주입
             summon.setMetadata("SungJinWooOwner",
                     new org.bukkit.metadata.FixedMetadataValue(plugin, owner.getUniqueId().toString()));
