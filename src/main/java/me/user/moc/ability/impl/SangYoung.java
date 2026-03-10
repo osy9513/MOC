@@ -35,13 +35,13 @@ public class SangYoung extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 상영(바집소)",
-                "§f갓필드ㄱ?");
+                "§d히든 ● 상영(바집소)",
+                "§f갈필드ㄱ?");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 상영(바집소)");
+        p.sendMessage("§d히든 ● 상영(바집소)");
         p.sendMessage("§f상영이가 죽을 때 까지 3초마다 모든 생명체 머리 위에");
         p.sendMessage("§f모루가 떨어짐.");
         p.sendMessage("§f해당 떨어지는 모루는 유리를 부수고 떨어짐.");

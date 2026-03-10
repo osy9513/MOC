@@ -40,28 +40,25 @@ public class Pantheon extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§e전투 ● §f빵테온 (Pantheon of Bread)",
-                "§f빵을 우클릭하여 던질 수 있습니다.",
-                "§f빵을 적중시키면 피해를 입히고 배고픔을 채워줍니다.",
-                "§f빵으로 근접 공격 시 철 검과 동일한 피해를 줍니다.");
+                "§f빵테온~~~ 미드로 가부자~~");
     }
 
     @Override
     public void giveItem(Player p) {
         // 장비 제거: 철 칼
         p.getInventory().remove(Material.IRON_SWORD);
+        // [장비 제거] 구운 소고기 제거
+        p.getInventory().remove(Material.COOKED_BEEF);
 
         // 추가 장비: 빵 64 * 3개
         ItemStack bread = new ItemStack(Material.BREAD, 64);
         ItemMeta meta = bread.getItemMeta();
         if (meta != null) {
-            meta.setLore(Arrays.asList("§7우클릭 시 빵을 던져 피해를 입히고 배고픔을 회복합니다."));
+            meta.setLore(Arrays.asList("§7우클릭 시 빵을 던져 피격 무적을 무시하고 피해를 입히며 배고픔을 회복합니다."));
             bread.setItemMeta(meta);
         }
         p.getInventory().addItem(bread);
         p.getInventory().addItem(bread);
-        p.getInventory().addItem(bread);
-        // [장비 제거] 구운 소고기 제거
-        p.getInventory().remove(Material.COOKED_BEEF);
 
         p.getServer().broadcastMessage("§c빵테온 : 난 항상 제빵사가 되고 싶었지.");
     }
@@ -71,13 +68,13 @@ public class Pantheon extends Ability {
         p.sendMessage("§c전투 ● 판테온(리그 오브 레전드)");
         p.sendMessage("§f우클릭 시 빵을 활처럼 당겨서 발사합니다.");
         p.sendMessage("§f빵 발사 시 배고픔 3칸이 찹니다.");
-        p.sendMessage("§f빵에 맞으면 체력이 3칸 감소하며 배고픔이 3칸 찹니다.");
+        p.sendMessage("§f던진 빵에 맞으면 피격 무적을 무시하고 체력이 3칸 감소하며 배고픔이 3칸 찹니다.");
         p.sendMessage("§f빵으로 때리면 철 칼과 같은 대미지를 줍니다.");
         p.sendMessage("§f빵을 발사하는 만큼 빵이 소모됩니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 0초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 빵 64 * 3개");
+        p.sendMessage("§f추가 장비 : 빵 64 * 2개");
         p.sendMessage("§f장비 제거 : 철 칼, 구운 소고기");
     }
 
@@ -166,7 +163,8 @@ public class Pantheon extends Ability {
                     return;
                 }
 
-                // 타인 적중 시: 데미지 3칸 (6)
+                // 타인 적중 시: 피격 무적 무시 후 데미지 3칸 (6)
+                victim.setNoDamageTicks(0);
                 e.setDamage(6.0);
 
                 // 맞은 대상 배고픔 회복

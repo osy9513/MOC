@@ -38,13 +38,13 @@ public class OneC extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c유틸 ● 원크(바집소)",
+                "§d히든 ● 원크(바집소)",
                 "§f랜덤 능력 펀치~");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c유틸 ● 원크(바집소)");
+        p.sendMessage("§d히든 ● 원크(바집소)");
         p.sendMessage("§f맨손 쉬프트 좌클릭으로 플레이어를 공격할 경우, 해당 플레이어의 체력을 3칸 깎고");
         p.sendMessage("§f능력을 현재 라운드의 플레이어 능력들과 겹치지 않는 랜덤한 능력으로 변경 시킵니다.");
         p.sendMessage(" ");

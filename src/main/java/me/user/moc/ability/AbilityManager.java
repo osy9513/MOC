@@ -99,7 +99,7 @@ public class AbilityManager {
         addAbility(new FoxDevil(plugin)); // 042 여우의 악마
         addAbility(new Gintoki(plugin)); // 043 긴토키
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
-        addAbility(new Yesung(plugin)); // H02 예성이
+        addAbility(new Yesung(plugin)); // H02 루키
         addAbility(new TungTungTungSahur(plugin)); // 016 퉁퉁퉁 사후르
         addAbility(new DIO(plugin)); // 045 DIO
         addAbility(new Jigsaw(plugin)); // 049 직쏘
@@ -134,12 +134,12 @@ public class AbilityManager {
         addAbility(new OneC(plugin)); // H08 원크 등록
         addAbility(new SangYoung(plugin)); // H09 상영 등록
         addAbility(new UchihaItachi(plugin)); // 067 우치하 이타치
-        addAbility(new me.user.moc.ability.impl.HatsuneMiku(plugin)); // 072
-        addAbility(new me.user.moc.ability.impl.Mario(plugin)); // 073
-
-        // H 계열 (등급외/유틸 등) addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
+        addAbility(new CrazyMiner(plugin)); // 069 크레이지마이너
         addAbility(new Chell(plugin)); // 070 첼
         addAbility(new Hiccup(plugin)); // 071 히컵
+        addAbility(new HatsuneMiku(plugin)); // 072 하츠네 미쿠
+        addAbility(new Mario(plugin)); // 073 마리오
+        //
         //
         //
         //

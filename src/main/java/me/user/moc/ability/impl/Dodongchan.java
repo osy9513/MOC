@@ -39,14 +39,12 @@ public class Dodongchan extends Ability {
 
     @Override
     public List<String> getDescription() {
-        return Arrays.asList(
-                "§c유틸 ● 도동찬(바집소)",
-                "§f도동찬이되.");
+        return Arrays.asList("§d히든 ● 도동찬(바집소)", "§f동!!!!");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c유틸 ● 도동찬(바집소)");
+        p.sendMessage("§d히든 ● 도동찬(바집소)");
         p.sendMessage("§f배고픈 동찬이가 된다. 검은 정장이 잘 어울린다.");
         p.sendMessage("§f동까스 망치를 우클릭 시 돌풍구를 쏜다.");
         p.sendMessage("§f배고프다. 허기 255 상시 유지");

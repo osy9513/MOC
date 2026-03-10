@@ -349,7 +349,8 @@ public class Yesung extends Ability {
 
             // [추가] 무적 시간 무시 (True Damage 효과)
             target.setNoDamageTicks(0);
-            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
+            target.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                    me.user.moc.MocPlugin.getInstance(), attacker.getUniqueId().toString()));
             target.damage(13.0, attacker);
             w.spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 10, 0.5, 0.5, 0.5, 0.1);
             count++;
