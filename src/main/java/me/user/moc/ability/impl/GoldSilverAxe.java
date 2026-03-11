@@ -153,11 +153,50 @@ public class GoldSilverAxe extends Ability {
         // 4. 아이템을 물 위로 튀어오르게 함
         resultItem.setVelocity(new Vector(0, 0.8, 0));
 
+        // [추가] 금도끼 은도끼 도끼 소유권 보호 (3초 동안 본인만 먹을 수 있음)
+        resultItem.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(plugin, "MOC_Fergus_Owner"),
+                org.bukkit.persistence.PersistentDataType.STRING,
+                p.getUniqueId().toString()
+        );
+        resultItem.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(plugin, "MOC_ProtectTime"),
+                org.bukkit.persistence.PersistentDataType.LONG,
+                System.currentTimeMillis() + 3000L
+        );
+
         // 5. 효과 연출 (노란 연기 + 소리)
         // DUST 파티클은 Color 옵션이 필요함 (노란색: 255, 255, 0)
         Particle.DustOptions dustOptions = new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 255, 0), 1.5f);
         loc.getWorld().spawnParticle(Particle.DUST, loc, 30, 0.5, 0.5, 0.5, dustOptions);
         loc.getWorld().playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.5f);
+    }
+
+    // 아이템 습득 방어 (능력자 본인이 아니면 3초 안에 먹는 것 차단)
+    @EventHandler
+    public void onPickup(org.bukkit.event.entity.EntityPickupItemEvent e) {
+        if (!(e.getEntity() instanceof Player p)) return;
+
+        Item item = e.getItem();
+        org.bukkit.persistence.PersistentDataContainer data = item.getPersistentDataContainer();
+        
+        org.bukkit.NamespacedKey ownerKey = new org.bukkit.NamespacedKey(plugin, "MOC_Fergus_Owner");
+        org.bukkit.NamespacedKey timeKey = new org.bukkit.NamespacedKey(plugin, "MOC_ProtectTime");
+
+        if (data.has(ownerKey, org.bukkit.persistence.PersistentDataType.STRING) &&
+            data.has(timeKey, org.bukkit.persistence.PersistentDataType.LONG)) {
+            
+            String ownerUUIDStr = data.get(ownerKey, org.bukkit.persistence.PersistentDataType.STRING);
+            long protectTime = data.get(timeKey, org.bukkit.persistence.PersistentDataType.LONG);
+
+            // 시간이 지나지 않았고
+            if (System.currentTimeMillis() < protectTime) {
+                // 습득자가 주인이 아니라면 차단
+                if (!p.getUniqueId().toString().equals(ownerUUIDStr)) {
+                    e.setCancelled(true);
+                }
+            }
+        }
     }
 
     private Material pickRandomAxeMaterial() {

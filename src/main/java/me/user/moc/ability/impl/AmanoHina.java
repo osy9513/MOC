@@ -56,7 +56,7 @@ public class AmanoHina extends Ability {
         p.sendMessage("§c전투 ● 아마노 히나(날씨의 아이)");
         p.sendMessage("§f맨손 쉬프트 좌클릭 시");
         p.sendMessage("§f비가 오면서 본인을 제외한 모든 플레이어 머리에 비를 떨어트립니다.");
-        p.sendMessage("§f8초 뒤 날씨가 맑아집니다.");
+        p.sendMessage("§f13초 뒤 날씨가 맑아집니다.");
         p.sendMessage("§f날씨가 맑아진 뒤 1초간 몸이 투명해집니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초");
@@ -97,7 +97,7 @@ public class AmanoHina extends Ability {
 
         // 날씨를 비로 변경
         world.setStorm(true);
-        world.setWeatherDuration(200); // 넉넉하게 설정 (어차피 8초 뒤에 맑게 함)
+        world.setWeatherDuration(300); // 넉넉하게 설정 (어차피 13초 뒤에 맑게 함)
 
         Bukkit.broadcastMessage("§b아마노 히나 : 비가 오려나?");
         p.getWorld().playSound(p.getLocation(), Sound.WEATHER_RAIN_ABOVE, 1f, 1f);
@@ -112,10 +112,10 @@ public class AmanoHina extends Ability {
             world.spawnParticle(Particle.CLOUD, center.clone().add(x, 0, z), 1, 0, 0, 0, 0);
         }
 
-        // 눈물 떨구기 태스크 (8초간, 초당 10회 = 2틱마다)
+        // 눈물 떨구기 태스크 (13초간, 초당 10회 = 2틱마다)
         BukkitTask task = new BukkitRunnable() {
             int tickCount = 0;
-            final int maxTicks = 160; // 8초 * 20틱
+            final int maxTicks = 260; // 13초 * 20틱
 
             @Override
             public void run() {

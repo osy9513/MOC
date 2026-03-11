@@ -139,6 +139,8 @@ public class AbilityManager {
         addAbility(new Hiccup(plugin)); // 071 히컵
         addAbility(new HatsuneMiku(plugin)); // 072 하츠네 미쿠
         addAbility(new Mario(plugin)); // 073 마리오
+        addAbility(new Sasuke(plugin)); // 074 사스케
+        addAbility(new Fergus(plugin)); // 075 퍼거스
         //
         //
         //
