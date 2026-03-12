@@ -320,6 +320,12 @@ public class Deidara extends Ability {
         if (e.getDamager() instanceof TNTPrimed tnt) {
             if (tnt.getSource() instanceof Player p) {
                 if (AbilityManager.getInstance().hasAbility(p, getCode())) {
+                    // [추가] 데이다라 너프: 물 안에서 터진 TNT는 데미지를 주지 못하게 막음.
+                    if (tnt.getLocation().getBlock().getType() == Material.WATER) {
+                        e.setCancelled(true);
+                        return;
+                    }
+
                     e.getEntity().setMetadata("MOC_LastKiller",
                             new org.bukkit.metadata.FixedMetadataValue(plugin, p.getUniqueId().toString()));
                 }
