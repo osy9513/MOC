@@ -124,7 +124,7 @@ public class Jihyun extends Ability {
             setCooldown(p, 5);
 
             // 채팅 메시지 출력
-            MocPlugin.getInstance().getServer().broadcastMessage("§e" + p.getName() + " §f: 담탐 ㄱ?");
+            MocPlugin.getInstance().getServer().broadcastMessage("§e지현 : §f담탐 ㄱ?");
             p.sendMessage("§e[지현] §f현재 도넛 개수: " + currentStack + "개"); // 본인에게만 표시
 
             // 연사 루프 시작 (BukkitRunnable)
