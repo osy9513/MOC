@@ -60,6 +60,25 @@ public class Ulquiorra extends Ability {
             meta.setLore(List.of("§7우클릭 시 2초간 기를 모아 강력한 창을 던집니다.", "§7적중 시 대상을 끌고 가며 큰 피해를 입힙니다.", "§8(쿨타임 20초)"));
             meta.setUnbreakable(true); // 부서지지 않음
             meta.setCustomModelData(1); // 리소스팩: ulquiorra
+
+            // [추가] 삼지창 자체 평타 데미지를 철칼과 동일하게(데미지 6, 공속 1.6) 맞추기 위한 속성값 변경
+            // 플레이어 기본 데미지가 1이므로 +5를 추가해 총 6의 데미지를 가짐
+            org.bukkit.attribute.AttributeModifier damageMod = new org.bukkit.attribute.AttributeModifier(
+                    new org.bukkit.NamespacedKey(plugin, "ulquiorra_dmg"),
+                    5.0,
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+                    org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+            
+            // 기본 공격속도(4.0)에서 2.4를 빼서 철검과 동일한 1.6의 공격속도로 변경
+            org.bukkit.attribute.AttributeModifier speedMod = new org.bukkit.attribute.AttributeModifier(
+                    new org.bukkit.NamespacedKey(plugin, "ulquiorra_spd"),
+                    -2.4, 
+                    org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+                    org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+
+            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE, damageMod);
+            meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED, speedMod);
+
             lanza.setItemMeta(meta);
         }
         p.getInventory().addItem(lanza);
