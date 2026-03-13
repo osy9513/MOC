@@ -142,8 +142,11 @@ public class AbilityManager {
         addAbility(new Ghost(plugin)); // 076 고스트
         addAbility(new Kaiji(plugin)); // 077 카이지
         addAbility(new StevenArmstrong(plugin)); // 078 스티븐 암스트롱
+        addAbility(new Jadoo(plugin)); // 079 최자두
         addAbility(new Sasuke(plugin)); // 074 사스케
         addAbility(new Fergus(plugin)); // 075 퍼거스
+        addAbility(new Lurker(plugin)); // 080 럴커
+        addAbility(new Byunggu(plugin)); // 081 이병구
         //
         //
         //
