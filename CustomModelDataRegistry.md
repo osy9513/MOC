@@ -72,3 +72,5 @@
 | **mic** (17) | 철 검 (`iron_sword`) | 하츠네 미쿠 (`HatsuneMiku.java`) | `models/item/mic.json` |
 | **soju** (1) | 초록색 염료 (`green_dye`) | 알아서해 (`Alaseohae.java`) | `models/item/soju.json` |
 | **supermraio** (1) | 붉은 버섯 (`red_mushroom`) | 마리오 (`Mario.java`) | `models/item/supermraio.json` |
+| **luck_letter** (1) | 황금 검 (`golden_sword`) | 최자두 (`Jadoo.java`) | `models/item/luck_letter.json` |
+| **ggul** (1) | 벌집조각 (`honeycomb`) | 이병구 (`Byunggu.java`) | `models/item/ggul.json` |
