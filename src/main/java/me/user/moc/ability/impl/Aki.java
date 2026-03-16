@@ -24,9 +24,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import me.user.moc.ability.Ability;
 import net.kyori.adventure.text.Component;
 
-public class FoxDevil extends Ability {
+public class Aki extends Ability {
 
-    public FoxDevil(JavaPlugin plugin) {
+    public Aki(JavaPlugin plugin) {
         super(plugin);
     }
 
@@ -37,13 +37,13 @@ public class FoxDevil extends Ability {
 
     @Override
     public String getName() {
-        return "여우의 악마";
+        return "아키";
     }
 
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 여우의 악마(체인소맨)",
+                "§c전투 ● 아키(체인소맨)",
                 "§f여우의 악마와 계약해 콩을 사용합니다.");
     }
 
@@ -54,7 +54,7 @@ public class FoxDevil extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 여우의 악마(체인소맨)");
+        p.sendMessage("§c전투 ● 아키(체인소맨)");
         p.sendMessage("§f여우의 악마와 계약해 콩을 사용합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f블럭을 바라보며 맨손으로 좌클릭 + 쉬프트를 동시에 눌러 체력을 3칸을 소모하여");
@@ -119,7 +119,7 @@ public class FoxDevil extends Ability {
             }
         }
 
-        Bukkit.broadcast(Component.text("여우의 악마 계약자 : 콩!"));
+        Bukkit.broadcast(Component.text("아키 : 콩!"));
 
         // 6. 여우 소환 로직 (나머지는 기존과 동일)
         Location targetLoc = b.getLocation();
