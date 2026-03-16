@@ -96,7 +96,7 @@ public class AbilityManager {
         addAbility(new KiraYoshikage(plugin)); // 039 키라 요시카게
         addAbility(new KimDokja(plugin)); // 040 김독자
         addAbility(new ErenYeager(plugin)); // 041 에렌 예거
-        addAbility(new FoxDevil(plugin)); // 042 여우의 악마
+        addAbility(new Aki(plugin)); // 042 아키
         addAbility(new Gintoki(plugin)); // 043 긴토키
         addAbility(new TogaHimiko(plugin)); // 047 토가 히미코
         addAbility(new Yesung(plugin)); // H02 루키
