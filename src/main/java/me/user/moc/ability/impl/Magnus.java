@@ -57,8 +57,8 @@ public class Magnus extends Ability {
         p.sendMessage("§e복합 ● 매그너스(이터널 리턴)");
         p.sendMessage("§f우클릭 시 10초간 오토바이를 탑승하여 질주합니다.");
         p.sendMessage("§f점점 빠른 속도로 이동하며, 마우스로 방향을 조절합니다.");
-        p.sendMessage("§f충돌 시 또는 하차 후 1초 뒤 폭발하여 강력한 광역 피해를 줍니다.");
-        p.sendMessage("§f본인은 폭발 대미지를 입지 않습니다.");
+        p.sendMessage("§f충돌 시 또는 하차 후 1초 뒤 폭발하여 25의 폭발 피해를 줍니다.");
+        p.sendMessage("§f본인은 폭발 피해를 입지 않습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f쿨타임 : 20초");
         p.sendMessage("§f---");
@@ -253,9 +253,10 @@ public class Magnus extends Ability {
                 if (e instanceof Player && ((Player) e).getGameMode() == org.bukkit.GameMode.SPECTATOR)
                     continue;
 
-                living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
+                living.setMetadata("MOC_LastKiller", new org.bukkit.metadata.FixedMetadataValue(
+                        me.user.moc.MocPlugin.getInstance(), p.getUniqueId().toString()));
 
-                living.damage(36.0, p); // 18칸 = 36 대미지
+                living.damage(25.0, p); // 12.5칸 = 25 대미지
             }
         }
     }

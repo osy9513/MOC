@@ -82,6 +82,8 @@ public class Lurker extends Ability {
         burrowedState.remove(p.getUniqueId());
         lastSneakTime.remove(p.getUniqueId());
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
+        // [추가] 잠복 중 이동 차단용 이속 감소 효과도 같이 제거
+        p.removePotionEffect(PotionEffectType.SLOWNESS);
     }
 
     @Override
@@ -108,6 +110,7 @@ public class Lurker extends Ability {
         // 잠복 상태일 때는 평타 공격(EntityDamageByEntity) 불가
         if (isBurrowed(p)) {
             e.setCancelled(true);
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c잠복 중에는 공격할 수 없습니다!"));
         }
     }
 
@@ -199,6 +202,12 @@ public class Lurker extends Ability {
         // 은신 부여
         p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
 
+        // [고도화] 이동 차단 - Slowness 255(최대 레벨) 무한 부여
+        // 마인크래프트에서 Slowness 255는 이동 속도를 사실상 0으로 만들어 움직일 수 없게 합니다.
+        // 잠복 중 이동이 가능했던 문제를 이 방법으로 해결합니다.
+        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 254, false, false));
+        p.sendActionBar(net.kyori.adventure.text.Component.text("§2잠복 상태 - 이동 불가 / 공격 불가"));
+
         // 잠복 및 공격 스케줄러 등록
         BukkitTask task = new BukkitRunnable() {
             @Override
@@ -245,6 +254,8 @@ public class Lurker extends Ability {
     private void unburrow(Player p, boolean giveCooldown) {
         burrowedState.put(p.getUniqueId(), false);
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
+        // [고도화] 이동 차단 해제 - 잠복 해제 시 Slowness 제거
+        p.removePotionEffect(PotionEffectType.SLOWNESS);
         
         p.sendMessage("§e[럴커] §f잠복이 해제되었습니다.");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 1f, 1.2f); // 흙 튀기는 소리

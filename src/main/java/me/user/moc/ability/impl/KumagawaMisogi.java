@@ -5,10 +5,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
@@ -21,6 +23,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -96,6 +99,26 @@ public class KumagawaMisogi extends Ability {
         meta.displayName(Component.text("§f나사"));
         meta.setLore(List.of("§7우클릭 시 나사를 전방으로 발사합니다.", "§75의 데미지를 주며 15칸 날아갑니다."));
         meta.setCustomModelData(1); // 리소스팩 적용
+
+        // [고도화] 평타 공격력을 고정 5로 설정 (프리렌 지팅이와 동일한 방식)
+        // 마인크래프트 기본 공격력(1) + 4 = 5 로 설정
+        // ADD_NUMBER 연산: 기본값에 직접 더하는 방식
+        AttributeModifier damageMod = new AttributeModifier(
+                new NamespacedKey(plugin, "misogi_screw_dmg"),
+                4.0, // 기본(1) + 4 = 5 공격력
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND // 손에 든 상태에서만 적용
+        );
+        // 공간 속도(쿨타임) -2.4 설정 제거 (MOC는 disable_attack_cooldown 설정으로 관리)
+        // 대신 돌검 기준 공속(1.6)으로 맞춤
+        AttributeModifier speedMod = new AttributeModifier(
+                new NamespacedKey(plugin, "misogi_screw_spd"),
+                -2.4, // 기본(4.0) - 2.4 = 1.6 공간 속도 (돌검 기준)
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, damageMod);
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, speedMod);
+
         screw.setItemMeta(meta);
         p.getInventory().addItem(screw);
 
@@ -208,7 +231,7 @@ public class KumagawaMisogi extends Ability {
             as.setMarker(true);
             ItemStack helmet = new ItemStack(Material.END_ROD);
             ItemMeta meta = helmet.getItemMeta();
-            meta.setCustomModelData(1); // 리소스팩 적용
+            // meta.setCustomModelData(1); // 리소스팩 적용
             helmet.setItemMeta(meta);
             as.getEquipment().setHelmet(helmet);
             // 진행 방향으로 머리 회전

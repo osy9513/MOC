@@ -530,7 +530,7 @@ public class ArenaManager implements Listener {
         // 부드럽게 줄어들도록 API 사용
         if (currentSize > targetSize) {
             long durationSeconds = (long) (currentSize - targetSize); // 1 block per second
-            border.setSize(targetSize, durationSeconds);
+            border.changeSize(targetSize, durationSeconds * 20L);
             Bukkit.broadcastMessage("§c[!] §f자기장이 " + durationSeconds + "초 동안 서서히 줄어듭니다.");
         }
 

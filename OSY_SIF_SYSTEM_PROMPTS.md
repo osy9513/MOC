@@ -11,6 +11,11 @@
 2. **관전자 & 크리에이티브 모드 통제:** 타겟팅 스킬 사용 시 상대가 관전자(SPECTATOR)이면 대상을 즉시 무효화하고, 본인이 크리에이티브(CREATIVE) 모드라면 쿨타임 증가를 절대 무시(상시 스킬 사용 가능)해야 합니다.
 3. **상태 관리의 격리:** 모든 데이터 상태(예: 쿨타임, 중첩 횟수, 활성화 여부)는 `Map<UUID, 상태>` 구조로 관리하십시오. 절대로 클래스 전역에 `private int count;` 식으로 단일 인스턴스 변수로 관리해서는 안 됩니다.
 4. **Kill Attribution 필수 연동:** 간접 공격(소환수, 폭발)이나 우회 피해(`target.setHealth(0)`) 시에는 죽기 직전 반드시 피해자에게 `MOC_LastKiller` 메타데이터(점수 획득할 UUID)를 주입해야 스코어보드가 정상 작동합니다.
+5. **🔴 [실제 발생한 버그] `reset()`에서 스케줄러 시작 절대 금지:** `reset()` 메서드는 라운드 종료 및 플러그인 비활성화(`onDisable`) 시 호출됩니다. 이 안에서 `BukkitRunnable`을 새로 등록(startXxxLoop 등)하면 **"Plugin attempted to register task while disabled"** 에러가 발생하여 `stopGame()`이 중간에 터지고 브금 종료, 체력 초기화 등 모든 후속 처리가 실패합니다.
+   - **`reset()`은 오직 취소(cancel)와 null 초기화만 해야 합니다.**
+   - 스케줄러 재시작이 필요하다면 반드시 `giveItem()` 안에서만 실행하십시오.
+   - 예시 (틀린 코드): `reset() { passiveTask.cancel(); startPassiveLoop(); }` ← 절대 금지!
+   - 예시 (올바른 코드): `reset() { passiveTask.cancel(); passiveTask = null; }` + `giveItem() { if (passiveTask == null) startPassiveLoop(); }`
 ---
 
 ## [V] Metadata & Environment
@@ -159,6 +164,29 @@ public List<String> getDescription() {
    - 능력 클래스의 생성자(`Constructor`)에는 `super(plugin);` 이외의 로직(스케줄러 시작, 이벤트 리스너 등록, 리소스 로딩 등)을 **절대 작성하지 마십시오.**
    - 모든 초기화 및 스케줄러 실행은 실제 능력이 지급되는 `giveItem(Player p)` 메서드 내에서 처리해야 합니다.
    - 이는 서버 시작 시 모든 클래스가 인스턴스화되면서 발생하는 불필요한 성능 저하를 막기 위함입니다. 반드시 **Lazy Initialization** 원칙을 준수하십시오.
+4. **`reset()` 내 스케줄러 시작 금지 (중요):**
+   - `reset()`은 라운드 종료 및 플러그인 비활성화 시 호출됩니다. 이 메서드 안에서 절대 새 `BukkitRunnable`을 등록하거나 `startXxxLoop()` 같은 스케줄러 시작 메서드를 호출하지 마십시오.
+   - 위반 시 `bukkit:reload confirm` 또는 서버 종료 시 **"Plugin attempted to register task while disabled"** 에러 → `stopGame()` 중단 → 브금 미종료, 체력 미초기화 등 모든 마무리 처리 실패로 이어집니다. (StevenArmstrong.java 선례 참고)
+   - **올바른 패턴:** `reset()`에서는 취소 + `null` 초기화만, 재시작은 `giveItem()`에서 조건부로 수행.
+   ```java
+   // ✅ 올바른 reset() 패턴
+   @Override
+   public void reset() {
+       super.reset();
+       if (passiveTask != null && !passiveTask.isCancelled()) {
+           passiveTask.cancel();
+       }
+       passiveTask = null; // null로 초기화 → giveItem()에서 재시작 조건 판별에 사용
+   }
+   
+   // ✅ 올바른 giveItem() 패턴
+   @Override
+   public void giveItem(Player p) {
+       if (passiveTask == null || passiveTask.isCancelled()) {
+           startPassiveLoop(); // 능력 지급 시에만 새 루프 시작
+       }
+   }
+   ```
 - **능력 아이템 설명 (Item Lore):**
    - 모든 능력자 파일 중 능력 아이템을 지급하는 소스(`giveItem` 등)에는 반드시 아이템의 사용법과 발동되는 능력에 대한 설명(Lore)을 추가해야 합니다.
    - 예시: "우클릭 시 바람의 상처 발동", "웅크리고 우클릭 시 폭류파 발동" 등 구체적인 행동과 결과를 명시하십시오.
@@ -197,8 +225,6 @@ public List<String> getDescription() {
 6. **장비 정보:** 
    - `§f추가 장비 : [내용 또는 없음]`
    - `§f장비 제거 : [내용 또는 없음]`
-7. **연동:**
-   - `giveItem()` 호출 시 `detailCheck()`가 호출되도록 합니다.
 
 ---
 

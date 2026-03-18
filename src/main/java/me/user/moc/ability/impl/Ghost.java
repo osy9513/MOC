@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Ghost extends Ability {
 
     private final String CODE = "076";
-    private final String NAME = "고스트(스타크래프트)";
-    private final int COOLDOWN = 45;
+    private final String NAME = "고스트";
+    private final int COOLDOWN = 60;
 
     // 핵 신호기 관련 블록 추적 (위치 좌표 정보 저장. 파괴 시 스케줄러를 취소하기 위함)
     private final Map<UUID, Location> activeBeacons = new ConcurrentHashMap<>();
@@ -65,10 +65,10 @@ public class Ghost extends Ability {
         p.sendMessage("§f전술 핵 공격을 유도합니다.");
         p.sendMessage("§f ");
         p.sendMessage("§f핵 신호기로 블럭을 때리면 해당 블럭을 핵 신호기로 변경합니다.");
-        p.sendMessage("§f15초 뒤에 해당 위치에 전술 핵을 떨어트립니다.");
-        p.sendMessage("§f15초 전에 핵 신호기가 부셔지면 핵 공격이 취소됩니다.");
+        p.sendMessage("§f30초 뒤에 해당 위치에 전술 핵을 떨어트립니다.");
+        p.sendMessage("§f30초 전에 핵 신호기가 부셔지면 핵 공격이 취소됩니다.");
         p.sendMessage("§f전술 핵은 떨어지는 동안 블럭을 관통합니다.");
-        p.sendMessage("§f전술 핵 데미지는 폭심지로부터 거리에 따라 999 / 59 / 29이 가해지며 넉백을 동반합니다.");
+        p.sendMessage("§f전술 핵 데미지는 폭심지로부터 거리에 따라 999 / 49 / 29이 가해지며 넉백을 동반합니다.");
         p.sendMessage("§f ");
         p.sendMessage("§f쿨타임 : " + COOLDOWN + "초");
         p.sendMessage("§f---");
@@ -89,7 +89,6 @@ public class Ghost extends Ability {
             beacon.setItemMeta(meta);
         }
         p.getInventory().addItem(beacon);
-        detailCheck(p);
     }
 
     @Override
@@ -190,7 +189,7 @@ public class Ghost extends Ability {
             // 15초 카운트다운 스케줄러 등록
             BukkitTask task = new BukkitRunnable() {
                 int tick = 0;
-                final int maxTick = 15 * 20; // 300틱 (15초)
+                final int maxTick = 30 * 20; // 600틱 (30초)
 
                 @Override
                 public void run() {
@@ -356,8 +355,8 @@ public class Ghost extends Ability {
                 damageAmount = 999.0;
                 knockbackPower = 1.0;
             } else if (distance <= 40.0) {
-                // 2단계: 20~40 블록 - 59 데미지 및 강한 넉백
-                damageAmount = 59.0;
+                // 2단계: 20~40 블록 - 49 데미지 및 강한 넉백
+                damageAmount = 49.0;
                 knockbackPower = 3.0;
             } else if (distance <= 60.0) {
                 // 3단계: 40~60 블록 - 29 데미지 및 적당한 넉백
