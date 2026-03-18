@@ -36,6 +36,8 @@ public class Jadoo extends Ability {
 
     // [상태 관리의 격리] 싱글톤 변수 금지, Map 사용
     private final Map<UUID, Integer> sendCountMap = new HashMap<>();
+    // [고도화] 스케줄러 중복 실행 방지를 위한 태스크 관리 맵
+    private final Map<UUID, BukkitTask> activeCurseTasks = new HashMap<>();
 
     public Jadoo(MocPlugin plugin) {
         super(plugin);
@@ -75,16 +77,44 @@ public class Jadoo extends Ability {
         p.sendMessage("§f장비 제거 : 철 칼.");
     }
 
+    /**
+     * [고도화] 라운드 종료 시 전역 데이터 초기화
+     * 메모리 누수 방지 및 다음 라운드 영향 차단
+     */
+    @Override
+    public void reset() {
+        super.reset();
+        sendCountMap.clear();
+        // 실행 중인 모든 저주 스케줄러 취소 및 맵 비우기
+        for (BukkitTask task : activeCurseTasks.values()) {
+            if (task != null)
+                task.cancel();
+        }
+        activeCurseTasks.clear();
+    }
+
     @Override
     public void cleanup(Player p) {
         super.cleanup(p);
-        sendCountMap.remove(p.getUniqueId());
+        UUID uuid = p.getUniqueId();
+        sendCountMap.remove(uuid);
         p.removePotionEffect(PotionEffectType.LUCK);
-        // 4초 스케줄러는 activeTasks에 등록하여 부모에서 자동 해제되도록 함.
+
+        // [고도화] 해당 플레이어의 저주 스케줄러 확실히 제거
+        BukkitTask task = activeCurseTasks.remove(uuid);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     @Override
     public void giveItem(Player p) {
+        // [고도화] 기존에 이미 능력을 가지고 있었다면 중복 실행 방지를 위해 cleanup 먼저 수행
+        // 만약 강제로 능력이 다시 지급되는 상황에서 안전 장치 역할을 합니다.
+        if (activeCurseTasks.containsKey(p.getUniqueId())) {
+            cleanup(p);
+        }
+
         // 철 칼 제거 (인벤토리에서 철 검 삭제)
         for (ItemStack item : p.getInventory().getContents()) {
             if (item != null && item.getType() == Material.IRON_SWORD) {
@@ -98,7 +128,7 @@ public class Jadoo extends Ability {
         // 초기 카운트 설정
         sendCountMap.put(p.getUniqueId(), 0);
 
-        // 4초 주기 스케줄러 시작
+        // 4초 주기 스케줄러 시작 (Lazy Initialization - 이미 실행 중이면 취소 후 재시작하거나 중복 실행 방지)
         startCurseScheduler(p);
     }
 
@@ -301,6 +331,7 @@ public class Jadoo extends Ability {
             }
         };
         BukkitTask bTask = task.runTaskTimer(plugin, 0L, 80L); // 0초 지연, 80틱(4초) 반복
+        activeCurseTasks.put(jadoo.getUniqueId(), bTask); // [고도화] 매니저 맵에 등록
         registerTask(jadoo, bTask);
     }
 

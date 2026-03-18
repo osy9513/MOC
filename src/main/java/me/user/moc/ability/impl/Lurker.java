@@ -59,7 +59,7 @@ public class Lurker extends Ability {
         p.sendMessage("§c전투 ● 럴커(스타크래프트)");
         p.sendMessage("§f쉬프트 연속 두 번 시 잠복합니다.");
         p.sendMessage("§f잠복 시 은신 상태가 되고 공격 및 블럭 파괴가 안 되며 점프할 수 없습니다.");
-        p.sendMessage("§f잠복 중 럴커 주위 21*21 블럭 범위 내에 생명체가 있을 경우");
+        p.sendMessage("§f잠복 중 럴커 주위 41*41 블럭 범위 내에 생명체가 있을 경우");
         p.sendMessage("§f1.25초당 한 번 씩 바닥을 통해 9 데미지의 공격을 합니다.");
         p.sendMessage("§f잠복 중 쉬프트 연속 두 번 시 잠복을 해제하며 쿨타임이 돕니다.");
         p.sendMessage(" ");
@@ -280,8 +280,8 @@ public class Lurker extends Ability {
 
     // 21*21 내에서 가장 가까운 LivingEntity 적(관전자 제외)을 찾습니다.
     private LivingEntity findNearestTarget(Player p) {
-        // 10.5 반경이란건 기준점에서 상하좌우 10.5칸. 즉 지름 21칸 (21x21 범위)이다.
-        List<org.bukkit.entity.Entity> nearby = p.getNearbyEntities(10.5, 10.5, 10.5);
+        // 21.0 반경이란건 기준점에서 상하좌우 21칸. 즉 지름 41칸 (41x41 범위)이다. (기존 10.5에서 2배 확장)
+        List<org.bukkit.entity.Entity> nearby = p.getNearbyEntities(21.0, 21.0, 21.0);
         LivingEntity closest = null;
         double minDistanceSq = Double.MAX_VALUE;
 
@@ -318,8 +318,8 @@ public class Lurker extends Ability {
         }
         dir.setY(0).normalize(); // 지상 타겟팅용: 높이 차이를 평탄화하고 정규화
 
-        // 소환사의 송곳니 생성 지점 간격 & 길이 설정 (최대거리 10.5 블럭 쭈욱)
-        double maxDistance = 10.5;
+        // 소환사의 송곳니 생성 지점 간격 & 길이 설정 (최대거리 21.0 블럭까지 확장)
+        double maxDistance = 21.0;
         double step = 1.25; // 약 1.25 블럭마다 송곳니 솟게 함
 
         // 한 번에 모든 이보스 팡을 쏘면 이펙트가 너무 동시에 터짐. 지연을 두고 1열로 나아가게 함.
