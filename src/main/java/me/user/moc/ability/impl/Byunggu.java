@@ -46,13 +46,13 @@ public class Byunggu extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 이병구(지구를 지켜라!)",
+                "§e전투 ● 이병구(지구를 지켜라!)",
                 "§f외계인에게 꿀을 던집니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 이병구(지구를 지켜라!)");
+        p.sendMessage("§e전투 ● 이병구(지구를 지켜라!)");
         p.sendMessage("§f꿀 병을 던집니다.");
         p.sendMessage("§f해당 꿀 병에 맞으면 7마리의 벌들이 공격 합니다.");
         p.sendMessage("§f양봉 모자를 쓰면 벌들에게 공격 당하지 않습니다.");
@@ -119,7 +119,7 @@ public class Byunggu extends Ability {
             setCooldown(p, 7.0);
 
             // 대사 출력
-            Bukkit.broadcastMessage("§c이병구 : §f당신 외계인이지!!");
+            Bukkit.broadcastMessage("§e이병구 : §f당신 외계인이지!!");
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_SPLASH_POTION_THROW, 1f, 1f);
 
             // 노란색 스플래시 포션 던지기

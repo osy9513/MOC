@@ -60,13 +60,13 @@ public class Kaiji extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§2혹합 ● 카이지(도박묵시록 카이지)",
+                "§b혹합 ● 카이지(도박묵시록 카이지)",
                 "§f인생을 건 도박을 합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§2혹합 ● 카이지(도박묵시록 카이지)");
+        p.sendMessage("§b혹합 ● 카이지(도박묵시록 카이지)");
         p.sendMessage("§f인생을 건 도박을 합니다.");
         p.sendMessage("§f ");
         p.sendMessage("§f다이아몬드로 플레이어를 가격 시 상대와 나는 5초간 가위 바위 보를 합니다.");
@@ -190,7 +190,7 @@ public class Kaiji extends Ability {
         gambleTargets.put(targetUuid, kaijiUuid);
 
         // 대사 방송
-        Bukkit.broadcastMessage("§c카이지 : §f이건 단순한 가위 바위 보가 아니야!! 인생을 건 가위 바위 보다!!!");
+        Bukkit.broadcastMessage("§b카이지 : §f이건 단순한 가위 바위 보가 아니야!! 인생을 건 가위 바위 보다!!!");
 
         // 소리 & 이펙트
         kaiji.playSound(kaiji.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.0f);
@@ -480,7 +480,7 @@ public class Kaiji extends Ability {
                 target.closeInventory();
 
             // 대사 방송 (가위 바위 보!!!)
-            Bukkit.broadcastMessage("§c카이지 : §f안 내면 진 거! 가위 바위 보!!!");
+            Bukkit.broadcastMessage("§b카이지 : §f안 내면 진 거! 가위 바위 보!!!");
 
             // 미선택에 대한 페널티 판정 로직
             final int WIN_KAIJI = 1;
@@ -517,7 +517,7 @@ public class Kaiji extends Ability {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 String targetName = (target != null) ? target.getName() : "상대방";
 
-                Bukkit.broadcastMessage("§c카이지 §f: " + kaijiChoice);
+                Bukkit.broadcastMessage("§b카이지 §f: " + kaijiChoice);
                 Bukkit.broadcastMessage("§e" + targetName + " §f: " + targetChoice);
 
                 if (finalResult == DRAW) {
@@ -540,7 +540,7 @@ public class Kaiji extends Ability {
                     processWinner(kaiji, target);
                 } else {
                     processWinner(target, kaiji);
-                    Bukkit.broadcastMessage("§c카이지 : §f무승부로 하지 않을래…?");
+                    Bukkit.broadcastMessage("§b카이지 : §f무승부로 하지 않을래…?");
                 }
 
                 // 끝났으므로 세션 종료 (디스플레이, 무적 해제)

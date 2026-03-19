@@ -55,13 +55,13 @@ public class Ghost extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 고스트(스타크래프트)",
+                "§a전투 ● 고스트(스타크래프트)",
                 "§f전술 핵 공격을 유도합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 고스트(스타크래프트)");
+        p.sendMessage("§a전투 ● 고스트(스타크래프트)");
         p.sendMessage("§f전술 핵 공격을 유도합니다.");
         p.sendMessage("§f ");
         p.sendMessage("§f핵 신호기로 블럭을 때리면 해당 블럭을 핵 신호기로 변경합니다.");
@@ -183,7 +183,7 @@ public class Ghost extends Ability {
             activeBeacons.put(uuid, beaconLoc);
 
             // 대사 방송
-            Bukkit.broadcastMessage("§c고스트 : §fNuclear Launch Detected.");
+            Bukkit.broadcastMessage("§a고스트 : §fNuclear Launch Detected.");
             p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 1f, 0.5f); // 웅장한 알람 느낌 대체
 
             // 15초 카운트다운 스케줄러 등록
@@ -241,7 +241,7 @@ public class Ghost extends Ability {
                     beaconLoc.getBlockZ() == targetLoc.getBlockZ()) {
 
                 // 핵 신호기 파괴 됨!
-                Bukkit.broadcastMessage("§c고스트 : §f핵 공격이 취소되었습니다.");
+                Bukkit.broadcastMessage("§a고스트 : §f핵 공격이 취소되었습니다.");
 
                 // 스케줄러 취소
                 BukkitTask task = nukeTasks.remove(ownerUuid);

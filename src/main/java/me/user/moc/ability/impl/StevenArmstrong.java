@@ -72,8 +72,6 @@ public class StevenArmstrong extends Ability {
     @Override
     public void detailCheck(Player p) {
         p.sendMessage("§6유틸 ● 스티븐 암스트롱(메탈기어)");
-        p.sendMessage("§f상원의원 스티븐 암스트롱이 됩니다.");
-        p.sendMessage("§f ");
         p.sendMessage("§f상시 힘 1 버프를 유지합니다.");
         p.sendMessage("§f연속으로 쉬프트(웅크리기)를 2번 누르면 나노 머신을 3초간 활성화 합니다.");
         p.sendMessage("§f나노 머신 활성화 중에는 모든 피격 데미지와 밀림(넉백)이 0으로 고정됩니다.");
@@ -82,7 +80,7 @@ public class StevenArmstrong extends Ability {
         p.sendMessage("§f ");
         p.sendMessage("§f쿨타임 : " + COOLDOWN + "초");
         p.sendMessage("§f---");
-        p.sendMessage("§f추가 장비 : 흰색 상의, 가죽 바지, 검은 부츠");
+        p.sendMessage("§f추가 장비 : 상원의원 셔츠, 상원의원 바지, 상원의원 구두");
         p.sendMessage("§f장비 제거 : 철 칼");
     }
 
@@ -297,7 +295,7 @@ public class StevenArmstrong extends Ability {
             setCooldown(p, COOLDOWN);
         }
 
-        Bukkit.broadcastMessage("§c스티븐 암스트롱 §f: Nanomachines, son.");
+        Bukkit.broadcastMessage("§6스티븐 암스트롱 §f: Nanomachines, son.");
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
     }
 
