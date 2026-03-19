@@ -274,45 +274,58 @@ public class GameManager implements Listener {
                     continue;
                 }
 
-                // [추가] 죽어있는 플레이어 강제 리스폰 (게임 참여를 위해)
+                // [버그 수정] 죽어있는 플레이어 강제 리스폰 (게임 참여를 위해)
+                // respawn()은 즉시 완료되지 않고 클라이언트와 서버 사이에 처리 시간이 필요합니다.
+                // 따라서 1틱(0.05초) 뒤에 모드전환, 텔레포트 등 나머지 초기화를 실행해야
+                // 리스폰이 완료된 상태에서 처리가 적용됩니다.
                 if (p.isDead()) {
-                    p.spigot().respawn();
+                    p.spigot().respawn(); // 강제 리스폰 요청 전송
+                    // 1틱 후 나머지 초기화 처리 (리스폰이 처리된 이후 실행 보장)
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        initializePlayer(p, configManager);
+                    }, 2L); // 2틱 여유를 주어 클라이언트 리스폰이 확실히 끝나도록
+                    continue; // 아래의 일반 초기화는 건너뜀 (1틱 뒤 실행될 예정)
                 }
 
-                // [수정] 테스트 모드면 크리에이티브, 아니면 서바이벌
-                if (configManager.test) {
-                    p.setGameMode(GameMode.CREATIVE);
-                    p.sendMessage("§e[TEST] §f테스트 모드가 활성화되어 '크리에이티브' 모드로 설정됩니다.");
-                } else {
-                    p.setGameMode(GameMode.SURVIVAL); // 관전 -> 서바이벌
-                }
-                if (configManager.spawn_point != null) {
-                    p.teleport(configManager.spawn_point); // 스폰 지점으로 이동
-                }
-
-                p.getInventory().clear();
-                // [버그 수정] 체력 설정 시 최대 체력 범위 내에서 설정
-                double maxHealthVal = p.getAttribute(Attribute.MAX_HEALTH).getValue();
-                p.setHealth(Math.min(20.0, maxHealthVal)); // 기본 체력으로 일단 리셋
-                p.setFoodLevel(20);
-                // [추가] 피격 무적 시간 초기화 (버그 방지)
-                p.setMaximumNoDamageTicks(20);
-                p.setNoDamageTicks(0);
-
-                for (PotionEffect effect : p.getActivePotionEffects())
-                    p.removePotionEffect(effect.getType());
-
-                // [수정] 룰렛 대기 시간 동안 지루함을 달래기 위해 돌풍구 16개 지급 (기본템은 룰렛 이후 지급)
-                p.getInventory().addItem(new ItemStack(Material.WIND_CHARGE, 16));
-
-                // 포션 효과 모두 제거
-                for (PotionEffect effect : p.getActivePotionEffects())
-                    p.removePotionEffect(effect.getType());
+                // 살아있는 플레이어는 즉시 초기화
+                initializePlayer(p, configManager);
             }
 
             // [수정] 공사가 완벽히 끝난 후, 3초간 룰렛 연출 시작
             startRouletteAnimation(deck);
         });
+    }
+
+    /**
+     * [추가] 플레이어 라운드 시작 초기화 공통 메서드
+     * 리스폰 딜레이 처리와 중복 코드를 방지하기 위해 분리했습니다.
+     */
+    private void initializePlayer(Player p, ConfigManager configManager) {
+        // [수정] 테스트 모드면 크리에이티브, 아니면 서바이벌
+        if (configManager.test) {
+            p.setGameMode(GameMode.CREATIVE);
+            p.sendMessage("§e[TEST] §f테스트 모드가 활성화되어 '크리에이티브' 모드로 설정됩니다.");
+        } else {
+            p.setGameMode(GameMode.SURVIVAL);
+        }
+        if (configManager.spawn_point != null) {
+            p.teleport(configManager.spawn_point);
+        }
+
+        p.getInventory().clear();
+        // 체력 설정 시 최대 체력 범위 내에서 설정
+        double maxHealthVal = p.getAttribute(Attribute.MAX_HEALTH).getValue();
+        p.setHealth(Math.min(20.0, maxHealthVal));
+        p.setFoodLevel(20);
+        // 피격 무적 시간 초기화 (버그 방지)
+        p.setMaximumNoDamageTicks(20);
+        p.setNoDamageTicks(0);
+
+        for (PotionEffect effect : p.getActivePotionEffects())
+            p.removePotionEffect(effect.getType());
+
+        // 룰렛 대기 시간 동안 지루함을 달래기 위해 돌풍구 16개 지급 (기본템은 룰렛 이후 지급)
+        p.getInventory().addItem(new ItemStack(Material.WIND_CHARGE, 16));
     }
 
     /**
@@ -605,7 +618,11 @@ public class GameManager implements Listener {
             // 모든 살아있는 엔티티 제거 (플레이어 제외)
             for (org.bukkit.entity.LivingEntity le : world.getLivingEntities()) {
                 if (!(le instanceof Player)) {
-                    le.remove(); // drops nothing
+                    // [버그 수정] isPersistent()==true 인 엔티티는 MOC 플러그인이
+                    // 직접 관리하는 소환수(이병구 벌, 란가 늑대 등)이므로 제거하지 않습니다.
+                    // 이들은 라운드 종료 시 Ability.reset()에서 별도로 정리됩니다.
+                    if (le.isPersistent()) continue;
+                    le.remove();
                 }
             }
             // [추가] 월드에 떨어진 모든 아이템 제거
@@ -722,6 +739,13 @@ public class GameManager implements Listener {
                         continue;
                     // 이름(네임택)이 있거나 커스텀 생성된 능력물(란가, 요뽀뽀 등) 보호
                     if (entity.customName() != null || entity.isCustomNameVisible())
+                        continue;
+
+                    // [버그 수정] isPersistent()==true 인 엔티티는 MOC 플러그인이
+                    // 직접 소환한 소환수입니다. (예: 이병구의 벌, 란가의 늑대 등)
+                    // 커스텀 이름이 없더라도(이병구 벌은 이름이 없음) 자연 스폰으로
+                    // 오인하여 3마리 제한에 걸려 삭제되는 문제를 방지합니다.
+                    if (entity.isPersistent())
                         continue;
 
                     // 자연스폰일 확률이 높은 몬스터나 동물 카운팅

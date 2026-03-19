@@ -53,7 +53,7 @@ public class GojoSatoru extends Ability {
     public void detailCheck(Player p) {
         p.sendMessage("§b유틸 ● 고죠 사토루(주술회전)");
         p.sendMessage("§f맨손 쉬프트 좌클릭을 할 경우, 영역전개를 시전합니다.");
-        p.sendMessage("§f자신을 기준 16x16x16까지 2초에 걸쳐 점점 커지는");
+        p.sendMessage("§f자신을 기준 32x32x32까지 2초에 걸쳐 점점 커지는");
         p.sendMessage("§f영역에 닿은 상대는 무량공처에 맞습니다.");
         p.sendMessage(" ");
         p.sendMessage("§f무량공처에 맞은 상대는 3초간 행동할 수 없으며,");
@@ -150,7 +150,7 @@ public class GojoSatoru extends Ability {
         new BukkitRunnable() {
             int tick = 0;
             final Set<UUID> hitTargets = new HashSet<>();
-            final float targetScale = 16.0f; // 최종 크기 (지름)
+            final float targetScale = 32.0f; // 최종 크기 (지름)
             final int DURATION = 40; // 2초 (40틱)
 
             @Override

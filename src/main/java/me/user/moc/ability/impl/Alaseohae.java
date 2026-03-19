@@ -59,8 +59,6 @@ public class Alaseohae extends Ability {
 
     @Override
     public void giveItem(Player p) {
-        detailCheck(p);
-
         // 장비 제거: 철칼
         p.getInventory().remove(Material.IRON_SWORD);
 

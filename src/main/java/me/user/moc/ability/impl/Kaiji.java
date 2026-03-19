@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Kaiji extends Ability {
 
     private final String CODE = "077";
-    private final String NAME = "카이지(도박묵시록 카이지)";
+    private final String NAME = "카이지";
     private final int COOLDOWN = 10;
 
     // 가위바위보 상태 관리
@@ -60,13 +60,13 @@ public class Kaiji extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§2혹합 ● 카이지(도박묵시록 카이지)",
+                "§b혹합 ● 카이지(도박묵시록 카이지)",
                 "§f인생을 건 도박을 합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§2혹합 ● 카이지(도박묵시록 카이지)");
+        p.sendMessage("§b혹합 ● 카이지(도박묵시록 카이지)");
         p.sendMessage("§f인생을 건 도박을 합니다.");
         p.sendMessage("§f ");
         p.sendMessage("§f다이아몬드로 플레이어를 가격 시 상대와 나는 5초간 가위 바위 보를 합니다.");
@@ -85,7 +85,7 @@ public class Kaiji extends Ability {
         ItemStack diamond = new ItemStack(Material.DIAMOND);
         ItemMeta meta = diamond.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§b인생의 도박 (다이아몬드)");
+            meta.setDisplayName("§b인생의 도박");
             meta.setLore(Arrays.asList("§f플레이어를 가격 시 가위바위보를 시작합니다."));
             diamond.setItemMeta(meta);
         }
@@ -190,7 +190,7 @@ public class Kaiji extends Ability {
         gambleTargets.put(targetUuid, kaijiUuid);
 
         // 대사 방송
-        Bukkit.broadcastMessage("§c카이지 : §f이건 단순한 가위 바위 보가 아니야!! 인생을 건 가위 바위 보다!!!");
+        Bukkit.broadcastMessage("§b카이지 : §f이건 단순한 가위 바위 보가 아니야!! 인생을 건 가위 바위 보다!!!");
 
         // 소리 & 이펙트
         kaiji.playSound(kaiji.getLocation(), Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1.0f, 1.0f);
@@ -391,10 +391,11 @@ public class Kaiji extends Ability {
                     if (k != null && kaijiDisplay != null && !kaijiDisplay.isDead()) {
                         Location loc = k.getLocation().add(0, 2.5, 0);
                         kaijiDisplay.teleport(loc);
-                        // 세로 회전(X 또는 Z축)
+                        // [카이지 회전 방향 수정] Y축 회전 = 세로 기준 좌우 회전
+                        // (기존 X축 관성 = 가로 기준 위아래 회전 → Y축으로 변경)
                         float angle = (float) Math.toRadians(tick * 9);
                         Transformation trans = kaijiDisplay.getTransformation();
-                        trans.getLeftRotation().set(new AxisAngle4f(angle, new Vector3f(1, 0, 0))); // X축 회전 적용
+                        trans.getLeftRotation().set(new AxisAngle4f(angle, new Vector3f(0, 1, 0))); // Y축 회전: 좌우 회전
                         kaijiDisplay.setTransformation(trans);
                     }
                     if (t != null && targetDisplay != null && !targetDisplay.isDead()) {
@@ -402,7 +403,7 @@ public class Kaiji extends Ability {
                         targetDisplay.teleport(loc);
                         float angle = (float) Math.toRadians(tick * 9);
                         Transformation trans = targetDisplay.getTransformation();
-                        trans.getLeftRotation().set(new AxisAngle4f(angle, new Vector3f(1, 0, 0))); // X축 회전 적용
+                        trans.getLeftRotation().set(new AxisAngle4f(angle, new Vector3f(0, 1, 0))); // Y축 회전: 좌우 회전
                         targetDisplay.setTransformation(trans);
                     }
                     tick++;
@@ -479,7 +480,7 @@ public class Kaiji extends Ability {
                 target.closeInventory();
 
             // 대사 방송 (가위 바위 보!!!)
-            Bukkit.broadcastMessage("§c카이지 : §f안 내면 진 거! 가위 바위 보!!!");
+            Bukkit.broadcastMessage("§b카이지 : §f안 내면 진 거! 가위 바위 보!!!");
 
             // 미선택에 대한 페널티 판정 로직
             final int WIN_KAIJI = 1;
@@ -516,7 +517,7 @@ public class Kaiji extends Ability {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 String targetName = (target != null) ? target.getName() : "상대방";
 
-                Bukkit.broadcastMessage("§c카이지 §f: " + kaijiChoice);
+                Bukkit.broadcastMessage("§b카이지 §f: " + kaijiChoice);
                 Bukkit.broadcastMessage("§e" + targetName + " §f: " + targetChoice);
 
                 if (finalResult == DRAW) {
@@ -525,19 +526,21 @@ public class Kaiji extends Ability {
                     if (target != null)
                         target.sendMessage("§e[무승부!] 다시 가위바위보를 진행합니다.");
 
-                    // 재시작 (무적 상태 유지)
+                    // [버그 수정] 무승부 시 restart()을 호출하여 기존 디스플레이/태스크를 정리 후 재생성
+                    // 기존에 start()을 그대로 호출하면 spawnDisplays()가 다시 실행되어
+                    // 이전 다이아가 괜먹되고 새 다이아가 소환되는 중첩 버그가 발생했습니다.
                     isFinished = false;
                     timeRemain = 5;
                     kaijiChoice = null;
                     targetChoice = null;
-                    start();
+                    restart(kaiji, target);
                     return;
 
                 } else if (finalResult == WIN_KAIJI) {
                     processWinner(kaiji, target);
                 } else {
                     processWinner(target, kaiji);
-                    Bukkit.broadcastMessage("§c카이지 : §f무승부로 하지 않을래…?");
+                    Bukkit.broadcastMessage("§b카이지 : §f무승부로 하지 않을래…?");
                 }
 
                 // 끝났으므로 세션 종료 (디스플레이, 무적 해제)
@@ -594,6 +597,53 @@ public class Kaiji extends Ability {
                     winner.getWorld().dropItemNaturally(winner.getLocation(), drop);
                 }
             }
+        }
+
+        /**
+         * [버그 수정] 무승부 재시작 전용 메서드
+         * start()와 달리 기존 디스플레이와 태스크를 먼저 제거한 후 재생성합니다.
+         * start()을 그대로 호출하면 spawnDisplays()가 중첩 호출되어 다이아가 누적됩니다.
+         */
+        private void restart(Player kaiji, Player target) {
+            // 기존 디스플레이 제거 (중첩 방지)
+            if (kaijiDisplay != null && !kaijiDisplay.isDead()) {
+                kaijiDisplay.remove();
+            }
+            if (targetDisplay != null && !targetDisplay.isDead()) {
+                targetDisplay.remove();
+            }
+            // 기존 디스플레이 태스크 취소
+            if (displayTask != null && !displayTask.isCancelled()) {
+                displayTask.cancel();
+            }
+
+            // 새 디스플레이 소환 후 UI 오픈 및 타이머 재시작
+            spawnDisplays(kaiji, target);
+            openUIForKaiji();
+            openUIForTarget();
+
+            timerTask = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (isFinished) {
+                        this.cancel();
+                        return;
+                    }
+                    if (timeRemain <= 0) {
+                        evaluateResult();
+                        this.cancel();
+                        return;
+                    }
+                    Player k = Bukkit.getPlayer(kaijiUuid);
+                    Player t = Bukkit.getPlayer(targetUuid);
+                    if (k != null)
+                        k.sendTitle("§e" + timeRemain, "§f가위바위보를 선택하세요!", 0, 25, 0);
+                    if (t != null)
+                        t.sendTitle("§e" + timeRemain, "§f가위바위보를 선택하세요!", 0, 25, 0);
+                    timeRemain--;
+                }
+            }.runTaskTimer(plugin, 0L, 20L);
+            registerTask(kaiji, timerTask);
         }
 
         public void cancel() {

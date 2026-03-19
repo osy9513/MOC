@@ -41,8 +41,7 @@ public class Sasuke extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§c전투 ● 사스케(나루토)",
-                "§f화둔 호화구의 술를 사용합니다."
-        );
+                "§f화둔 호화구의 술를 사용합니다.");
     }
 
     @Override
@@ -107,7 +106,7 @@ public class Sasuke extends Ability {
             return;
         if (!(e.getEntity() instanceof LivingEntity target))
             return;
-        
+
         // 관전자 타겟팅 제외
         if (target instanceof Player tp && tp.getGameMode() == GameMode.SPECTATOR)
             return;
@@ -149,7 +148,8 @@ public class Sasuke extends Ability {
                 if (AbilityManager.getInstance().hasAbility(shooter, getCode())) {
                     if (e.getEntity() instanceof LivingEntity target) {
                         // 10 데미지 고정 피해 및 10초 화염
-                        target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
+                        target.setMetadata("MOC_LastKiller",
+                                new FixedMetadataValue(plugin, shooter.getUniqueId().toString()));
                         e.setDamage(10.0);
                         target.setFireTicks(200); // 10초 * 20틱
                     }
@@ -177,7 +177,8 @@ public class Sasuke extends Ability {
                 Vector direction = eyeLoc.getDirection().normalize();
 
                 // SmallFireball 발사
-                SmallFireball fireball = p.getWorld().spawn(eyeLoc.add(direction.clone().multiply(1.5)), SmallFireball.class);
+                SmallFireball fireball = p.getWorld().spawn(eyeLoc.add(direction.clone().multiply(1.5)),
+                        SmallFireball.class);
                 fireball.setShooter(p);
                 fireball.setVelocity(direction.clone().multiply(1.5)); // 속도 조절
                 fireball.setYield(0); // 폭발 파괴 끔
@@ -213,7 +214,8 @@ public class Sasuke extends Ability {
                         Location center = w.getWorldBorder().getCenter();
                         int emeraldY = -999;
                         for (int y = w.getMaxHeight(); y > w.getMinHeight(); y--) {
-                            if (w.getBlockAt(center.getBlockX(), y, center.getBlockZ()).getType() == Material.EMERALD_BLOCK) {
+                            if (w.getBlockAt(center.getBlockX(), y, center.getBlockZ())
+                                    .getType() == Material.EMERALD_BLOCK) {
                                 emeraldY = y;
                                 break;
                             }
@@ -247,11 +249,11 @@ public class Sasuke extends Ability {
     }
 
     private void castKirin(Player p, LivingEntity target) {
-        Bukkit.broadcastMessage("§c사스케: **술법의 이름은 기린. 뇌명과 함께 사라져라...!!**");
-        
+        Bukkit.broadcastMessage("§c사스케: 술법의 이름은 기린. 뇌명과 함께 사라져라...!!");
+
         // 발광 3초 부여
         p.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 60, 0, false, false, true));
-        
+
         // 3초간 1초마다 무피해 번개 효과
         new BukkitRunnable() {
             int timer = 0;
@@ -260,7 +262,7 @@ public class Sasuke extends Ability {
             public void run() {
                 if (timer >= 3 || !p.isOnline()) {
                     this.cancel();
-                    
+
                     // 3초 후 기린(타겟 피격) 시전
                     if (target.isValid() && !target.isDead()) {
                         strikeKirin(p, target);
@@ -271,7 +273,7 @@ public class Sasuke extends Ability {
                 // 타겟 상공에 무피해 번개 (번개 효과음)
                 Location strikeLoc = p.getLocation().clone().add(Math.random() * 4 - 2, 0, Math.random() * 4 - 2);
                 p.getWorld().strikeLightningEffect(strikeLoc);
-                
+
                 timer++;
             }
         }.runTaskTimer(plugin, 0L, 20L); // 1초(20틱)마다 실행
@@ -297,10 +299,10 @@ public class Sasuke extends Ability {
 
                 // 8 고정 데미지 + 무적시간 리셋
                 target.setNoDamageTicks(0);
-                
+
                 // 킬 메타데이터
                 target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
-                
+
                 // 즉사 처리 주의 로직 포함하여 데미지 8 부여
                 double hitHealth = target.getHealth() - 8.0;
                 if (hitHealth <= 0) {

@@ -305,4 +305,37 @@ public class Singed extends Ability {
             p.getInventory().addItem(currentHelmet);
         }
     }
+
+    /**
+     * [고도화] 방독면 착용 시 독(POISON) 디버프 무조건 면역
+     * 신지드 자신의 가스 로직에서도 방독면 체크를 하지만,
+     * 이병구의 벌 공격, 독 화살 등 외부에서 부여되는 독은
+     * EntityPotionEffectEvent를 통해 차단해야 합니다.
+     */
+    @EventHandler
+    public void onPotionEffect(org.bukkit.event.entity.EntityPotionEffectEvent e) {
+        // 독 효과가 부여될 때만 처리
+        if (e.getNewEffect() == null)
+            return;
+        if (e.getNewEffect().getType() != PotionEffectType.POISON)
+            return;
+
+        // 대상이 플레이어인지 확인
+        if (!(e.getEntity() instanceof Player target))
+            return;
+
+        // 현재 투구 슬롯 확인
+        ItemStack helmet = target.getInventory().getHelmet();
+        if (helmet == null || helmet.getType() != Material.NETHER_BRICK_FENCE)
+            return;
+        if (!helmet.hasItemMeta())
+            return;
+
+        // 방독면 이름 확인
+        if (!"§5방독면".equals(helmet.getItemMeta().getDisplayName()))
+            return;
+
+        // 방독면 착용 중이면 독 부여 완전 차단!
+        e.setCancelled(true);
+    }
 }

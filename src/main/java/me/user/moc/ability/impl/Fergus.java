@@ -44,7 +44,7 @@ public class Fergus extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c유틸 ● 퍼거스(마비노기)",
+                "§6유틸 ● 퍼거스(마비노기)",
                 "§f무기를 재련 합니다.");
     }
 
@@ -55,7 +55,7 @@ public class Fergus extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c유틸 ● 퍼거스(마비노기)");
+        p.sendMessage("§6유틸 ● 퍼거스(마비노기)");
         p.sendMessage("§f검 들고 쉬프트 우클릭 시");
         p.sendMessage("§f해당 검을 43% 확률로 강화하거나 57% 확률로 실패(하락) 합니다.");
         p.sendMessage("§f재련한 검은 3초간 퍼거스만 먹을 수 있습니다.");
@@ -112,7 +112,7 @@ public class Fergus extends Ability {
             success = false;
             targetTier = tier - 1;
             p.getWorld().playSound(p.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1f, 1f);
-            Bukkit.broadcastMessage("§c퍼거스 : §f**어이쿠, 손이 미끄러졌네**");
+            Bukkit.broadcastMessage("§6퍼거스 : §f어이쿠, 손이 미끄러졌네");
         }
 
         if (success) {

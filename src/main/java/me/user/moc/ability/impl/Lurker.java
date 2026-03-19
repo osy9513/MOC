@@ -50,16 +50,16 @@ public class Lurker extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 럴커(스타크래프트)",
+                "§5전투 ● 럴커(스타크래프트)",
                 "§f잠복하여 공격합니다.");
     }
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 럴커(스타크래프트)");
+        p.sendMessage("§5전투 ● 럴커(스타크래프트)");
         p.sendMessage("§f쉬프트 연속 두 번 시 잠복합니다.");
         p.sendMessage("§f잠복 시 은신 상태가 되고 공격 및 블럭 파괴가 안 되며 점프할 수 없습니다.");
-        p.sendMessage("§f잠복 중 럴커 주위 21*21 블럭 범위 내에 생명체가 있을 경우");
+        p.sendMessage("§f잠복 중 럴커 주위 81*81 블럭 범위 내에 생명체가 있을 경우");
         p.sendMessage("§f1.25초당 한 번 씩 바닥을 통해 9 데미지의 공격을 합니다.");
         p.sendMessage("§f잠복 중 쉬프트 연속 두 번 시 잠복을 해제하며 쿨타임이 돕니다.");
         p.sendMessage(" ");
@@ -82,6 +82,8 @@ public class Lurker extends Ability {
         burrowedState.remove(p.getUniqueId());
         lastSneakTime.remove(p.getUniqueId());
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
+        // [추가] 잠복 중 이동 차단용 이속 감소 효과도 같이 제거
+        p.removePotionEffect(PotionEffectType.SLOWNESS);
     }
 
     @Override
@@ -108,6 +110,7 @@ public class Lurker extends Ability {
         // 잠복 상태일 때는 평타 공격(EntityDamageByEntity) 불가
         if (isBurrowed(p)) {
             e.setCancelled(true);
+            p.sendActionBar(net.kyori.adventure.text.Component.text("§c잠복 중에는 공격할 수 없습니다!"));
         }
     }
 
@@ -122,10 +125,10 @@ public class Lurker extends Ability {
         // 주인이 럴커인지 확인
         if (fangs.hasMetadata("LurkerOwner")) {
             String ownerUuid = fangs.getMetadata("LurkerOwner").get(0).asString();
-            
+
             // 데미지 9 적용을 위해 e.setDamage(9) 호출
             e.setDamage(9.0);
-            
+
             // 킬귀속 (MOC_LastKiller)
             target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, ownerUuid));
         }
@@ -152,7 +155,8 @@ public class Lurker extends Ability {
             return;
 
         // Sneak 이벤트는 누를때(true), 뗄때(false) 일어난다. 누르는 순간(true)만 캐치
-        if (!e.isSneaking()) return;
+        if (!e.isSneaking())
+            return;
 
         // 이미 잠복 상태인지 체크
         boolean burrowed = isBurrowed(p);
@@ -164,9 +168,9 @@ public class Lurker extends Ability {
         if (now - last < 400) {
             // 연타 검출
             lastSneakTime.put(p.getUniqueId(), 0L); // 타이머 초기화 (안그러면 1초후 눌러도 3연타 버그됨)
-            
+
             if (isSilenced(p)) {
-                if(burrowed) {
+                if (burrowed) {
                     // 고죠 등으로 침묵 걸려있으면 잠복 푸는건 가능하나(사실 위협 검사에 의해 풀리겠지만) 못들어가게 막음
                     unburrow(p, true);
                 }
@@ -178,8 +182,9 @@ public class Lurker extends Ability {
                 unburrow(p, true);
             } else {
                 // 잠복 상태가 아니면, 쿨타임 체크 (잠복 돌입 시에는 쿨타임 검사를 함. 잠복이 끝나야 쿨이 돔)
-                if(!checkCooldown(p)) return;
-                
+                if (!checkCooldown(p))
+                    return;
+
                 // 잠복 돌입
                 burrow(p);
             }
@@ -193,11 +198,19 @@ public class Lurker extends Ability {
     private void burrow(Player p) {
         p.sendMessage("§e[럴커] §f잠복 상태에 돌입했습니다.");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 1f, 0.5f); // 껍질 파뭍히는 소리
-        
+
         burrowedState.put(p.getUniqueId(), true);
-        
+
         // 은신 부여
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+
+        // [고도화] 이동 차단 - Slowness 255(최대 레벨) 무한 부여
+        // 마인크래프트에서 Slowness 255는 이동 속도를 사실상 0으로 만들어 움직일 수 없게 합니다.
+        // 잠복 중 이동이 가능했던 문제를 이 방법으로 해결합니다.
+        p.addPotionEffect(
+                new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, 254, false, false));
+        p.sendActionBar(net.kyori.adventure.text.Component.text("§2잠복 상태 - 이동 불가 / 공격 불가"));
 
         // 잠복 및 공격 스케줄러 등록
         BukkitTask task = new BukkitRunnable() {
@@ -232,7 +245,7 @@ public class Lurker extends Ability {
                 LivingEntity target = findNearestTarget(p);
                 if (target != null) {
                     // 타겟이 존재하면 푸슉푸슉 메세지와 공격 전개
-                    Bukkit.broadcastMessage("§c럴커 : §f푸슉푸슉");
+                    Bukkit.broadcastMessage("§5럴커 : §f푸슉푸슉");
                     executeLurkerAttack(p, target);
                 }
             }
@@ -245,7 +258,9 @@ public class Lurker extends Ability {
     private void unburrow(Player p, boolean giveCooldown) {
         burrowedState.put(p.getUniqueId(), false);
         p.removePotionEffect(PotionEffectType.INVISIBILITY);
-        
+        // [고도화] 이동 차단 해제 - 잠복 해제 시 Slowness 제거
+        p.removePotionEffect(PotionEffectType.SLOWNESS);
+
         p.sendMessage("§e[럴커] §f잠복이 해제되었습니다.");
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TURTLE_EGG_BREAK, 1f, 1.2f); // 흙 튀기는 소리
 
@@ -269,20 +284,23 @@ public class Lurker extends Ability {
 
     // 21*21 내에서 가장 가까운 LivingEntity 적(관전자 제외)을 찾습니다.
     private LivingEntity findNearestTarget(Player p) {
-        // 10.5 반경이란건 기준점에서 상하좌우 10.5칸. 즉 지름 21칸 (21x21 범위)이다.
-        List<org.bukkit.entity.Entity> nearby = p.getNearbyEntities(10.5, 10.5, 10.5);
+        // 42.0 반경이란건 기준점에서 상하좌우 42칸. 즉 지름 81~84칸 (81x81 범위)이다. (기존 21.0에서 다시 2배 확장)
+        List<org.bukkit.entity.Entity> nearby = p.getNearbyEntities(42.0, 42.0, 42.0);
         LivingEntity closest = null;
         double minDistanceSq = Double.MAX_VALUE;
 
         for (org.bukkit.entity.Entity e : nearby) {
-            if (!(e instanceof LivingEntity le)) continue;
-            
+            if (!(e instanceof LivingEntity le))
+                continue;
+
             // 시체(죽은거) 제외
-            if (le.isDead()) continue;
-            
+            if (le.isDead())
+                continue;
+
             // 관전자 (SPECTATOR) 예외 처리 최우선 지침
             if (le instanceof Player targetPlayer) {
-                if (targetPlayer.getGameMode() == GameMode.SPECTATOR) continue;
+                if (targetPlayer.getGameMode() == GameMode.SPECTATOR)
+                    continue;
             }
 
             double distSq = le.getLocation().distanceSquared(p.getLocation());
@@ -298,7 +316,7 @@ public class Lurker extends Ability {
     private void executeLurkerAttack(Player p, LivingEntity target) {
         Location startLoc = p.getLocation();
         Location targetLoc = target.getLocation();
-        
+
         // 방향 벡터 구하기
         Vector dir = targetLoc.toVector().subtract(startLoc.toVector());
         // 만약 둘이 완벽히 겹쳤거나 하면 방향을 정할 수 없으므로 무시하거나 랜덤 처리
@@ -307,20 +325,20 @@ public class Lurker extends Ability {
         }
         dir.setY(0).normalize(); // 지상 타겟팅용: 높이 차이를 평탄화하고 정규화
 
-        // 소환사의 송곳니 생성 지점 간격 & 길이 설정 (최대거리 10.5 블럭 쭈욱)
-        double maxDistance = 10.5;
+        // 소환사의 송곳니 생성 지점 간격 & 길이 설정 (최대거리 42.0 블럭까지 2배 더 확장)
+        double maxDistance = 42.0;
         double step = 1.25; // 약 1.25 블럭마다 송곳니 솟게 함
 
         // 한 번에 모든 이보스 팡을 쏘면 이펙트가 너무 동시에 터짐. 지연을 두고 1열로 나아가게 함.
         for (double d = step; d <= maxDistance; d += step) {
             Vector offset = dir.clone().multiply(d);
             Location spawnLoc = startLoc.clone().add(offset);
-            
+
             // 땅위에 제대로 서기 위해 Y좌표를 보정
             // 위아래로 블록 검색 (원래 위치에서 +1 시작, 밑으로 -3 까지 체크)
             double topY = startLoc.getY() + 1;
             boolean foundGround = false;
-            
+
             for (double yOffset = 1; yOffset >= -3; yOffset -= 1) {
                 spawnLoc.setY(startLoc.getY() + yOffset);
                 if (spawnLoc.getBlock().getType().isSolid()) {
@@ -337,8 +355,8 @@ public class Lurker extends Ability {
             }
 
             // 거리 비례해서 딜레이 부여: 1당 1틱 정도 (0, 1, 2... 순서)
-            long delayTicks = (long)(d / step); 
-            
+            long delayTicks = (long) (d / step);
+
             new BukkitRunnable() {
                 @Override
                 public void run() {
