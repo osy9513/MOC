@@ -121,6 +121,27 @@
                     "type": "minecraft:model",
                     "model": "minecraft:item/mic"
                 }
+            },
+            {
+                "threshold": 18,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/biglight"
+                }
+            },
+            {
+                "threshold": 19,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/pochita"
+                }
+            },
+            {
+                "threshold": 20,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "minecraft:item/danjo"
+                }
             }
         ],
         "fallback": {

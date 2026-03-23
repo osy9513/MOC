@@ -147,6 +147,9 @@ public class AbilityManager {
         addAbility(new Fergus(plugin)); // 075 퍼거스
         addAbility(new Lurker(plugin)); // 080 럴커
         addAbility(new Byunggu(plugin)); // 081 이병구
+        addAbility(new Doraemon(plugin)); // 082 도라에몽
+        addAbility(new Denji(plugin)); // 083 덴지
+        addAbility(new Regent(plugin)); // 084 리젠트
         //
         //
         //
