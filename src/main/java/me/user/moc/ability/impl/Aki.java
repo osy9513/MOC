@@ -43,7 +43,7 @@ public class Aki extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 아키(체인소맨)",
+                "§c전투 ● 아키(체인소 맨)",
                 "§f여우의 악마와 계약해 콩을 사용합니다.");
     }
 
@@ -54,7 +54,7 @@ public class Aki extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 아키(체인소맨)");
+        p.sendMessage("§c전투 ● 아키(체인소 맨)");
         p.sendMessage("§f여우의 악마와 계약해 콩을 사용합니다.");
         p.sendMessage(" ");
         p.sendMessage("§f블럭을 바라보며 맨손으로 좌클릭 + 쉬프트를 동시에 눌러 체력을 3칸을 소모하여");
