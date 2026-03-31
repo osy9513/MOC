@@ -5,15 +5,19 @@ import me.user.moc.ability.Ability;
 import me.user.moc.ability.AbilityManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -41,6 +45,8 @@ public class Denji extends Ability {
 
     @Override
     public void giveItem(Player p) {
+        p.getInventory().remove(Material.IRON_SWORD); // 철 칼 삭제
+        // [롤백] 나무검에서 다시 철검을 베이스로 '포치타' 아이템을 생성합니다.
         ItemStack item = new ItemStack(Material.IRON_SWORD);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -48,12 +54,25 @@ public class Denji extends Ability {
             meta.setLore(Arrays.asList(
                     "§f포치타로 상대를 공격 시 1초에 걸쳐 1 데미지씩 5번 무적을 무시하고 타격합니다.",
                     "§f사망 시 인벤토리에 기본 재생 포션이 있다면",
-                    "§f체력 30으로 즉시 부활합니다."
-            ));
+                    "§f체력 30으로 즉시 부활합니다."));
             meta.setCustomModelData(19); // 리소스팩: pochita
+
+            // [추가] 포치타의 기본 데미지를 0으로 설정 (추가 타격이 주력이므로 기본 데미지 제거)
+            AttributeModifier damageModifier = new AttributeModifier(
+                    new NamespacedKey(plugin, "pochita_damage"),
+                    0.0,
+                    AttributeModifier.Operation.ADD_NUMBER,
+                    EquipmentSlotGroup.HAND);
+            meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, damageModifier);
+
+            // [추가] 내구도 무한 설정 및 내구도 바 숨김
+            meta.setUnbreakable(true);
+            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+
             item.setItemMeta(meta);
         }
-        p.getInventory().addItem(item);
+        // [수정] 인벤토리의 1번 칸(배열 인덱스 0번)에 포치타를 지급합니다.
+        p.getInventory().setItem(0, item);
     }
 
     @Override
@@ -63,18 +82,17 @@ public class Denji extends Ability {
         p.sendMessage("§f사망 시 인벤토리에 기본으로 지급하는 재생 포션이 있다면");
         p.sendMessage("§f체력 30(1줄 반)으로 부활합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 0초.");
+        p.sendMessage("§f쿨타임 : 2.2초."); // [수정] 쿨타임 2.2초로 변경
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 포치타");
-        p.sendMessage("§f장비 제거 : 철 검");
+        p.sendMessage("§f장비 제거 : 철 검"); // [롤백] 철검으로 복구됨
     }
 
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
                 "§c복합 ● 덴지(체인소 맨)",
-                "§f포치타와 계약합니다."
-        );
+                "§f포치타와 계약합니다.");
     }
 
     @Override
@@ -84,7 +102,8 @@ public class Denji extends Ability {
         AttributeInstance maxHp = null;
         try {
             maxHp = p.getAttribute(Attribute.valueOf("GENERIC_MAX_HEALTH"));
-        } catch (IllegalArgumentException ex) {}
+        } catch (IllegalArgumentException ex) {
+        }
         if (maxHp != null) {
             maxHp.setBaseValue(20.0);
         }
@@ -92,24 +111,39 @@ public class Denji extends Ability {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
-        if (!(e.getDamager() instanceof Player p)) return;
-        if (!AbilityManager.getInstance().hasAbility(p, getCode())) return;
-        if (isSilenced(p)) return;
+        if (!(e.getDamager() instanceof Player p))
+            return;
+        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+            return;
+        if (isSilenced(p))
+            return;
 
         // 재귀 타격 루프 방지
-        if (e.getEntity().hasMetadata("pochita_saw")) return;
+        if (e.getEntity().hasMetadata("pochita_saw"))
+            return;
 
         ItemStack hand = p.getInventory().getItemInMainHand();
-        if (hand.getType() != Material.IRON_SWORD || !hand.hasItemMeta()) return;
+        // [롤백] 나무검에서 다시 철검으로 베이스 아이템을 되남깁니다.
+        if (hand.getType() != Material.IRON_SWORD || !hand.hasItemMeta())
+            return;
         ItemMeta meta = hand.getItemMeta();
-        if (meta == null || !meta.hasCustomModelData() || meta.getCustomModelData() != 19) return;
+        if (meta == null || !meta.hasCustomModelData() || meta.getCustomModelData() != 19)
+            return;
 
-        if (!(e.getEntity() instanceof LivingEntity target)) return;
-        if (target instanceof Player t && t.getGameMode() == org.bukkit.GameMode.SPECTATOR) return;
+        if (!(e.getEntity() instanceof LivingEntity target))
+            return;
+        if (target instanceof Player t && t.getGameMode() == org.bukkit.GameMode.SPECTATOR)
+            return;
 
-        // 쿨타임 없음. 1초에 걸쳐 5연격 추가 (0.2초 = 4틱 간격)
+        // [수정] 무적 무시 공격에 2.2초의 쿨타임을 부여합니다. (기존 1.8초에서 상향 조정)
+        if (!checkCooldown(p))
+            return;
+        setCooldown(p, 2.2);
+
+        // 1초에 걸쳐 5연격 추가 (0.2초 = 4틱 간격)
         BukkitRunnable task = new BukkitRunnable() {
             int hits = 0;
+
             @Override
             public void run() {
                 if (target.isDead() || !target.isValid() || !p.isOnline() || p.isDead() || hits >= 5) {
@@ -123,7 +157,7 @@ public class Denji extends Ability {
 
                 double health = target.getHealth();
                 double newHealth = health - 1.0;
-                
+
                 if (newHealth <= 0) {
                     // 데미지로 인한 킬 어트리뷰션 처리
                     target.setMetadata("MOC_LastKiller", new FixedMetadataValue(plugin, p.getUniqueId().toString()));
@@ -135,12 +169,11 @@ public class Denji extends Ability {
                     target.getWorld().spawnParticle(
                             org.bukkit.Particle.DAMAGE_INDICATOR,
                             target.getLocation().add(0, 1, 0),
-                            3, 0.2, 0.2, 0.2, 0.1
-                    );
+                            3, 0.2, 0.2, 0.2, 0.1);
                 }
 
                 target.removeMetadata("pochita_saw", plugin);
-                
+
                 // 엔진 갈리는 소리 추가
                 target.getWorld().playSound(target.getLocation(), Sound.ENTITY_MINECART_RIDING, 0.8f, 1.5f);
 
@@ -155,10 +188,13 @@ public class Denji extends Ability {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEntityDamage(EntityDamageEvent e) {
-        if (e.isCancelled()) return;
-        if (!(e.getEntity() instanceof Player p)) return;
-        if (!AbilityManager.getInstance().hasAbility(p, getCode())) return;
-        
+        if (e.isCancelled())
+            return;
+        if (!(e.getEntity() instanceof Player p))
+            return;
+        if (!AbilityManager.getInstance().hasAbility(p, getCode()))
+            return;
+
         // 데미지를 받아 체력이 0 이하가 될 때 (즉, 사망할 때)
         if (p.getHealth() - e.getFinalDamage() <= 0) {
             // 인벤토리에 기본 재생 포션(CustomModelData 2)이 있는지 검사
@@ -167,7 +203,8 @@ public class Denji extends Ability {
             for (ItemStack item : contents) {
                 if (item != null && item.getType() == Material.POTION) {
                     // MOC 기본 지급 재생 포션 검사
-                    if (item.hasItemMeta() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == 2) {
+                    if (item.hasItemMeta() && item.getItemMeta().hasCustomModelData()
+                            && item.getItemMeta().getCustomModelData() == 2) {
                         item.setAmount(item.getAmount() - 1);
                         hasPotion = true;
                         break;
@@ -179,12 +216,13 @@ public class Denji extends Ability {
                 // 사망 무효화 (부활)
                 e.setCancelled(true);
                 p.setFireTicks(0);
-                
+
                 // 최대 체력 30(1줄 반)으로 확장 및 즉시 회복
                 AttributeInstance maxHp = null;
                 try {
                     maxHp = p.getAttribute(Attribute.valueOf("GENERIC_MAX_HEALTH"));
-                } catch (IllegalArgumentException ex) {}
+                } catch (IllegalArgumentException ex) {
+                }
                 if (maxHp != null) {
                     if (maxHp.getBaseValue() < 30.0) {
                         maxHp.setBaseValue(30.0);
@@ -193,11 +231,13 @@ public class Denji extends Ability {
                 p.setHealth(30.0);
 
                 // 부활 대사
-                Bukkit.broadcastMessage("§c덴지 : §f네가 나한테 베여서 피를 흘리고! 내가 네 피를 마시고 회복!! 영구기관이 완성되고 말았어!!! 이걸로 노벨상은 내 거라고!!!!");
+                Bukkit.broadcastMessage(
+                        "§c덴지 : §f네가 나한테 베여서 피를 흘리고! 내가 네 피를 마시고 회복!! 영구기관이 완성되고 말았어!!! 이걸로 노벨상은 내 거라고!!!!");
 
                 // 전기톱 소리 및 피 튀는 이펙트 스케줄러 (2초 = 40틱)
                 BukkitRunnable reviveTask = new BukkitRunnable() {
                     int ticks = 0;
+
                     @Override
                     public void run() {
                         if (p.isDead() || !p.isValid() || ticks >= 40) {
@@ -210,8 +250,7 @@ public class Denji extends Ability {
                                 org.bukkit.Particle.BLOCK,
                                 p.getLocation().add(0, 1, 0),
                                 15, 0.4, 0.5, 0.4, 0.1,
-                                Bukkit.createBlockData(Material.REDSTONE_BLOCK)
-                        );
+                                Bukkit.createBlockData(Material.REDSTONE_BLOCK));
 
                         // 부앙부앙 엔진 소리 (10틱에 1번씩)
                         if (ticks % 10 == 0) {
@@ -221,9 +260,10 @@ public class Denji extends Ability {
                         ticks += 5;
                     }
                 };
-                
+
                 BukkitTask bTask = reviveTask.runTaskTimer(plugin, 0L, 5L);
-                List<BukkitTask> taskList = activeTasks.computeIfAbsent(p.getUniqueId(), k -> new java.util.ArrayList<>());
+                List<BukkitTask> taskList = activeTasks.computeIfAbsent(p.getUniqueId(),
+                        k -> new java.util.ArrayList<>());
                 taskList.add(bTask);
             }
         }
