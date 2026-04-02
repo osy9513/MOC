@@ -39,6 +39,8 @@ public class Kaneki extends Ability {
 
     // 유언 메시지 중복 방지용
     private final Set<UUID> starvingPlayers = new HashSet<>();
+    // 폭주 상태 진입 메시지 중복 방지용
+    private final Set<UUID> rampantPlayers = new HashSet<>();
 
     public Kaneki(JavaPlugin plugin) {
         super(plugin);
@@ -80,8 +82,7 @@ public class Kaneki extends Ability {
         // 허기 20 (Amplifier 19)
         p.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 19, true, true));
 
-        // 4. 메시지
-        Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
+        // 4. 능력 틱 시작
         startTickTask();
     }
 
@@ -110,6 +111,7 @@ public class Kaneki extends Ability {
         p.removePotionEffect(PotionEffectType.STRENGTH);
 
         starvingPlayers.remove(p.getUniqueId());
+        rampantPlayers.remove(p.getUniqueId());
 
         WorldBorder border = p.getWorld().getWorldBorder();
         if (p.isOnline()) {
@@ -291,11 +293,18 @@ public class Kaneki extends Ability {
 
                     // 3. 폭주 모드
                     if (food <= 10) {
+                        if (!rampantPlayers.contains(p.getUniqueId())) {
+                            Bukkit.broadcastMessage("§c카네키 켄 : 나는 '구울'이다.");
+                            rampantPlayers.add(p.getUniqueId());
+                        }
+
                         // 지속시간도 짧게 갱신 (2틱이므로 40틱(2초)면 충분)
                         p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 40, 2, true, true, true));
                         p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 40, 2, true, true, true));
                         drawKaguneWings(p);
                         p.sendActionBar(net.kyori.adventure.text.Component.text("§4§l[ 폭주 상태 ]"));
+                    } else {
+                        rampantPlayers.remove(p.getUniqueId());
                     }
                 }
             }

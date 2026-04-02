@@ -145,3 +145,4 @@
 | **biglight** (18) | 철 검 (`iron_sword`) | 도라에몽 (`Doraemon.java`) | `models/item/biglight.json` |
 | **pochita** (19) | 철 검 (`iron_sword`) | 덴지 (`Denji.java`) | `models/item/pochita.json` |
 | **danjo** (20) | 철 검 (`iron_sword`) | 리젠트 (`Regent.java`) | `models/item/danjo.json` |
+| **eden** (1) | 은방울꽃 (`lily_of_the_valley`) | 에덴 (`Eden.java`) | `models/item/eden.json` |

@@ -127,6 +127,7 @@ public class Jigsaw extends Ability {
         ItemStack item = new ItemStack(Material.STONECUTTER);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§c게임 시작");
+        meta.setLore(Arrays.asList("§7생명체를 좌클릭하여 직쏘 게임을 시작합니다."));
         meta.setCustomModelData(1); // 리소스팩: jigsaw
         item.setItemMeta(meta);
         p.getInventory().addItem(item);
@@ -224,9 +225,9 @@ public class Jigsaw extends Ability {
         }
 
         // 2. 메시지 출력
-        p.sendMessage("§c[직쏘] §f게임을 시작하지.");
+        Bukkit.broadcastMessage("§c직쏘 : §f게임을 시작하지.");
         String targetName = target.getName();
-        Bukkit.broadcastMessage("§c직쏘 : " + targetName + "는 8초 안에 구운 소고기 " + info.requiredBeef + "개를 한 번에 버려라.");
+        Bukkit.broadcastMessage("§c직쏘 : §f" + targetName + "는 8초 안에 구운 소고기 " + info.requiredBeef + "개를 한 번에 버려라.");
 
         // 3. 톱날 소환 (타겟과 나 사이)
         spawnSaws(info);
