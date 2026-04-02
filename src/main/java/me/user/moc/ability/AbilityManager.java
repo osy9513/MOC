@@ -150,6 +150,8 @@ public class AbilityManager {
         addAbility(new Doraemon(plugin)); // 082 도라에몽
         addAbility(new Denji(plugin)); // 083 덴지
         addAbility(new Regent(plugin)); // 084 리젠트
+        addAbility(new Eden(plugin)); // 085 에덴
+        addAbility(new Raizel(plugin)); // 086 카디스 에트라마 디 라이제르
         //
         //
         //

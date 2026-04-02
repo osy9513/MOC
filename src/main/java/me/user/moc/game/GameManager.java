@@ -39,6 +39,7 @@ public class GameManager implements Listener {
     private ConfigManager configManager;
     private AbilityManager abilityManager; // 의존성 주입
     private MusicManager musicManager; // [추가] 음악 관리 매니저
+    private final Set<UUID> edenBonusPlayers = new HashSet<>(); // [추가] 에덴 축복 보너스 대상자
 
     // [Scoreboard 전용 Getter]
     public int getScore(UUID uuid) {
@@ -424,7 +425,13 @@ public class GameManager implements Listener {
                 abilityManager.setPlayerAbility(p.getUniqueId(), abilityCode);
 
                 // 리롤 횟수 설정 (콘피그 값)
-                abilityManager.setRerollCount(p.getUniqueId(), configManager.re_point);
+                int rerollPoint = configManager.re_point;
+                if (edenBonusPlayers.contains(p.getUniqueId())) {
+                    rerollPoint += 3;
+                    edenBonusPlayers.remove(p.getUniqueId());
+                    p.sendMessage("§d[MOC] 에덴의 축복으로 이번 라운드 리롤 포인트가 +3 되었습니다!");
+                }
+                abilityManager.setRerollCount(p.getUniqueId(), rerollPoint);
 
                 // 능력 정보 출력
                 abilityManager.showAbilityInfo(p, abilityCode, 0);
@@ -621,7 +628,8 @@ public class GameManager implements Listener {
                     // [버그 수정] isPersistent()==true 인 엔티티는 MOC 플러그인이
                     // 직접 관리하는 소환수(이병구 벌, 란가 늑대 등)이므로 제거하지 않습니다.
                     // 이들은 라운드 종료 시 Ability.reset()에서 별도로 정리됩니다.
-                    if (le.isPersistent()) continue;
+                    if (le.isPersistent())
+                        continue;
                     le.remove();
                 }
             }
@@ -1210,6 +1218,24 @@ public class GameManager implements Listener {
 
             // 승자 위치에 폭죽 발사
             spawnFireworks(winner.getLocation());
+
+            // [추가] 에덴 축복 체크
+            if (abilityManager != null) {
+                String code = abilityManager.getPlayerAbilities().get(winner.getUniqueId());
+                if ("085".equals(code)) {
+                    // 에덴의 축복 아이템 소지 여부 확인
+                    for (ItemStack item : winner.getInventory().getContents()) {
+                        if (item != null && item.getType() == Material.LILY_OF_THE_VALLEY) {
+                            org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+                            if (meta != null && meta.hasCustomModelData() && meta.getCustomModelData() == 1) {
+                                edenBonusPlayers.add(winner.getUniqueId());
+                                Bukkit.broadcastMessage("§d[MOC] 에덴이 에덴의 축복을 들고 우승하여 다음 라운드 리롤 포인트 +3점을 얻습니다!");
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             // 여러 명인 경우: 점수 지급 메시지 없이 그냥 축하 폭죽만 모든 승자 위치에 발사
             for (Player p : winners) {

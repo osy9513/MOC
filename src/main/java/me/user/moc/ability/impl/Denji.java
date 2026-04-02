@@ -82,7 +82,7 @@ public class Denji extends Ability {
         p.sendMessage("§f사망 시 인벤토리에 기본으로 지급하는 재생 포션이 있다면");
         p.sendMessage("§f체력 30(1줄 반)으로 부활합니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 2.2초."); // [수정] 쿨타임 2.2초로 변경
+        p.sendMessage("§f쿨타임 : 1.6초."); // [수정] 쿨타임 1.6초로 상향(버프)
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 포치타");
         p.sendMessage("§f장비 제거 : 철 검"); // [롤백] 철검으로 복구됨
@@ -135,10 +135,10 @@ public class Denji extends Ability {
         if (target instanceof Player t && t.getGameMode() == org.bukkit.GameMode.SPECTATOR)
             return;
 
-        // [수정] 무적 무시 공격에 2.2초의 쿨타임을 부여합니다. (기존 1.8초에서 상향 조정)
+        // [수정] 무적 무시 공격에 1.6초의 쿨타임을 부여합니다. (기존 2.2초에서 상향)
         if (!checkCooldown(p))
             return;
-        setCooldown(p, 2.2);
+        setCooldown(p, 1.6);
 
         // 1초에 걸쳐 5연격 추가 (0.2초 = 4틱 간격)
         BukkitRunnable task = new BukkitRunnable() {
@@ -174,8 +174,16 @@ public class Denji extends Ability {
 
                 target.removeMetadata("pochita_saw", plugin);
 
-                // 엔진 갈리는 소리 추가
-                target.getWorld().playSound(target.getLocation(), Sound.ENTITY_MINECART_RIDING, 0.8f, 1.5f);
+                // [고도화] 엔진 갈리는 소리 + 금속 마찰음 추가
+                target.getWorld().playSound(target.getLocation(), Sound.ENTITY_MINECART_RIDING, 0.6f, 1.8f);
+                target.getWorld().playSound(target.getLocation(), Sound.BLOCK_CHAIN_BREAK, 0.5f, 0.5f);
+                
+                // [고도화] 타격 시 피 튀는 효과 (레드스톤 파티클 추가)
+                target.getWorld().spawnParticle(
+                        org.bukkit.Particle.BLOCK,
+                        target.getLocation().add(0, 1, 0),
+                        5, 0.1, 0.1, 0.1, 0.05,
+                        Bukkit.createBlockData(Material.REDSTONE_BLOCK));
 
                 hits++;
             }
