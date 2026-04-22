@@ -306,7 +306,7 @@ public List<String> getDescription() {
 1.  **Dependency Check:** 신규 기능이 어떤 매니저(`GameManager`, `AbilityManager` 등)와 상호작용해야 하는지 분석.
 2.  **Code Consistency:** 새로운 능력 추가 시 중복되지 않는 코드 번호(예: `014`) 할당 및 `AbilityManager.registerAbilities()` 등록 위치 확인. 리소스팩 CustomModelData 중복 확인.
 3.  **Creative Mode Exception:** 테스트 편의성을 위해 플레이어가 크리에이티브 모드일 경우 `setCooldown()` 또는 개별 쿨타임 설정 로직이 작동하지 않도록(`if (p.getGameMode() == GameMode.CREATIVE) return;`) 예외 처리를 반드시 포함해야 함.
-4.  **Resource Cleanup:** 능력이 소환수나 반복 작업을 사용하는 경우, `cleanup()` 또는 `reset()`에서 해제 로직이 포함되었는지 검토.
+4.  **Resource Cleanup:** 능력이 소환수나 반복 작업, 능력치 변경 등 영구적인 영향을 주는 기능을 사용할 경우, `cleanup()` 과 `reset()`를 함께 사용하여 해제 로직이 포함되었는지 검토.
 5.  **UX/UI Flow:** 플레이어에게 보여지는 채팅 메시지나 액션바 출력이 기존 양식과 일치하는지 확인.
 6.  **Resource Pack Sync:** 새로운 아이템이 필요한 경우, `MOC_ResourcePack` 파일 수정 계획을 동시에 수립.
 

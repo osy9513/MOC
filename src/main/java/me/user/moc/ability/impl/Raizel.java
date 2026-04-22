@@ -46,8 +46,7 @@ public class Raizel extends Ability {
     public List<String> getDescription() {
         return Arrays.asList(
                 "§c유틸 ● 라이제르(노블레스)",
-                "§f꿇어라. 이것이 너와 나의 눈높이다."
-        );
+                "§f꿇어라. 이것이 너와 나의 눈높이다.");
     }
 
     @Override
@@ -56,7 +55,7 @@ public class Raizel extends Ability {
         p.sendMessage("§f쉬프트 연속 2번 입력 시 능력이 발동됩니다.");
         p.sendMessage("§f발동 시 8초간 주변 15*15 범위의 적들은 점프가 불가능해지고 강제로 엎드린 상태가 됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 18초 (지속시간 종료 후 15초)");
+        p.sendMessage("§f쿨타임 : 15초");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 없음");
         p.sendMessage("§f장비 제거 : 없음");
@@ -78,9 +77,19 @@ public class Raizel extends Ability {
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
-        if (!e.isSneaking()) return;
-        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) return;
-        if (!checkCooldown(p)) return;
+        if (!e.isSneaking())
+            return;
+        if (!AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode()))
+            return;
+        if (isSilenced(p))
+            return; // 침묵 상태 검사
+        
+        // 이미 능력이 발동 중인지 체크 (중복 발동 방지 보호 로직)
+        if (activeUntil.containsKey(p.getUniqueId()))
+            return;
+
+        if (!checkCooldown(p))
+            return;
 
         long now = System.currentTimeMillis();
         long lastTime = lastSneakTime.getOrDefault(p.getUniqueId(), 0L);
@@ -96,7 +105,7 @@ public class Raizel extends Ability {
     private void activateAbility(Player p) {
         // 전체 메시지
         Bukkit.broadcastMessage("§c카디스 에트라마 디 라이제르 : §f꿇어라. 이것이 너와 나의 눈높이다.");
-        
+
         // 효과음 및 파티클
         p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1f, 0.5f);
         p.getWorld().playSound(p.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 2f, 0.5f);
@@ -106,9 +115,11 @@ public class Raizel extends Ability {
         // 8초간 지속 프로세스
         new BukkitRunnable() {
             int ticks = 0;
+
             @Override
             public void run() {
-                if (ticks >= 160 || !p.isOnline() || !AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
+                if (ticks >= 160 || !p.isOnline()
+                        || !AbilityManager.getInstance((MocPlugin) plugin).hasAbility(p, getCode())) {
                     this.cancel();
                     activeUntil.remove(p.getUniqueId());
                     setCooldown(p, 15); // 지속시간 종료 후 15초 쿨타임
@@ -116,7 +127,8 @@ public class Raizel extends Ability {
                 }
 
                 // 라이제르 본인 파티클 (영압 방출 느낌)
-                p.getWorld().spawnParticle(Particle.DRAGON_BREATH, p.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3, 0.05);
+                p.getWorld().spawnParticle(Particle.DRAGON_BREATH, p.getLocation().add(0, 1, 0), 5, 0.3, 0.5, 0.3,
+                        0.05);
                 p.getWorld().spawnParticle(Particle.SQUID_INK, p.getLocation().add(0, 1, 0), 10, 0.5, 1.0, 0.5, 0.02);
 
                 // 범위 내 적 탐색 및 제압
@@ -124,8 +136,9 @@ public class Raizel extends Ability {
                 for (Entity entity : p.getNearbyEntities(range, range, range)) {
                     if (entity instanceof Player victim && !victim.equals(p)) {
                         // 관전자 및 크리에이티브 모드 제외 (시스템 프롬프트 준수)
-                        if (victim.getGameMode() == GameMode.SPECTATOR || victim.getGameMode() == GameMode.CREATIVE) continue;
-                        
+                        if (victim.getGameMode() == GameMode.SPECTATOR || victim.getGameMode() == GameMode.CREATIVE)
+                            continue;
+
                         applyDomination(victim);
                     }
                 }
@@ -136,7 +149,7 @@ public class Raizel extends Ability {
 
     private void applyDomination(Player victim) {
         UUID uuid = victim.getUniqueId();
-        
+
         // 이미 제압 중이라면 시간만 갱신 (이미 굴러가고 있는 태스크가 있을 것이므로 생략 가능하나 안전을 위해)
         if (forcedPronePlayers.contains(uuid)) {
             applyJumpSilence(victim, 10);
@@ -149,6 +162,7 @@ public class Raizel extends Ability {
         // 강제 제압 태스크 (10틱 = 0.5초간 매 틱 실행)
         new BukkitRunnable() {
             int subTicks = 0;
+
             @Override
             public void run() {
                 if (subTicks >= 10 || !victim.isOnline() || victim.getGameMode() == GameMode.SPECTATOR) {
@@ -160,18 +174,20 @@ public class Raizel extends Ability {
                 // 매 틱마다 강제로 수영(엎드리기) 포즈 주입
                 victim.setPose(Pose.SWIMMING, true);
                 victim.setSneaking(true);
-                
+
                 // 영압에 짓눌리는 효과
-                victim.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS, 5, 4, false, false, false));
-                
+                victim.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS,
+                        5, 4, false, false, false));
+
                 // 아래로 누르는 힘
                 victim.setVelocity(victim.getVelocity().add(new Vector(0, -0.5, 0)));
-                
+
                 // 짓눌리는 비주얼
                 if (subTicks % 2 == 0) {
-                    victim.getWorld().spawnParticle(Particle.LARGE_SMOKE, victim.getLocation().add(0, 1, 0), 2, 0.2, 0.1, 0.2, 0.01);
+                    victim.getWorld().spawnParticle(Particle.LARGE_SMOKE, victim.getLocation().add(0, 1, 0), 2, 0.2,
+                            0.1, 0.2, 0.01);
                 }
-                
+
                 subTicks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);

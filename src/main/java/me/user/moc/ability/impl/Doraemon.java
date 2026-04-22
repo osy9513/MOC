@@ -29,8 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Doraemon extends Ability {
 
-    // [추가] 빅 라이트로 인해 크기가 변경된 생명체들을 추적하기 위한 집합
-    private final Set<LivingEntity> enlargedEntities = ConcurrentHashMap.newKeySet();
+    // [추가] 빅 라이트로 인해 크기가 변경된 생명체들을 추적하기 위한 집합 (메모리 릭 방지를 위해 UUID 저장)
+    private final Set<java.util.UUID> enlargedEntities = ConcurrentHashMap.newKeySet();
 
     public Doraemon(MocPlugin plugin) {
         super(plugin);
@@ -84,15 +84,16 @@ public class Doraemon extends Ability {
     @Override
     public void reset() {
         // [고도화] 라운드 종료 또는 게임 리셋 시, 커졌던 모든 생명체들의 크기를 원래대로(1.0) 되돌립니다.
-        for (LivingEntity le : enlargedEntities) {
-            if (le != null && le.isValid()) {
+        for (java.util.UUID uuid : enlargedEntities) {
+            org.bukkit.entity.Entity entity = Bukkit.getEntity(uuid);
+            if (entity instanceof LivingEntity le && le.isValid()) {
                 try {
-                    AttributeInstance scale = le.getAttribute(Attribute.valueOf("GENERIC_SCALE"));
+                    AttributeInstance scale = le.getAttribute(Attribute.SCALE);
                     if (scale != null) {
                         scale.setBaseValue(1.0);
                     }
-                } catch (IllegalArgumentException ex) {
-                    // 버전 호환성 등으로 속성이 없는 경우 무시
+                } catch (Exception ex) {
+                    // 무시
                 }
             }
         }
@@ -142,16 +143,15 @@ public class Doraemon extends Ability {
         // 크기 증폭 (15%)
         AttributeInstance scale = null;
         try {
-            scale = target.getAttribute(Attribute.valueOf("GENERIC_SCALE"));
-        } catch (IllegalArgumentException ex) {
-            // 버전 호환성을 위한 예외 처리
+            scale = target.getAttribute(Attribute.SCALE);
+        } catch (Exception ex) {
+            // 호환성 무시
         }
+        
         if (scale != null) {
             double currentScale = scale.getBaseValue();
             scale.setBaseValue(currentScale * 1.15);
-            
-            // [추가] 나중에 원래대로 되돌리기 위해 추적 목록에 추가
-            enlargedEntities.add(target);
+            enlargedEntities.add(target.getUniqueId());
         }
 
         // 1.5초간(30틱) 이펙트 및 사운드 효과

@@ -45,6 +45,8 @@ public class ConfigManager {
     public boolean random_map = true; // [추가] 전장 생성 시 자연 환경(흙, 물, 용암 등)을 생성할까요?
     public boolean test = false; // [추가] 테스트 모드 여부 (true=혼자 남아도 라운드 안 끝남)
     public boolean disable_attack_cooldown = true; // [추가] 1.8 버전처럼 공격 딜레이를 없앨까요?
+    public boolean auto_restart = false; // [추가] 게임 종료 시 30초 후 자동 재시작 여부
+    public boolean auto_stop = false; // [추가] 3연속 혼자 남을 시 자동 게임 종료 여부
 
     /**
      * [설정 불러오기]
@@ -71,6 +73,8 @@ public class ConfigManager {
         random_map = config.getBoolean("random_map", true); // [추가]
         test = config.getBoolean("test", false); // [추가] 테스트 모드 (혼자 남았을 때 종료 X)
         disable_attack_cooldown = config.getBoolean("disable_attack_cooldown", true); // [추가]
+        auto_restart = config.getBoolean("auto_restart", false); // [추가] 자동 재시작 여부
+        auto_stop = config.getBoolean("auto_stop", false); // [추가] 3연속 혼자 남을 시 게임 자동 종료 여부
 
         // 위치 정보는 좌표 X, Y, Z가 다 필요해서 따로 저장합니다. 지금은 일단 패스.
         // spawn_point는 나중에 Location 저장 로직 추가 필요.
@@ -101,6 +105,8 @@ public class ConfigManager {
         config.set("random_map", random_map); // [추가]
         config.set("test", test); // [추가] 테스트 모드 저장
         config.set("disable_attack_cooldown", disable_attack_cooldown); // [추가]
+        config.set("auto_restart", auto_restart); // [추가] 자동 재시작 저장
+        config.set("auto_stop", auto_stop); // [추가] 3연속 1인 자동 종료 저장
 
         plugin.saveConfig(); // 실제로 파일에 씁니다.
     }

@@ -97,7 +97,7 @@ public class Regent extends Ability {
         p.sendMessage("§f군주의 칼날을 쉬프트 우클릭 시 단조를 합니다.");
         p.sendMessage("§f단조 시 1~3 만큼 군주의 칼날의 데미지가 강화 됩니다.");
         p.sendMessage(" ");
-        p.sendMessage("§f쿨타임 : 13초.");
+        p.sendMessage("§f쿨타임 : 11초.");
         p.sendMessage("§f---");
         p.sendMessage("§f추가 장비 : 군주의 칼날");
         p.sendMessage("§f장비 제거 : 철 검"); // [롤백] 철검으로 복구됨
@@ -144,10 +144,10 @@ public class Regent extends Ability {
                 !meta.hasDisplayName() || !meta.getDisplayName().contains("군주의 칼날"))
             return;
 
-        // 쿨타임 13초 체크
+        // 쿨타임 11초 체크
         if (!checkCooldown(p))
             return;
-        setCooldown(p, 13.0);
+        setCooldown(p, 11.0);
 
         // 단조 대사 출력
         Bukkit.broadcastMessage("§6리젠트 : §f위대한 재련!");
