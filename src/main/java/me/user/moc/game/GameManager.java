@@ -61,11 +61,13 @@ public class GameManager implements Listener {
     private boolean isRunning = false;
     private boolean isInvincible = false;
     private int round = 0;
+    private int aloneRoundCount = 0; // [추가] 혼자 있는 라운드 연속 횟수 카운터
     // 태스크 관리 (타이머)
     private BukkitTask selectionTask; // 능력 추첨 타이머
     private BukkitTask startGameTask; // [추가] 게임 시작 카운트다운 타이머
     private BukkitTask borderStartTask; // [추가] 자기장 시작 대기 타이머
     private BukkitTask mobLimitTask; // [추가] 무분별한 전투 중 몬스터 스폰 방지 타이머
+    private BukkitTask autoRestartTask; // [추가] 자동 재시작 타이머
 
     public GameManager(MocPlugin plugin, ArenaManager arenaManager) {
         this.plugin = plugin;
@@ -131,7 +133,9 @@ public class GameManager implements Listener {
             this.configManager = ConfigManager.getInstance();
         }
         if (isRunning) {
-            starter.sendMessage("§c이미 게임이 진행 중입니다.");
+            if (starter != null) {
+                starter.sendMessage("§c이미 게임이 진행 중입니다.");
+            }
             return;
         }
 
@@ -140,8 +144,15 @@ public class GameManager implements Listener {
             startGameTask.cancel();
         }
 
+        // [고도화] 자동 재시작 대기 중에 수동으로 /moc start를 쳤을 경우 자동 재시작 타이머 취소
+        if (autoRestartTask != null && !autoRestartTask.isCancelled()) {
+            autoRestartTask.cancel();
+            autoRestartTask = null;
+        }
+
         isRunning = true;
         round = 0;
+        aloneRoundCount = 0; // [추가] 새 게임 시작 시 혼자 남은 횟수 초기화
         scores.clear();
 
         // 1-1. 게임 설정 정보 출력 (기획안 양식)
@@ -169,8 +180,8 @@ public class GameManager implements Listener {
         Bukkit.broadcastMessage("§f참가 인원 : (총 " + participants.size() + "명) " + String.join(", ", participants));
 
         // 스폰 좌표 확인
-        Location spawn = configManager.spawn_point != null ? configManager.spawn_point : starter.getLocation();
-        // 만약 콘피그에 스폰이 없으면 시작한 사람 위치를 임시 스폰으로 잡음
+        Location spawn = configManager.spawn_point != null ? configManager.spawn_point
+                : (starter != null ? starter.getLocation() : Bukkit.getWorlds().get(0).getSpawnLocation());
         if (configManager.spawn_point == null)
             configManager.spawn_point = spawn;
 
@@ -207,6 +218,37 @@ public class GameManager implements Listener {
     private void startRound() {
         if (!isRunning)
             return;
+
+        // [고도화] 라운드 시작 시 참여자 수 확인 (AFK 제외)
+        int currentParticipants = (int) Bukkit.getOnlinePlayers().stream()
+                .filter(p -> !isAfk(p.getName()))
+                .count();
+
+        if (currentParticipants <= 1) {
+            aloneRoundCount++;
+            Bukkit.broadcastMessage("§c[MOC] " + aloneRoundCount + "연속으로 혼자 시작했습니다.");
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!isAfk(p.getName())) {
+                    p.sendTitle("§c외로운 싸움", "§e" + aloneRoundCount + "연속 혼자 시작했습니다!", 10, 50, 20);
+                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                }
+            }
+        } else {
+            aloneRoundCount = 0; // 다른 플레이어가 들어오면 연속 카운트 초기화
+        }
+
+        // [고도화] test 모드일 경우 자동 종료(auto_stop) 무시
+        if (configManager.auto_stop && !configManager.test && aloneRoundCount >= 3) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!isAfk(p.getName())) {
+                    p.sendTitle("§c외로운 싸움", "§03연속 혼자 시작하여 게임이 자동으로 종료됩니다.", 10, 50, 20);
+                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                }
+            }
+            stopGame();
+            return;
+        }
+
         round++;
         readyPlayers.clear();
         isRoundEnding = false; // [버그 수정] 새 라운드 시작 시 라운드 종료 잠금 해제
@@ -876,12 +918,26 @@ public class GameManager implements Listener {
     public void stopGame() {
         if (!isRunning) {
             Bukkit.broadcastMessage("§b게임이 시작되지 않았습니다.");
+            // [추가] 대기열 중 /moc stop을 칠 경우 자동 재시작을 명시적으로 취소
+            if (autoRestartTask != null && !autoRestartTask.isCancelled()) {
+                autoRestartTask.cancel();
+                autoRestartTask = null;
+                if (configManager != null)
+                    configManager.spawn_point = null; // 좌표 캐시 초기화
+                Bukkit.broadcastMessage("§c[MOC] 예약된 자동 재시작이 취소되었습니다.");
+            }
             return;
         }
 
         // [버그 수정] 예약된 시작 태스크가 있다면 취소
         if (startGameTask != null && !startGameTask.isCancelled()) {
             startGameTask.cancel();
+        }
+
+        // [추가] 수동 종료 시 기존 자동 재시작 태스크가 있다면 취소
+        if (autoRestartTask != null && !autoRestartTask.isCancelled()) {
+            autoRestartTask.cancel();
+            autoRestartTask = null;
         }
 
         // [버그 수정] 자기장 시작 대기 태스크 취소
@@ -994,8 +1050,30 @@ public class GameManager implements Listener {
         }
 
         isRunning = false;
+
+        // [고도화] 자동 재시작을 위해 이전 좌표를 잠깐 기억해둠
+        org.bukkit.Location tempSpawn = configManager.spawn_point;
         configManager.spawn_point = null;
         isInvincible = false;
+
+        // [추가] 자동 재시작 로직
+        if (configManager.auto_restart) {
+            // [고도화] 자동 재시작 시 이전 스폰 좌표 유지
+            configManager.spawn_point = tempSpawn;
+
+            Bukkit.broadcastMessage("§e[MOC] 자동 재시작이 활성화되어 30초 후 게임이 다시 시작됩니다.");
+            autoRestartTask = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    autoRestartTask = null; // 태스크 초기화
+                    // 서버에 사람이 없으면 재시작 취소
+                    if (Bukkit.getOnlinePlayers().isEmpty())
+                        return;
+                    Bukkit.broadcastMessage("§a[MOC] 자동 재시작을 진행합니다!");
+                    startGame(null); // startGame(Player starter)에 null 전달
+                }
+            }.runTaskLater(plugin, 600L); // 30초 = 600틱
+        }
     }
 
     // 사람 죽였을 때 - 사망 이벤트 핸들러 (점수 계산)
@@ -1219,16 +1297,25 @@ public class GameManager implements Listener {
             // 승자 위치에 폭죽 발사
             spawnFireworks(winner.getLocation());
 
-            // [추가] 에덴 축복 체크
-            if (abilityManager != null) {
-                String code = abilityManager.getPlayerAbilities().get(winner.getUniqueId());
+        } else {
+            // 여러 명인 경우: 점수 지급 메시지 없이 그냥 축하 폭죽만 모든 승자 위치에 발사
+            for (Player p : winners) {
+                spawnFireworks(p.getLocation());
+            }
+            Bukkit.broadcastMessage("§e최종 전장의 생존 점수는 없습니다.");
+        }
+
+        // [추가] 에덴 축복 체크 (공동 우승도 지원)
+        if (abilityManager != null) {
+            for (Player w : winners) {
+                String code = abilityManager.getPlayerAbilities().get(w.getUniqueId());
                 if ("085".equals(code)) {
                     // 에덴의 축복 아이템 소지 여부 확인
-                    for (ItemStack item : winner.getInventory().getContents()) {
+                    for (ItemStack item : w.getInventory().getContents()) {
                         if (item != null && item.getType() == Material.LILY_OF_THE_VALLEY) {
                             org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
                             if (meta != null && meta.hasCustomModelData() && meta.getCustomModelData() == 1) {
-                                edenBonusPlayers.add(winner.getUniqueId());
+                                edenBonusPlayers.add(w.getUniqueId());
                                 Bukkit.broadcastMessage("§d[MOC] 에덴이 에덴의 축복을 들고 우승하여 다음 라운드 리롤 포인트 +3점을 얻습니다!");
                                 break;
                             }
@@ -1236,12 +1323,6 @@ public class GameManager implements Listener {
                     }
                 }
             }
-        } else {
-            // 여러 명인 경우: 점수 지급 메시지 없이 그냥 축하 폭죽만 모든 승자 위치에 발사
-            for (Player p : winners) {
-                spawnFireworks(p.getLocation());
-            }
-            Bukkit.broadcastMessage("§e최종 전장의 생존 점수는 없습니다.");
         }
 
         // 4. 점수 현황판 출력
