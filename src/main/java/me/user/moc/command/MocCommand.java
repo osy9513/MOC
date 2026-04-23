@@ -197,6 +197,8 @@ public class MocCommand implements CommandExecutor {
                     p.sendMessage("§e hidden (히든 캐릭터 활성화): §f" + cm.hidden);
                     p.sendMessage("§e test (테스트 모드 - true/false): §f" + cm.test); // [추가]
                     p.sendMessage("§6 ※참고: 테스트 모드 시 자동으로 크리에이티브 모드로 전환됩니다. 크리에이티브 모드 일 땐 노쿨로 능력 사용 가능");
+                    p.sendMessage("§e auto_stop (3연속 혼자 남을 시 자동 게임 종료 - true/false): §f" + cm.auto_stop);
+                    p.sendMessage("§e auto_restart (게임 종료 시 30초 후 자동 재시작 - true/false): §f" + cm.auto_restart);
                     p.sendMessage(" ");
                     p.sendMessage("§7(변경법: /moc config set [이름] [값])");
                     p.sendMessage(" ");

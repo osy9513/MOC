@@ -71,7 +71,7 @@ public class Doraemon extends Ability {
 
     @Override
     public void detailCheck(Player p) {
-        p.sendMessage("§c전투 ● 도라에몽(도라에몽)");
+        p.sendMessage("§b전투 ● 도라에몽(도라에몽)");
         p.sendMessage("§f빅 라이트로 상대(동물, 몬스터 포함)를 가격 시 15% 커지게 만듭니다.");
         p.sendMessage("§f빅 라이트는 꼭 도라에몽이 아니어도 모든 플레이어가 사용할 수 있습니다.");
         p.sendMessage(" ");
@@ -104,7 +104,7 @@ public class Doraemon extends Ability {
     @Override
     public List<String> getDescription() {
         return Arrays.asList(
-                "§c전투 ● 도라에몽(도라에몽)",
+                "§b전투 ● 도라에몽(도라에몽)",
                 "§f빅라이트를 사용합니다.");
     }
 
@@ -138,7 +138,7 @@ public class Doraemon extends Ability {
         setCooldown(attacker, 1.5);
 
         // 도라에몽 대사 출력
-        Bukkit.broadcastMessage("§c도라에몽 : §f빅 라이트~!");
+        Bukkit.broadcastMessage("§b도라에몽 : §f빅 라이트~!");
 
         // 크기 증폭 (15%)
         AttributeInstance scale = null;
@@ -147,7 +147,7 @@ public class Doraemon extends Ability {
         } catch (Exception ex) {
             // 호환성 무시
         }
-        
+
         if (scale != null) {
             double currentScale = scale.getBaseValue();
             scale.setBaseValue(currentScale * 1.15);
