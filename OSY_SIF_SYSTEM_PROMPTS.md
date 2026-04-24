@@ -47,6 +47,10 @@
     -   **Attributes:** `Attribute.GENERIC_MAX_HEALTH` 처럼 인터페이스 상수를 사용해야 함.
     -   **NamespacedKey:** `AttributeModifier`나 `Recipe` 등록 시 반드시 `NamespacedKey`를 사용해야 함.
     -   **Profile:** `setPlayerProfile()`을 통해 스킨과 닉네임을 동기화함.
+    -   **🔴 [실제 발생한 버그] 파티클 Float 데이터 필수 (Particle Data Requirement):** 1.21.11에서 일부 파티클(`DRAGON_BREATH`, `SQUID_INK` 등)은 `Float` 타입의 크기(scale) 데이터를 **필수**로 요구합니다. 데이터 없이 `world.spawnParticle(Particle.DRAGON_BREATH, loc, count, dx, dy, dz, speed)` 형태로 호출하면 **`IllegalArgumentException: missing required data class java.lang.Float`** 런타임 에러가 발생합니다.
+        -   **올바른 사용법:** `world.spawnParticle(Particle.DRAGON_BREATH, loc, count, dx, dy, dz, speed, 1.0f);` — 마지막 인자로 `Float` 크기 값을 반드시 전달해야 합니다.
+        -   **안전한 대안:** 데이터가 불필요한 파티클(`SOUL_FIRE_FLAME`, `LARGE_SMOKE`, `FLAME` 등)을 사용하면 해당 문제를 원천 차단할 수 있습니다.
+        -   **파티클 사용 전 반드시 확인:** 새로운 파티클을 사용할 때는 해당 파티클이 데이터 클래스(`Float`, `DustOptions`, `BlockData` 등)를 요구하는지 Paper API 문서를 확인하고, 요구하는 경우 적절한 데이터를 반드시 전달하십시오.
 3.  **리소스팩 구조 (1.21.11):**
     -   아이템 모델 정의는 `models/item/`이 아닌 `items/` 폴더의 JSON 파일에서 `minecraft:range_dispatch`를 사용하여 `custom_model_data`에 따라 분기합니다.
 
@@ -78,8 +82,12 @@
    4) 능력 구현 소스 진행.
    아래는 구현 예시 입니다.
 
-- **콘피그 변수 자동 동기화 (중요):**
-  `ConfigManager.java`에 새로운 설정 변수를 추가할 경우, 반드시 `MocCommand.java`의 `/moc config` 명령어 출력 로직에도 해당 변수의 **한글 설명과 현재 값**을 보여주는 코드를 추가해야 합니다. 관리자가 새로운 설정을 즉시 확인하고 제어할 수 있도록 하기 위함입니다.
+- **🔴 [실제 발생한 누락] 콘피그 변수 3곳 동시 동기화 (필수):**
+  `ConfigManager.java`에 새로운 설정 변수를 추가할 경우, **반드시 아래 3곳을 동시에 업데이트**해야 합니다. 하나라도 누락하면 안 됩니다.
+  1. **`ConfigManager.java`** — 변수 선언 + `load()` + `save()` 메서드에 추가
+  2. **`MocCommand.java`** — `/moc config` 명령어 출력 로직에 해당 변수의 **한글 설명과 현재 값**을 보여주는 `p.sendMessage()` 코드 추가
+  3. **`OSY_SIF_SYSTEM_PROMPTS.md`** — 이 시프 파일의 `config.yml` 관련 문서에도 신규 변수 설명 반영
+  - 관리자가 `/moc config`로 모든 설정을 즉시 확인하고 `/moc config set`으로 제어할 수 있도록 하기 위함입니다.
 
 ```java
    // AbilityManager를 통해 능력자 체크
@@ -379,7 +387,7 @@ public List<String> getDescription() {
 **현재 설정:**
 - **MC Version:** 1.21.11
 - **Java Version:** 21
-- **Plugin Version:** 0.1.4
+- **Plugin Version:** 0.1.7
 - **Resource Pack Version:** 1.3.0
 
 ---

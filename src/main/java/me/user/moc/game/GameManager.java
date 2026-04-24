@@ -224,29 +224,32 @@ public class GameManager implements Listener {
                 .filter(p -> !isAfk(p.getName()))
                 .count();
 
-        if (currentParticipants <= 1) {
-            aloneRoundCount++;
-            Bukkit.broadcastMessage("§c[MOC] " + aloneRoundCount + "연속으로 혼자 시작했습니다.");
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (!isAfk(p.getName())) {
-                    p.sendTitle("§c외로운 싸움", "§e" + aloneRoundCount + "연속 혼자 시작했습니다!", 10, 50, 20);
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+        // [고도화] auto_stop이 켜져 있을 때만 혼자 남은 횟수를 카운팅하고 안내 문구를 표시
+        if (configManager.auto_stop && !configManager.test) {
+            if (currentParticipants <= 1) {
+                aloneRoundCount++;
+                Bukkit.broadcastMessage("§c[MOC] " + aloneRoundCount + "연속으로 혼자 시작했습니다.");
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!isAfk(p.getName())) {
+                        p.sendTitle("§c외로운 싸움", "§e" + aloneRoundCount + "연속 혼자 시작했습니다!", 10, 50, 20);
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                    }
                 }
-            }
-        } else {
-            aloneRoundCount = 0; // 다른 플레이어가 들어오면 연속 카운트 초기화
-        }
 
-        // [고도화] test 모드일 경우 자동 종료(auto_stop) 무시
-        if (configManager.auto_stop && !configManager.test && aloneRoundCount >= 3) {
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (!isAfk(p.getName())) {
-                    p.sendTitle("§c외로운 싸움", "§03연속 혼자 시작하여 게임이 자동으로 종료됩니다.", 10, 50, 20);
-                    p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                // 3연속 혼자 남으면 자동 게임 종료
+                if (aloneRoundCount >= 3) {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (!isAfk(p.getName())) {
+                            p.sendTitle("§c외로운 싸움", "§03연속 혼자 시작하여 게임이 자동으로 종료됩니다.", 10, 50, 20);
+                            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                        }
+                    }
+                    stopGame();
+                    return;
                 }
+            } else {
+                aloneRoundCount = 0; // 다른 플레이어가 들어오면 연속 카운트 초기화
             }
-            stopGame();
-            return;
         }
 
         round++;
